@@ -9,11 +9,11 @@ import {
   allBestOf,
   allProducts,
   allSources,
-  childrenOf,
   getCategory,
+  listedChildren,
+  listedSilos,
   productsIn,
   recentlyUpdated,
-  listedChildren, listedSilos,
 } from '@/lib/catalog'
 import { formatCount } from '@/lib/format'
 import { countedReviews, suspiciousCount } from '@/lib/metrics'

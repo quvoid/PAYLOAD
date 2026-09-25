@@ -12,7 +12,7 @@ ReviewLens collects every review of a product from across the internet (Amazon, 
 |---|---|
 | Public site | Built. Every page type from the plan, running on **fictional sample data** (`src/data`). Fully static. |
 | Payload admin | Scaffolded (Payload 3.90, `Users` + `Media` only). ReviewLens collections not built yet. |
-| Database | Neon Postgres via `@payloadcms/db-postgres`. Not connected yet — add the connection strings to `.env`. |
+| Database | Neon Postgres via `@payloadcms/db-postgres`. Project `spring-meadow-84090481` (Singapore). Local dev uses the `dev` branch; `production` is kept clean for migrations. |
 | Scrapers | Existing scraper code to be integrated. The Amazon scraper runs a headful browser, so it needs a long-running server, not Vercel functions. |
 | Hosting | Local for now; Vercel later. |
 
@@ -51,7 +51,15 @@ Payload 3.90 supports pnpm 9–11. pnpm 12 ignores the build-script allow-list i
 | `PAYLOAD_SECRET` | Signs Payload auth tokens. Generate with `openssl rand -hex 32`. |
 | `NEXT_PUBLIC_SITE_URL` | Public origin for canonical URLs, sitemaps and JSON-LD. |
 
-Point local development at a Neon **dev branch**, never the production branch.
+Local development points at the Neon **`dev` branch**, never `production`. In development Payload syncs the schema automatically ("push"); production only ever changes through migrations.
+
+The folder is linked to Neon with the `neon` CLI (`.neon` context file, `neon.ts` policy). Useful commands:
+
+```bash
+neon env pull                                   # refresh DATABASE_URL* in .env for the linked branch
+neon link --project-id spring-meadow-84090481 --branch dev -y   # switch the linked branch
+neon branches create --name <name>              # a throwaway branch to test a migration
+```
 
 ## Scripts
 

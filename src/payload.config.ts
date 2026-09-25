@@ -1,5 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -60,7 +61,22 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
+    // Sync the schema automatically only under `pnpm dev` (on the Neon dev branch). Scripts like
+    // the seed must never do it: against production it marks the database as dev-managed, and
+    // from then on `payload migrate` stops at a prompt, which hangs the Vercel build.
+    push: process.env.NODE_ENV === 'development',
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    // Vercel's disk isn't kept between requests, so uploaded images live in Vercel Blob there.
+    // Without a token (local dev) they stay on disk in /media. alwaysInsertFields keeps the
+    // database schema identical either way, so one set of migrations fits both.
+    vercelBlobStorage({
+      collections: { media: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      alwaysInsertFields: true,
+      // Upload straight from the browser: Vercel functions reject request bodies over 4.5 MB.
+      clientUploads: true,
+    }),
+  ],
 })

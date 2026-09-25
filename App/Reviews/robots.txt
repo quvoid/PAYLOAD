@@ -1,0 +1,18 @@
+# Ships as public/robots.txt (or app/robots.ts in Next.js).
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /search
+
+# AI search crawlers are DELIBERATELY not blocked. Blocking OAI-SearchBot,
+# PerplexityBot, Claude-SearchBot, Claude-User or Google-Extended means that
+# platform cannot cite us — and being cited is the entire distribution strategy.
+# Do not add a blanket "AI bot" block here without reading PLAN.md section 7.
+#
+# Training-only crawlers (GPTBot, ClaudeBot, CCBot) are a separate decision.
+# Currently allowed: our content is aggregated public reviews plus our own
+# analysis, and training exposure is not a risk we're trying to manage.
+
+Sitemap: https://example.com/sitemap-index.xml

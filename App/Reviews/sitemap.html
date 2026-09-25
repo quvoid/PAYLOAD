@@ -1,0 +1,461 @@
+<title>ReviewLens Sitemap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root{
+    --ground:#F2F5F4; --surface:#FFFFFF; --surface-2:#FAFCFB;
+    --ink:#131A1B; --ink-2:#4E5F60; --ink-3:#7B8C8C;
+    --rule:#CFDAD8; --rule-2:#E3EBE9;
+    --accent:#0C6B67; --accent-wash:#E2EFED;
+    --good:#3D7A38; --warn:#9A680E;
+    --slab:'Bitter','Georgia',serif;
+    --sans:'Source Sans 3','Segoe UI',system-ui,sans-serif;
+    --mono:'JetBrains Mono','Consolas',ui-monospace,monospace;
+    --shadow:0 1px 2px rgba(19,26,27,.05), 0 8px 24px -16px rgba(19,26,27,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0C1212; --surface:#131B1B; --surface-2:#17201F;
+      --ink:#E2EBE9; --ink-2:#9AACAB; --ink-3:#748584;
+      --rule:#27322F; --rule-2:#1D2725;
+      --accent:#4CBEB5; --accent-wash:#0D2A28;
+      --good:#71B866; --warn:#D6A342;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C1212; --surface:#131B1B; --surface-2:#17201F;
+    --ink:#E2EBE9; --ink-2:#9AACAB; --ink-3:#748584;
+    --rule:#27322F; --rule-2:#1D2725;
+    --accent:#4CBEB5; --accent-wash:#0D2A28;
+    --good:#71B866; --warn:#D6A342;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--ink); font-family:var(--sans);
+       font-size:16px; line-height:1.6; margin:0; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 1.5rem 5rem}
+
+  header.hero{padding:4rem 0 2.5rem; border-bottom:1px solid var(--rule)}
+  .kicker{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em;
+          text-transform:uppercase; color:var(--ink-3); margin:0 0 1rem}
+  h1{font-family:var(--slab); font-weight:700; font-size:clamp(2rem,4.6vw,3rem);
+     line-height:1.06; letter-spacing:-.015em; margin:0 0 1rem; text-wrap:balance}
+  .lede{font-size:1.08rem; color:var(--ink-2); max-width:60ch; margin:0; line-height:1.65}
+
+  section{padding:3rem 0 0; border-bottom:1px solid var(--rule-2)}
+  section:last-of-type{border-bottom:0}
+  h2{font-family:var(--slab); font-weight:600; font-size:1.4rem; line-height:1.2;
+     margin:0 0 .6rem; text-wrap:balance}
+  p{margin:0 0 1rem; max-width:66ch; color:var(--ink-2)}
+  p.lead-in{color:var(--ink)}
+  code{font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+       border:1px solid var(--rule-2); border-radius:3px; padding:.08em .34em}
+
+  figure.plate{margin:1.75rem 0 2.5rem; background:var(--surface); border:1px solid var(--rule);
+               border-radius:5px; box-shadow:var(--shadow); overflow:hidden}
+  .plate-scroll{overflow-x:auto; padding:1.4rem 1.4rem .8rem}
+  svg.dgm{display:block; width:100%; min-width:880px; height:auto; color:var(--ink)}
+  figcaption{border-top:1px solid var(--rule-2); background:var(--surface-2);
+             padding:.7rem 1.4rem; font-size:.85rem; color:var(--ink-2); line-height:1.55}
+  figcaption b{color:var(--ink); font-weight:600}
+
+  .dgm text{font-family:var(--mono); font-size:11.5px; fill:currentColor; fill-opacity:.72}
+  .dgm .ttl{font-family:var(--sans); font-size:13px; font-weight:600; fill-opacity:1}
+  .dgm .lbl{font-family:var(--sans); font-size:12px; fill-opacity:.6}
+  .dgm .sub{font-size:11px; fill-opacity:.58}
+  .dgm .mn{font-size:11.5px; fill-opacity:.75}
+  .dgm .eb{font-size:9.5px; letter-spacing:.11em; fill-opacity:.45}
+  .dgm .bt{font-size:9px; letter-spacing:.06em}
+  .dgm .card{fill:var(--surface-2); stroke:currentColor; stroke-opacity:.22; stroke-width:1}
+  .dgm .card-a{fill:var(--accent-wash); stroke:var(--accent); stroke-width:1.3}
+  .dgm .ln{fill:none; stroke:currentColor; stroke-opacity:.32; stroke-width:1.1}
+  .dgm .ln-a{fill:none; stroke:var(--accent); stroke-width:1.4}
+  .dgm .rl{fill:none; stroke:currentColor; stroke-opacity:.14; stroke-width:1}
+  .dgm .ah{fill:currentColor; fill-opacity:.45}
+  .dgm .ah-a{fill:var(--accent)}
+  .dgm .dot{fill:var(--accent)}
+  .dgm .b-a{fill:none; stroke:var(--accent); stroke-width:1}
+  .dgm .b-i{fill:none; stroke:currentColor; stroke-opacity:.45; stroke-width:1}
+  .dgm .b-w{fill:none; stroke:var(--warn); stroke-width:1}
+  .dgm .b-g{fill:none; stroke:var(--good); stroke-width:1}
+  .dgm .b-m{fill:none; stroke:currentColor; stroke-opacity:.22; stroke-width:1}
+  .dgm .t-a{fill:var(--accent); fill-opacity:1}
+  .dgm .t-i{fill:currentColor; fill-opacity:.7}
+  .dgm .t-w{fill:var(--warn); fill-opacity:1}
+  .dgm .t-g{fill:var(--good); fill-opacity:1}
+  .dgm .t-m{fill:currentColor; fill-opacity:.4}
+
+  .tbl-scroll{overflow-x:auto; margin:1.5rem 0 2rem}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:.88rem}
+  th,td{text-align:left; padding:.55rem .8rem; border-bottom:1px solid var(--rule-2); vertical-align:top}
+  th{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+     color:var(--ink-3); font-weight:500; border-bottom:1px solid var(--rule)}
+  td.m{font-family:var(--mono); font-size:.8rem; white-space:nowrap}
+  td.nw{white-space:nowrap; font-weight:600}
+  tr:last-child td{border-bottom:0}
+
+  ol.rules{counter-reset:r; list-style:none; padding:0; margin:1.5rem 0 2rem;
+           display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule);
+           border-radius:4px; overflow:hidden}
+  ol.rules li{counter-increment:r; background:var(--surface); padding:.85rem 1rem .85rem 3.2rem;
+              position:relative; font-size:.95rem}
+  ol.rules li::before{content:counter(r); position:absolute; left:1rem; top:.85rem;
+                      font-family:var(--mono); font-size:.72rem; color:var(--accent)}
+  ol.rules li b{font-weight:600}
+
+  footer{border-top:1px solid var(--rule); margin-top:2rem; padding:1.5rem 0;
+         font-family:var(--mono); font-size:.7rem; letter-spacing:.05em; color:var(--ink-3)}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">ReviewLens · site structure</p>
+  <h1>What the site looks like</h1>
+  <p class="lede">One silo shown end to end, with real products. Everything below is a real URL pattern — the shape stays identical whether you have 40 products or 4,000.</p>
+</header>
+
+<section>
+  <h2>The whole site, in one tree</h2>
+  <p class="lead-in">Supplements is expanded. Skincare is a second silo, collapsed — it works exactly the same way.</p>
+
+  <figure class="plate">
+    <div class="plate-scroll">
+      <svg class="dgm" viewBox="0 0 1000 760" role="img" aria-label="Site tree. The home page branches into two silos, Protein and Supplements and Skincare. Protein and Supplements contains three category hubs — whey protein, plant protein and mass gainers — each holding product review pages such as MuscleBlaze Biozyme Performance Whey. Alongside the silos sit best-of lists, comparison pages, brand hubs, topic hubs, and trust pages including methodology, sources and author profiles.">
+        <text class="eb" x="30" y="30">URL</text>
+        <text class="eb" x="620" y="30">PAGE TYPE</text>
+        <text class="eb" x="712" y="30">WHAT IT IS</text>
+        <path class="rl" d="M30 40 H 970"/>
+
+        <text class="mn" x="40" y="62">/</text>
+        <rect class="b-m" x="620" y="50" width="78" height="17" rx="2"/>
+        <text class="bt t-m" x="659" y="62" text-anchor="middle">HOME</text>
+        <text class="lbl" x="712" y="62">Silo directory</text>
+
+        <path class="ln" d="M52 68 V 660"/>
+        <path class="ln" d="M88 94 V 296"/>
+        <path class="ln" d="M124 120 V 192"/>
+        <path class="ln" d="M124 224 V 270"/>
+        <path class="ln" d="M124 302 V 322"/>
+        <path class="ln" d="M88 354 V 400"/>
+
+        <path class="ln" d="M52 88 H 76"/>
+        <text class="mn t-a" x="78" y="92">/category/supplements/</text>
+        <rect class="b-a" x="620" y="80" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="92" text-anchor="middle">SILO</text>
+        <text class="lbl" x="712" y="92">Protein &amp; Supplements</text>
+
+        <path class="ln" d="M88 114 H 112"/>
+        <text class="mn t-a" x="114" y="118">/category/supplements/whey-protein/</text>
+        <rect class="b-a" x="620" y="106" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="118" text-anchor="middle">HUB</text>
+        <text class="lbl" x="712" y="118">Whey Protein</text>
+
+        <path class="ln" d="M124 140 H 148"/>
+        <text class="mn" x="150" y="144">/reviews/muscleblaze-biozyme-performance-whey</text>
+        <rect class="b-i" x="620" y="132" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="144" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="144">MuscleBlaze Biozyme</text>
+
+        <path class="ln" d="M124 166 H 148"/>
+        <text class="mn" x="150" y="170">/reviews/on-gold-standard-100-whey</text>
+        <rect class="b-i" x="620" y="158" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="170" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="170">ON Gold Standard</text>
+
+        <path class="ln" d="M124 192 H 148"/>
+        <text class="mn" x="150" y="196">/reviews/avvatar-alpha-whey</text>
+        <rect class="b-i" x="620" y="184" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="196" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="196">Avvatar Alpha Whey</text>
+
+        <path class="ln" d="M88 218 H 112"/>
+        <text class="mn t-a" x="114" y="222">/category/supplements/plant-protein/</text>
+        <rect class="b-a" x="620" y="210" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="222" text-anchor="middle">HUB</text>
+        <text class="lbl" x="712" y="222">Plant Protein</text>
+
+        <path class="ln" d="M124 244 H 148"/>
+        <text class="mn" x="150" y="248">/reviews/oziva-plant-protein-shake</text>
+        <rect class="b-i" x="620" y="236" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="248" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="248">OZiva Plant Protein</text>
+
+        <path class="ln" d="M124 270 H 148"/>
+        <text class="mn" x="150" y="274">/reviews/plix-plant-protein</text>
+        <rect class="b-i" x="620" y="262" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="274" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="274">Plix Plant Protein</text>
+
+        <path class="ln" d="M88 296 H 112"/>
+        <text class="mn t-a" x="114" y="300">/category/supplements/mass-gainers/</text>
+        <rect class="b-a" x="620" y="288" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="300" text-anchor="middle">HUB</text>
+        <text class="lbl" x="712" y="300">Mass Gainers</text>
+
+        <path class="ln" d="M124 322 H 148"/>
+        <text class="mn" x="150" y="326">/reviews/muscleblaze-super-gainer-xxl</text>
+        <rect class="b-i" x="620" y="314" width="78" height="17" rx="2"/>
+        <text class="bt t-i" x="659" y="326" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="712" y="326">MuscleBlaze Super Gainer</text>
+
+        <path class="ln" d="M52 348 H 76"/>
+        <text class="mn t-a" x="78" y="352">/category/skincare/</text>
+        <rect class="b-a" x="620" y="340" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="352" text-anchor="middle">SILO</text>
+        <text class="lbl" x="712" y="352">Skincare — second silo</text>
+
+        <path class="ln" d="M88 374 H 112"/>
+        <text class="mn t-a" x="114" y="378">/category/skincare/sunscreen/</text>
+        <rect class="b-a" x="620" y="366" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="378" text-anchor="middle">HUB</text>
+        <text class="lbl" x="712" y="378">Sunscreen · products below</text>
+
+        <path class="ln" d="M88 400 H 112"/>
+        <text class="mn t-a" x="114" y="404">/category/skincare/moisturisers/</text>
+        <rect class="b-a" x="620" y="392" width="78" height="17" rx="2"/>
+        <text class="bt t-a" x="659" y="404" text-anchor="middle">HUB</text>
+        <text class="lbl" x="712" y="404">Moisturisers · products below</text>
+
+        <path class="ln" d="M52 426 H 76"/>
+        <text class="mn t-w" x="78" y="430">/best/whey-protein-under-2000</text>
+        <rect class="b-w" x="620" y="418" width="78" height="17" rx="2"/>
+        <text class="bt t-w" x="659" y="430" text-anchor="middle">LIST</text>
+        <text class="lbl" x="712" y="430">Best Whey Protein Under ₹2,000</text>
+
+        <path class="ln" d="M52 452 H 76"/>
+        <text class="mn t-w" x="78" y="456">/best/plant-protein-india</text>
+        <rect class="b-w" x="620" y="444" width="78" height="17" rx="2"/>
+        <text class="bt t-w" x="659" y="456" text-anchor="middle">LIST</text>
+        <text class="lbl" x="712" y="456">Best Plant Protein in India</text>
+
+        <path class="ln" d="M52 478 H 76"/>
+        <text class="mn t-w" x="78" y="482">/compare/biozyme-vs-gold-standard</text>
+        <rect class="b-w" x="620" y="470" width="78" height="17" rx="2"/>
+        <text class="bt t-w" x="659" y="482" text-anchor="middle">COMPARE</text>
+        <text class="lbl" x="712" y="482">Biozyme vs Gold Standard</text>
+
+        <path class="ln" d="M52 504 H 76"/>
+        <text class="mn t-g" x="78" y="508">/brands/muscleblaze</text>
+        <rect class="b-g" x="620" y="496" width="78" height="17" rx="2"/>
+        <text class="bt t-g" x="659" y="508" text-anchor="middle">BRAND</text>
+        <text class="lbl" x="712" y="508">Every MuscleBlaze product</text>
+
+        <path class="ln" d="M52 530 H 76"/>
+        <text class="mn t-g" x="78" y="534">/brands/optimum-nutrition</text>
+        <rect class="b-g" x="620" y="522" width="78" height="17" rx="2"/>
+        <text class="bt t-g" x="659" y="534" text-anchor="middle">BRAND</text>
+        <text class="lbl" x="712" y="534">Every ON product</text>
+
+        <path class="ln" d="M52 556 H 76"/>
+        <text class="mn t-g" x="78" y="560">/topics/protein-powder-bloating</text>
+        <rect class="b-g" x="620" y="548" width="78" height="17" rx="2"/>
+        <text class="bt t-g" x="659" y="560" text-anchor="middle">TOPIC</text>
+        <text class="lbl" x="712" y="560">Does protein powder cause bloating?</text>
+
+        <path class="ln" d="M52 582 H 76"/>
+        <text class="mn t-g" x="78" y="586">/topics/fake-supplements-india</text>
+        <rect class="b-g" x="620" y="574" width="78" height="17" rx="2"/>
+        <text class="bt t-g" x="659" y="586" text-anchor="middle">TOPIC</text>
+        <text class="lbl" x="712" y="586">How to spot a fake supplement</text>
+
+        <path class="ln" d="M52 608 H 76"/>
+        <text class="mn t-m" x="78" y="612">/methodology</text>
+        <rect class="b-m" x="620" y="600" width="78" height="17" rx="2"/>
+        <text class="bt t-m" x="659" y="612" text-anchor="middle">TRUST</text>
+        <text class="lbl" x="712" y="612">How we score</text>
+
+        <path class="ln" d="M52 634 H 76"/>
+        <text class="mn t-m" x="78" y="638">/sources</text>
+        <rect class="b-m" x="620" y="626" width="78" height="17" rx="2"/>
+        <text class="bt t-m" x="659" y="638" text-anchor="middle">TRUST</text>
+        <text class="lbl" x="712" y="638">Where the reviews come from</text>
+
+        <path class="ln" d="M52 660 H 76"/>
+        <text class="mn t-m" x="78" y="664">/authors/[name]</text>
+        <rect class="b-m" x="620" y="652" width="78" height="17" rx="2"/>
+        <text class="bt t-m" x="659" y="664" text-anchor="middle">TRUST</text>
+        <text class="lbl" x="712" y="664">Who approved this verdict</text>
+
+        <path class="rl" d="M30 700 H 970"/>
+        <rect class="b-a" x="30" y="718" width="70" height="17" rx="2"/>
+        <text class="bt t-a" x="65" y="730" text-anchor="middle">SILO · HUB</text>
+        <text class="lbl" x="108" y="730">category pages</text>
+
+        <rect class="b-i" x="256" y="718" width="70" height="17" rx="2"/>
+        <text class="bt t-i" x="291" y="730" text-anchor="middle">REVIEW</text>
+        <text class="lbl" x="334" y="730">product pages</text>
+
+        <rect class="b-w" x="462" y="718" width="70" height="17" rx="2"/>
+        <text class="bt t-w" x="497" y="730" text-anchor="middle">LIST</text>
+        <text class="lbl" x="540" y="730">lists &amp; comparisons</text>
+
+        <rect class="b-g" x="700" y="718" width="70" height="17" rx="2"/>
+        <text class="bt t-g" x="735" y="730" text-anchor="middle">ENTITY</text>
+        <text class="lbl" x="778" y="730">brand &amp; topic hubs</text>
+      </svg>
+    </div>
+    <figcaption><b>Everything indented under a silo is that silo's territory.</b> The four blocks at the bottom — lists, comparisons, brand hubs, topic hubs — sit outside the silos on purpose: they're the only pages allowed to connect one silo to another.</figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Page type</th><th>URL pattern</th><th>Real example</th></tr></thead>
+      <tbody>
+        <tr><td class="nw">Silo</td><td class="m">/category/[silo]/</td><td class="m">/category/supplements/</td></tr>
+        <tr><td class="nw">Category hub</td><td class="m">/category/[silo]/[sub]/</td><td class="m">/category/supplements/whey-protein/</td></tr>
+        <tr><td class="nw">Product review</td><td class="m">/reviews/[product]</td><td class="m">/reviews/muscleblaze-biozyme-performance-whey</td></tr>
+        <tr><td class="nw">Ranked list</td><td class="m">/best/[query]</td><td class="m">/best/whey-protein-under-2000</td></tr>
+        <tr><td class="nw">Comparison</td><td class="m">/compare/[a]-vs-[b]</td><td class="m">/compare/biozyme-vs-gold-standard</td></tr>
+        <tr><td class="nw">Brand hub</td><td class="m">/brands/[brand]</td><td class="m">/brands/muscleblaze</td></tr>
+        <tr><td class="nw">Topic hub</td><td class="m">/topics/[aspect]</td><td class="m">/topics/protein-powder-bloating</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>What one product page connects to</h2>
+  <p class="lead-in">Take the MuscleBlaze Biozyme page. Nine links come off it — and an editor typed none of them.</p>
+
+  <figure class="plate">
+    <div class="plate-scroll">
+      <svg class="dgm" viewBox="0 0 1000 500" role="img" aria-label="The MuscleBlaze Biozyme product page in the centre, with links radiating out: upward to its silo and category hub as breadcrumbs, left to the MuscleBlaze brand hub and the protein bloating topic hub, right to three alternative whey proteins, a best-of list and a comparison page, and downward to the methodology page.">
+        <defs>
+          <marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+        </defs>
+
+        <text class="eb" x="30" y="26">EVERY LINK HERE IS GENERATED FROM A RELATION — NONE ARE TYPED BY AN EDITOR</text>
+
+        <rect class="card" x="280" y="46" width="200" height="46" rx="3"/>
+        <text class="ttl" x="380" y="68" text-anchor="middle">Supplements</text>
+        <text class="mn" x="380" y="84" text-anchor="middle">/category/supplements/</text>
+
+        <rect class="card" x="500" y="46" width="262" height="46" rx="3"/>
+        <text class="ttl" x="630" y="68" text-anchor="middle">Whey Protein</text>
+        <text class="mn" x="630" y="84" text-anchor="middle">/category/supplements/whey-protein/</text>
+
+        <path class="ln" d="M440 210 V 92" marker-end="url(#l1)"/>
+        <path class="ln" d="M560 210 V 92" marker-end="url(#l1)"/>
+        <text class="lbl" x="500" y="160" text-anchor="middle">breadcrumb, both ways</text>
+
+        <rect class="card-a" x="380" y="210" width="240" height="90" rx="4"/>
+        <text class="ttl" x="500" y="243" text-anchor="middle">MuscleBlaze Biozyme</text>
+        <text class="ttl" x="500" y="262" text-anchor="middle">Performance Whey</text>
+        <text class="mn" x="500" y="284" text-anchor="middle">/reviews/muscleblaze-biozyme…</text>
+
+        <rect class="card" x="40" y="150" width="260" height="48" rx="3"/>
+        <text class="ttl" x="56" y="172">MuscleBlaze</text>
+        <text class="mn" x="56" y="189">/brands/muscleblaze</text>
+
+        <rect class="card" x="40" y="240" width="260" height="48" rx="3"/>
+        <text class="ttl" x="56" y="262">Bloating &amp; digestion</text>
+        <text class="mn" x="56" y="279">/topics/protein-powder-bloating</text>
+
+        <path class="ln" d="M380 230 H 340 V 174 H 300" marker-end="url(#l1)"/>
+        <path class="ln" d="M380 276 H 340 V 264 H 300" marker-end="url(#l1)"/>
+
+        <rect class="card" x="700" y="140" width="260" height="66" rx="3"/>
+        <text class="ttl" x="716" y="162">3 alternatives</text>
+        <text class="mn" x="716" y="179">/reviews/on-gold-standard-100-whey</text>
+        <text class="mn" x="716" y="196">/reviews/avvatar-alpha-whey  …</text>
+
+        <rect class="card" x="700" y="240" width="260" height="48" rx="3"/>
+        <text class="ttl" x="716" y="262">Best under ₹2,000</text>
+        <text class="mn" x="716" y="279">/best/whey-protein-under-2000</text>
+
+        <rect class="card" x="700" y="320" width="260" height="48" rx="3"/>
+        <text class="ttl" x="716" y="342">Head-to-head</text>
+        <text class="mn" x="716" y="359">/compare/biozyme-vs-gold-standard</text>
+
+        <path class="ln" d="M620 230 H 670 V 174 H 700" marker-end="url(#l1)"/>
+        <path class="ln" d="M620 264 H 700" marker-end="url(#l1)"/>
+        <path class="ln" d="M620 282 H 670 V 344 H 700" marker-end="url(#l1)"/>
+
+        <path class="ln" d="M500 300 V 400" marker-end="url(#l1)"/>
+        <text class="lbl" x="512" y="356">from the score block</text>
+
+        <rect class="card" x="380" y="400" width="240" height="46" rx="3"/>
+        <text class="ttl" x="500" y="422" text-anchor="middle">How we score</text>
+        <text class="mn" x="500" y="438" text-anchor="middle">/methodology</text>
+
+        <text class="lbl" x="30" y="330">Same silo only</text>
+        <text class="sub" x="30" y="348">Alternatives are always other</text>
+        <text class="sub" x="30" y="364">whey proteins — never a</text>
+        <text class="sub" x="30" y="380">sunscreen, never another silo.</text>
+      </svg>
+    </div>
+    <figcaption><b>Every arrow points both ways.</b> The brand hub lists this product, the topic hub lists it, the best-of list ranks it, and each links back. That reciprocity is what makes the site a connected graph instead of a stack of dead-end pages — and it happens automatically, because the links are built from the product's category, brand and aspects.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Adding one product</h2>
+  <p class="lead-in">The editor fills in four fields. The structure on the right builds itself.</p>
+
+  <figure class="plate">
+    <div class="plate-scroll">
+      <svg class="dgm" viewBox="0 0 1000 380" role="img" aria-label="Two panels. On the left, what an editor types: the product name and marketplace URLs, the category, the brand, and tags, then a review of the drafted verdict. On the right, what the CMS produces automatically: a locked URL, a breadcrumb, nine internal links in both directions, four kinds of structured data, entries on five other pages, a sitemap entry, and twenty-one publish checks.">
+        <defs>
+          <marker id="e1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+        </defs>
+
+        <rect class="card" x="30" y="40" width="420" height="300" rx="4"/>
+        <text class="eb" x="48" y="66">THE EDITOR TYPES THIS</text>
+        <circle class="dot" cx="54" cy="100" r="3"/>
+        <text class="lbl" x="70" y="104">Product name + its Amazon &amp; Flipkart URLs</text>
+        <circle class="dot" cx="54" cy="140" r="3"/>
+        <text class="lbl" x="70" y="144">Category → Supplements › Whey Protein</text>
+        <circle class="dot" cx="54" cy="180" r="3"/>
+        <text class="lbl" x="70" y="184">Brand → MuscleBlaze</text>
+        <circle class="dot" cx="54" cy="220" r="3"/>
+        <text class="lbl" x="70" y="224">Tags → whey, isolate-blend, under-3000</text>
+        <path class="rl" d="M48 254 H 432"/>
+        <text class="lbl" x="48" y="280">Then, after the fetch runs:</text>
+        <circle class="dot" cx="54" cy="308" r="3"/>
+        <text class="lbl" x="70" y="312">Reads the drafted verdict and presses Publish</text>
+
+        <path class="ln-a" d="M450 190 H 530" marker-end="url(#e1)"/>
+
+        <rect class="card-a" x="530" y="40" width="440" height="300" rx="4"/>
+        <text class="eb" x="548" y="66">THE CMS PRODUCES THIS</text>
+        <circle class="dot" cx="554" cy="96" r="3"/>
+        <text class="lbl" x="570" y="100">URL /reviews/muscleblaze-biozyme… — locked at publish</text>
+        <circle class="dot" cx="554" cy="132" r="3"/>
+        <text class="lbl" x="570" y="136">Breadcrumb: Home › Supplements › Whey Protein</text>
+        <circle class="dot" cx="554" cy="168" r="3"/>
+        <text class="lbl" x="570" y="172">9 internal links, each reciprocated</text>
+        <circle class="dot" cx="554" cy="204" r="3"/>
+        <text class="lbl" x="570" y="208">Product + Review + BreadcrumbList + FAQPage</text>
+        <circle class="dot" cx="554" cy="240" r="3"/>
+        <text class="lbl" x="570" y="244">Listed on 2 hubs, 1 best-of, 1 brand, 1 topic page</text>
+        <circle class="dot" cx="554" cy="276" r="3"/>
+        <text class="lbl" x="570" y="280">Sitemap entry with a real lastmod date</text>
+        <circle class="dot" cx="554" cy="312" r="3"/>
+        <text class="lbl" x="570" y="316">21 structural checks run before it can go live</text>
+      </svg>
+    </div>
+    <figcaption><b>This is the whole design in one picture.</b> Editors supply judgement — which product, which category, and whether the verdict reads fairly. Everything that has to be consistent across a thousand pages is built by the machine, which is the only way it stays consistent across a thousand pages.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>The five rules that hold it together</h2>
+  <ol class="rules">
+    <li><b>Every product sits in exactly one category.</b> That category is its home, and it's what generates the breadcrumb.</li>
+    <li><b>Nothing is more than 3 clicks from the homepage.</b> Home → silo → category → product. That's the deepest it goes.</li>
+    <li><b>Products link sideways only inside their own silo.</b> A whey protein suggests other whey proteins — never a sunscreen.</li>
+    <li><b>Cross-silo links go through brand and topic hubs only.</b> Those pages are the bridges; nothing else crosses.</li>
+    <li><b>Editors never type a link.</b> Every link is built from the product's category, brand and aspects — so it can't be forgotten, broken, or inconsistent.</li>
+  </ol>
+</section>
+
+<footer>ReviewLens · site structure · companion to PLAN.md and the architecture reference</footer>
+
+</div>

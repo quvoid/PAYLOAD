@@ -1,0 +1,1333 @@
+<title>ReviewLens Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root{
+    --ground:#F2F5F4; --surface:#FFFFFF; --surface-2:#FAFCFB;
+    --ink:#131A1B; --ink-2:#4E5F60; --ink-3:#7B8C8C;
+    --rule:#CFDAD8; --rule-2:#E3EBE9;
+    --accent:#0C6B67; --accent-wash:#E2EFED;
+    --good:#3D7A38; --warn:#9A680E; --crit:#A33E2B; --crit-wash:#F7EBE7;
+    --slab:'Bitter','Georgia',serif;
+    --sans:'Source Sans 3','Segoe UI',system-ui,sans-serif;
+    --mono:'JetBrains Mono','Consolas',ui-monospace,monospace;
+    --shadow:0 1px 2px rgba(19,26,27,.05), 0 8px 24px -16px rgba(19,26,27,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0C1212; --surface:#131B1B; --surface-2:#17201F;
+      --ink:#E2EBE9; --ink-2:#9AACAB; --ink-3:#748584;
+      --rule:#27322F; --rule-2:#1D2725;
+      --accent:#4CBEB5; --accent-wash:#0D2A28;
+      --good:#71B866; --warn:#D6A342; --crit:#E07E64; --crit-wash:#2B1614;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C1212; --surface:#131B1B; --surface-2:#17201F;
+    --ink:#E2EBE9; --ink-2:#9AACAB; --ink-3:#748584;
+    --rule:#27322F; --rule-2:#1D2725;
+    --accent:#4CBEB5; --accent-wash:#0D2A28;
+    --good:#71B866; --warn:#D6A342; --crit:#E07E64; --crit-wash:#2B1614;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--ground); color:var(--ink); font-family:var(--sans);
+       font-size:16px; line-height:1.6; margin:0; -webkit-font-smoothing:antialiased}
+
+  .bar{position:sticky; top:0; z-index:20;
+       background:color-mix(in srgb, var(--ground) 88%, transparent);
+       backdrop-filter:saturate(1.4) blur(8px); border-bottom:1px solid var(--rule)}
+  .bar-in{max-width:1180px; margin:0 auto; padding:.6rem 1.5rem;
+          display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap}
+  .bar-name{font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+            text-transform:uppercase; color:var(--accent)}
+  .bar-nav{display:flex; gap:.85rem; flex-wrap:wrap; margin-left:auto}
+  .bar-nav a{font-family:var(--mono); font-size:.68rem; letter-spacing:.03em;
+             color:var(--ink-2); text-decoration:none; padding:.15rem 0;
+             border-bottom:1px solid transparent}
+  .bar-nav a:hover, .bar-nav a:focus-visible{color:var(--accent); border-bottom-color:var(--accent)}
+  a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 1.5rem 6rem}
+
+  header.hero{padding:4.5rem 0 3rem; border-bottom:1px solid var(--rule)}
+  .kicker{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em;
+          text-transform:uppercase; color:var(--ink-3); margin:0 0 1.25rem}
+  h1{font-family:var(--slab); font-weight:700; font-size:clamp(2.1rem,5vw,3.4rem);
+     line-height:1.05; letter-spacing:-.015em; margin:0 0 1.1rem; text-wrap:balance}
+  .lede{font-size:1.1rem; color:var(--ink-2); max-width:62ch; margin:0 0 2rem; line-height:1.65}
+  .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px;
+         background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden}
+  .fact{background:var(--surface); padding:.85rem 1rem}
+  .fact dt{font-family:var(--mono); font-size:.65rem; letter-spacing:.11em;
+           text-transform:uppercase; color:var(--ink-3); margin:0 0 .3rem}
+  .fact dd{margin:0; font-size:.9rem; font-weight:600; font-variant-numeric:tabular-nums}
+
+  section{display:grid; grid-template-columns:4rem minmax(0,1fr); gap:0 1.5rem;
+          padding:3.5rem 0 0; border-bottom:1px solid var(--rule-2)}
+  section:last-of-type{border-bottom:0}
+  .snum{font-family:var(--mono); font-size:.72rem; letter-spacing:.06em; color:var(--accent);
+        padding-top:.45rem; position:sticky; top:3.4rem; align-self:start}
+  .sbody{min-width:0; padding-bottom:3.5rem}
+  h2{font-family:var(--slab); font-weight:600; font-size:1.55rem; line-height:1.2;
+     letter-spacing:-.01em; margin:0 0 .7rem; text-wrap:balance}
+  h3{font-family:var(--sans); font-weight:600; font-size:.78rem; letter-spacing:.1em;
+     text-transform:uppercase; color:var(--ink-3); margin:2.5rem 0 .8rem}
+  p{margin:0 0 1rem; max-width:68ch}
+  p.tight{margin-bottom:.5rem}
+  code{font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+       border:1px solid var(--rule-2); border-radius:3px; padding:.08em .34em}
+  .note{border-left:2px solid var(--accent); padding:.1rem 0 .1rem 1rem;
+        color:var(--ink-2); max-width:66ch; margin:1.5rem 0}
+  .note.warn{border-left-color:var(--crit)}
+  .note b{color:var(--ink)}
+
+  figure.plate{margin:2rem 0 1.5rem; background:var(--surface); border:1px solid var(--rule);
+               border-radius:5px; box-shadow:var(--shadow); overflow:hidden}
+  .plate-scroll{overflow-x:auto; padding:1.4rem 1.4rem .6rem}
+  svg.dgm{display:block; width:100%; min-width:900px; height:auto; color:var(--ink)}
+  figcaption{border-top:1px solid var(--rule-2); background:var(--surface-2);
+             padding:.75rem 1.4rem; font-size:.85rem; color:var(--ink-2); line-height:1.55}
+  figcaption b{color:var(--ink); font-weight:600}
+
+  .dgm text{font-family:var(--mono); font-size:11.5px; fill:currentColor; fill-opacity:.72}
+  .dgm .ttl{font-family:var(--sans); font-size:13.5px; font-weight:600; fill-opacity:1}
+  .dgm .sub{font-size:11px; fill-opacity:.58}
+  .dgm .mn{font-size:11px; fill-opacity:.66}
+  .dgm .chk{font-size:10px; fill-opacity:.66}
+  .dgm .eb{font-size:9.5px; letter-spacing:.11em; fill-opacity:.45}
+  .dgm .tag{font-size:10px; fill-opacity:.42}
+  .dgm .card{fill:var(--surface-2); stroke:currentColor; stroke-opacity:.22; stroke-width:1}
+  .dgm .card-a{fill:var(--accent-wash); stroke:var(--accent); stroke-width:1.3}
+  .dgm .card-x{fill:var(--crit-wash); stroke:var(--crit); stroke-width:1.2}
+  .dgm .frame{fill:none; stroke:currentColor; stroke-opacity:.3; stroke-width:1; stroke-dasharray:3 4}
+  .dgm .frame-x{fill:none; stroke:var(--crit); stroke-width:1.1; stroke-dasharray:3 4; opacity:.75}
+  .dgm .ln{fill:none; stroke:currentColor; stroke-opacity:.42; stroke-width:1.2}
+  .dgm .ln-a{fill:none; stroke:var(--accent); stroke-width:1.5}
+  .dgm .ln-d{fill:none; stroke:var(--accent); stroke-width:1.3; stroke-dasharray:4 4}
+  .dgm .ln-g{fill:none; stroke:currentColor; stroke-opacity:.3; stroke-width:1.2; stroke-dasharray:4 4}
+  .dgm .ln-x{fill:none; stroke:var(--crit); stroke-width:1.2; stroke-dasharray:3 3; opacity:.7}
+  .dgm .xm{stroke:var(--crit); stroke-width:1.7; fill:none}
+  .dgm .rl{fill:none; stroke:currentColor; stroke-opacity:.16; stroke-width:1}
+  .dgm .ah{fill:currentColor; fill-opacity:.5}
+  .dgm .ah-a{fill:var(--accent)}
+  .dgm .cr{fill:var(--crit); fill-opacity:1}
+  .dgm .dot{fill:var(--accent)}
+  .dgm .dot-m{fill:currentColor; fill-opacity:.3}
+  .dgm .bar-a{fill:var(--accent-wash); stroke:var(--accent); stroke-width:1}
+
+  .tbl-scroll{overflow-x:auto; margin:1.5rem 0}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:.88rem}
+  th,td{text-align:left; padding:.55rem .8rem; border-bottom:1px solid var(--rule-2); vertical-align:top}
+  th{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+     color:var(--ink-3); font-weight:500; border-bottom:1px solid var(--rule)}
+  td:first-child{font-weight:600}
+  td.nw{white-space:nowrap}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+  td.m{font-family:var(--mono); font-size:.8rem; font-weight:400; white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+
+  .pill{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.05em;
+        padding:.12rem .42rem; border-radius:3px; border:1px solid currentColor; white-space:nowrap}
+  .pill.p{color:var(--good)} .pill.w{color:var(--warn)} .pill.c{color:var(--crit)} .pill.a{color:var(--accent)}
+
+  .phases{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px;
+          background:var(--rule); border:1px solid var(--rule); border-radius:4px;
+          overflow:hidden; margin:1.75rem 0}
+  .phase{background:var(--surface); padding:1rem}
+  .phase .pn{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; color:var(--accent);
+             display:block; margin-bottom:.45rem}
+  .phase h4{font-family:var(--slab); font-size:1rem; font-weight:600; margin:0 0 .1rem}
+  .phase .dur{font-family:var(--mono); font-size:.7rem; color:var(--ink-3); display:block; margin-bottom:.5rem}
+  .phase p{font-size:.83rem; color:var(--ink-2); margin:0; line-height:1.5}
+
+  pre{font-family:var(--mono); font-size:.78rem; line-height:1.7; margin:1.25rem 0;
+      background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+      padding:1rem 1.1rem; overflow-x:auto; color:var(--ink-2)}
+
+  footer{border-top:1px solid var(--rule); margin-top:2rem; padding:1.75rem 0;
+         font-family:var(--mono); font-size:.7rem; letter-spacing:.05em; color:var(--ink-3);
+         display:flex; gap:1.5rem; flex-wrap:wrap}
+
+  @media (max-width:720px){
+    section{grid-template-columns:1fr; gap:0}
+    .snum{position:static; padding:0 0 .5rem}
+    header.hero{padding:3rem 0 2.25rem}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <span class="bar-name">ReviewLens</span>
+    <nav class="bar-nav">
+      <a href="#surfaces">1 Surfaces</a>
+      <a href="#silos">2 Silos</a>
+      <a href="#entities">3 Entities</a>
+      <a href="#links">4 Links</a>
+      <a href="#markup">5 Markup</a>
+      <a href="#schema">6 Schema</a>
+      <a href="#crawl">7 Crawl</a>
+      <a href="#cms">8 CMS</a>
+      <a href="#gate">9 Gate</a>
+      <a href="#workflow">10 Workflow</a>
+      <a href="#pipeline">11 Pipeline</a>
+      <a href="#freshness">12 Freshness</a>
+      <a href="#cost">13 Cost</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">Architecture reference · v4 · SEO / AEO-first</p>
+  <h1>Structure the CMS enforces</h1>
+  <p class="lede">A curated review catalogue built to be ranked by search engines and cited by answer engines. Silos, entity relations, internal links and structured data are all generated from typed data — never a checklist an editor is asked to remember. Thirteen drawings of the mechanisms that make that true.</p>
+  <dl class="facts">
+    <div class="fact"><dt>Page types</dt><dd>7, each an entity</dd></div>
+    <div class="fact"><dt>Max click depth</dt><dd>3</dd></div>
+    <div class="fact"><dt>Internal links</dt><dd>Generated</dd></div>
+    <div class="fact"><dt>Publish gate</dt><dd>21 hard checks</dd></div>
+    <div class="fact"><dt>Frontend</dt><dd>Static, no JS content</dd></div>
+    <div class="fact"><dt>Admin</dt><dd>Payload CMS 3</dd></div>
+  </dl>
+</header>
+
+<!-- ========== 1 ========== -->
+<section id="surfaces">
+  <div class="snum">§ 1</div>
+  <div class="sbody">
+    <h2>Two audiences, one structure</h2>
+    <p>Search engines want topical silos, crawlable hub-and-spoke linking, unique content per URL, and valid structured data. Answer engines want extractable atomic facts, answer-first prose, question-shaped headings, stable anchors, and honest freshness. These overlap almost completely — and this product is unusually well-suited to both.</p>
+    <p>The reason is the pipeline. A sentence like <em>"23% of 1,050 reviews mention bloating (Amazon.in 847, Flipkart 203), concentrated in the unflavoured variant"</em> is a computed fact with named sources. That is exactly what an answer engine quotes and links back to. The format is an AEO asset and you get it for free — see §11.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 620" role="img" aria-label="Topology with three surfaces. An editor uses the Payload admin, which does CRUD against Postgres and triggers an Inngest fetch workflow. The workflow calls the adapter layer and credential broker out to Bright Data and Apify and on to marketplaces; provider webhooks resume the workflow. Publishing revalidates the static public site, which the user reads with no provider or model call on that path.">
+          <defs>
+            <marker id="t1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="t2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <rect class="frame" x="636" y="10" width="344" height="188" rx="4"/>
+          <text class="eb" x="972" y="190" text-anchor="end">STATIC · NO PROVIDER OR MODEL CALL · NO JS FOR CONTENT</text>
+
+          <rect class="card" x="60" y="24" width="200" height="44" rx="3"/>
+          <text class="ttl" x="160" y="52" text-anchor="middle">Editor</text>
+          <rect class="card" x="760" y="24" width="200" height="44" rx="3"/>
+          <text class="ttl" x="860" y="52" text-anchor="middle">User · crawler · answer engine</text>
+
+          <path class="ln" d="M160 68 V 104" marker-end="url(#t1)"/>
+          <path class="ln" d="M860 68 V 104" marker-end="url(#t1)"/>
+
+          <rect class="card-a" x="60" y="104" width="300" height="72" rx="3"/>
+          <text class="ttl" x="78" y="130">Payload admin</text>
+          <text class="sub" x="78" y="148">/admin · authenticated · dynamic</text>
+          <text class="sub" x="78" y="165">catalogue · entities · packs · gate</text>
+
+          <rect class="card" x="660" y="104" width="300" height="72" rx="3"/>
+          <text class="ttl" x="678" y="130">Public site</text>
+          <text class="sub" x="678" y="148">SSG + on-demand revalidate</text>
+          <text class="sub" x="678" y="165">semantic HTML · JSON-LD · .md mirror</text>
+
+          <path class="ln-a" d="M360 120 H 660" marker-end="url(#t2)"/>
+          <text class="mn" x="510" y="112" text-anchor="middle">publish → revalidatePath</text>
+
+          <path class="ln" d="M360 158 H 520 V 250 H 560" marker-end="url(#t1)"/>
+          <text class="mn" x="430" y="150">CRUD</text>
+
+          <path class="ln" d="M200 176 V 236" marker-end="url(#t1)"/>
+          <text class="mn" x="210" y="212">Run full fetch</text>
+
+          <rect class="card" x="60" y="236" width="420" height="66" rx="3"/>
+          <text class="ttl" x="78" y="262">Inngest fetch workflow</text>
+          <text class="sub" x="78" y="280">6 stages · per-step retry · waitForEvent</text>
+
+          <path class="ln" d="M270 302 V 350" marker-end="url(#t1)"/>
+
+          <rect class="card" x="60" y="350" width="420" height="66" rx="3"/>
+          <text class="ttl" x="78" y="376">Adapter layer + credential broker</text>
+          <text class="sub" x="78" y="394">route → lease key → trigger → collect → validate</text>
+
+          <path class="ln" d="M270 416 V 436 H 160 V 456" marker-end="url(#t1)"/>
+          <path class="ln" d="M270 416 V 436 H 380 V 456" marker-end="url(#t1)"/>
+
+          <rect class="card" x="60" y="456" width="200" height="52" rx="3"/>
+          <text class="ttl" x="160" y="479" text-anchor="middle">Bright Data</text>
+          <text class="sub" x="160" y="496" text-anchor="middle">Scraper API · SERP · Unlocker</text>
+          <rect class="card" x="280" y="456" width="200" height="52" rx="3"/>
+          <text class="ttl" x="380" y="479" text-anchor="middle">Apify</text>
+          <text class="sub" x="380" y="496" text-anchor="middle">actors · site recipes</text>
+
+          <path class="ln" d="M160 508 V 546" marker-end="url(#t1)"/>
+          <path class="ln" d="M380 508 V 546" marker-end="url(#t1)"/>
+          <rect class="card" x="60" y="546" width="420" height="56" rx="3"/>
+          <text class="eb" x="78" y="566">SOURCES</text>
+          <text class="mn" x="78" y="586">Amazon.in · Flipkart · HealthKart · Nykaa · Croma · YouTube</text>
+
+          <path class="ln-a" d="M60 482 H 28 V 270 H 60" marker-end="url(#t2)"/>
+          <text class="mn" x="20" y="376" text-anchor="middle" transform="rotate(-90 20 376)">webhook resumes step</text>
+
+          <rect class="card" x="560" y="250" width="400" height="112" rx="3"/>
+          <text class="ttl" x="578" y="276">Postgres</text>
+          <text class="sub" x="578" y="294">one database, two ownerships</text>
+          <path class="rl" d="M578 308 H 942"/>
+          <text class="mn" x="578" y="328">Payload collections — editorial + SEO</text>
+          <text class="mn" x="578" y="348">pipeline tables — high volume</text>
+          <path class="ln" d="M480 292 H 560" marker-end="url(#t1)"/>
+          <text class="mn" x="520" y="284" text-anchor="middle">writes</text>
+          <path class="ln" d="M700 250 V 180" marker-end="url(#t1)"/>
+          <text class="mn" x="710" y="218">read at build</text>
+
+          <rect class="card" x="560" y="396" width="400" height="56" rx="3"/>
+          <text class="ttl" x="578" y="420">R2 — raw provider payloads</text>
+          <text class="sub" x="578" y="438">re-parse is free; re-purchase is not</text>
+          <path class="ln" d="M480 424 H 560" marker-end="url(#t1)"/>
+          <text class="mn" x="520" y="416" text-anchor="middle">raw</text>
+        </svg>
+      </div>
+      <figcaption><b>The static output is what makes the SEO work cheap.</b> No JS is required for content, so nothing is hidden from a crawler; every page has a real URL, real HTML, and a real <code>lastmod</code>. The whole SEO problem reduces to getting the structure right at publish time — which is the CMS's job, not the runtime's.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 2 ========== -->
+<section id="silos">
+  <div class="snum">§ 2</div>
+  <div class="sbody">
+    <h2>Silos and URLs</h2>
+    <p>A silo works when link flow follows topic. It breaks when everything links to everything — which is what happens by default the moment editors add links by hand. So the rules below are enforced in the CMS, and the diagram shows both the links that get generated and the one that gets refused.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 540" role="img" aria-label="Silo diagram. Home links to three silo hubs and to entity hubs. One silo is expanded into sub-hubs, a best-of page, and products. Products link laterally to alternatives inside the same silo, down to comparison pages, and by dashed edges out to brand and topic entity hubs. A crossed-out edge shows that a product cannot link directly to a product in another silo.">
+          <defs>
+            <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <text class="eb" x="8" y="62">D0</text>
+          <text class="eb" x="8" y="152">D1</text>
+          <text class="eb" x="8" y="252">D2</text>
+          <text class="eb" x="8" y="352">D3</text>
+
+          <rect class="card" x="430" y="40" width="150" height="36" rx="3"/>
+          <text class="ttl" x="505" y="63" text-anchor="middle">Home</text>
+
+          <path class="ln" d="M505 76 V 100 H 145 V 126" marker-end="url(#s1)"/>
+          <path class="ln" d="M505 76 V 100 H 370 V 126" marker-end="url(#s1)"/>
+          <path class="ln" d="M505 76 V 100 H 595 V 126" marker-end="url(#s1)"/>
+          <path class="ln" d="M505 76 V 100 H 855 V 126" marker-end="url(#s1)"/>
+
+          <rect class="card" x="60" y="126" width="170" height="44" rx="3"/>
+          <text class="ttl" x="145" y="148" text-anchor="middle">Silo · Electronics</text>
+          <text class="mn" x="145" y="164" text-anchor="middle">/category/electronics/</text>
+
+          <rect class="card-a" x="262" y="126" width="216" height="44" rx="3"/>
+          <text class="ttl" x="370" y="148" text-anchor="middle">Silo · Supplements</text>
+          <text class="mn" x="370" y="164" text-anchor="middle">/category/protein-supplements/</text>
+
+          <rect class="card" x="510" y="126" width="170" height="44" rx="3"/>
+          <text class="ttl" x="595" y="148" text-anchor="middle">Silo · Beauty</text>
+          <text class="mn" x="595" y="164" text-anchor="middle">/category/beauty/</text>
+
+          <rect class="card" x="740" y="126" width="230" height="44" rx="3"/>
+          <text class="ttl" x="855" y="148" text-anchor="middle">Brand hubs</text>
+          <text class="mn" x="855" y="164" text-anchor="middle">/brands/[brand]</text>
+
+          <rect class="card" x="740" y="226" width="230" height="44" rx="3"/>
+          <text class="ttl" x="855" y="248" text-anchor="middle">Topic hubs</text>
+          <text class="mn" x="855" y="264" text-anchor="middle">/topics/[aspect]</text>
+
+          <path class="ln" d="M370 170 V 200 H 285 V 226" marker-end="url(#s1)"/>
+          <path class="ln" d="M370 170 V 200 H 455 V 226" marker-end="url(#s1)"/>
+          <path class="ln" d="M370 170 V 200 H 605 V 226" marker-end="url(#s1)"/>
+
+          <rect class="card" x="210" y="226" width="150" height="44" rx="3"/>
+          <text class="ttl" x="285" y="248" text-anchor="middle">Whey</text>
+          <text class="mn" x="285" y="264" text-anchor="middle">/…/whey/</text>
+
+          <rect class="card" x="380" y="226" width="150" height="44" rx="3"/>
+          <text class="ttl" x="455" y="248" text-anchor="middle">Plant</text>
+          <text class="mn" x="455" y="264" text-anchor="middle">/…/plant/</text>
+
+          <rect class="card" x="530" y="226" width="150" height="44" rx="3"/>
+          <text class="ttl" x="605" y="248" text-anchor="middle">Best-of</text>
+          <text class="mn" x="605" y="264" text-anchor="middle">/best/[query]</text>
+
+          <path class="ln" d="M285 270 V 300 H 260 V 326" marker-end="url(#s1)"/>
+          <path class="ln" d="M285 270 V 300 H 420 V 326" marker-end="url(#s1)"/>
+          <path class="ln" d="M455 270 V 300 H 580 V 326" marker-end="url(#s1)"/>
+          <path class="ln" d="M605 270 V 326" marker-end="url(#s1)"/>
+
+          <rect class="card" x="34" y="326" width="116" height="44" rx="3"/>
+          <text class="sub" x="92" y="346" text-anchor="middle">product in</text>
+          <text class="sub" x="92" y="361" text-anchor="middle">Electronics</text>
+
+          <rect class="card" x="190" y="326" width="140" height="44" rx="3"/>
+          <text class="ttl" x="260" y="348" text-anchor="middle">Product</text>
+          <text class="mn" x="260" y="363" text-anchor="middle">/reviews/…</text>
+
+          <rect class="card" x="350" y="326" width="140" height="44" rx="3"/>
+          <text class="ttl" x="420" y="348" text-anchor="middle">Product</text>
+          <text class="mn" x="420" y="363" text-anchor="middle">/reviews/…</text>
+
+          <rect class="card" x="510" y="326" width="140" height="44" rx="3"/>
+          <text class="ttl" x="580" y="348" text-anchor="middle">Product</text>
+          <text class="mn" x="580" y="363" text-anchor="middle">/reviews/…</text>
+
+          <path class="ln-x" d="M190 348 H 150"/>
+          <path class="xm" d="M164 342 L 176 354"/>
+          <path class="xm" d="M176 342 L 164 354"/>
+          <text class="eb" x="170" y="376" text-anchor="middle">BLOCKED</text>
+
+          <path class="ln" d="M240 370 V 386 H 440 V 370" marker-end="url(#s1)"/>
+          <text class="mn" x="340" y="402" text-anchor="middle">alternatives · same silo, adjacent score</text>
+
+          <rect class="card" x="430" y="426" width="210" height="44" rx="3"/>
+          <text class="ttl" x="535" y="448" text-anchor="middle">Comparison</text>
+          <text class="mn" x="535" y="463" text-anchor="middle">/compare/a-vs-b</text>
+          <path class="ln" d="M470 370 V 426" marker-end="url(#s1)"/>
+          <path class="ln" d="M560 370 V 426" marker-end="url(#s1)"/>
+          <text class="mn" x="650" y="404">comparisons</text>
+
+          <path class="ln-d" d="M650 340 H 700 V 248 H 740" marker-end="url(#s2)"/>
+          <path class="ln-d" d="M650 356 H 724 V 148 H 740" marker-end="url(#s2)"/>
+          <text class="mn" x="760" y="300">cross-silo links go only</text>
+          <text class="mn" x="760" y="316">to entity hubs</text>
+
+          <path class="rl" d="M40 478 H 960"/>
+          <path class="ln" d="M40 502 H 80"/>
+          <text class="tag" x="88" y="506">hub ↔ spoke, reciprocal</text>
+          <path class="ln-d" d="M300 502 H 340"/>
+          <text class="tag" x="348" y="506">cross-silo → entity hubs only</text>
+          <path class="xm" d="M614 496 L 626 508"/>
+          <path class="xm" d="M626 496 L 614 508"/>
+          <text class="tag" x="640" y="506">refused: product → product across silos</text>
+        </svg>
+      </div>
+      <figcaption><b>The refused edge is the whole point of a silo.</b> Products link up to their hubs, laterally to same-silo alternatives, and out to entity hubs — never sideways into an unrelated topic. Every generated edge is reciprocal, so the graph has no dead ends. Note the depth rails: nothing sits below D3, and the CMS blocks publication of anything more than three clicks from home.</figcaption>
+    </figure>
+
+    <h3>Flat product URLs, silo carried by links</h3>
+    <p>Nesting products under their category makes the silo visible in the URL, but every recategorisation becomes a redirect and a dual-category product has no clean home. <strong>Internal linking is a considerably stronger topical signal than URL path segments</strong> — and it's the one you can change without a redirect. So: flat <code>/reviews/[product]</code>, silo expressed through breadcrumbs, <code>BreadcrumbList</code>, and generated links. The <code>/reviews/</code> prefix also puts the search intent in the path, matching the real query shape.</p>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Page type</th><th>URL</th><th>Primary entity</th><th>Unique content floor</th></tr></thead>
+        <tbody>
+          <tr><td>Product review</td><td class="m">/reviews/[product]</td><td>Product</td><td>Verdict + pros/cons — unique by construction</td></tr>
+          <tr><td>Silo hub</td><td class="m">/category/[silo]/</td><td>Category</td><td>≥300 words of buying-guide intro</td></tr>
+          <tr><td>Sub-hub</td><td class="m">/category/[silo]/[sub]/</td><td>Category</td><td>≥300 words</td></tr>
+          <tr><td>Ranked list</td><td class="m">/best/[query]</td><td>Collection</td><td>≥250 words of selection rationale</td></tr>
+          <tr><td>Comparison</td><td class="m">/compare/[a]-vs-[b]</td><td>Comparison</td><td>≥200 words of head-to-head judgement</td></tr>
+          <tr><td>Brand hub</td><td class="m">/brands/[brand]</td><td>Brand</td><td>≥200 words</td></tr>
+          <tr><td>Topic hub</td><td class="m">/topics/[aspect]</td><td>Aspect</td><td>≥400 words explaining the aspect</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b><code>/best/[query]</code> is the highest-leverage page type you have.</b> It matches "best X" queries head-on, it's the ordered-<code>ItemList</code> shape answer engines reach for, and it's nearly free — the ranking already exists in your scored catalogue. Treat it as a first-class collection that regenerates when scores move, not a report someone writes.</div>
+  </div>
+</section>
+
+<!-- ========== 3 ========== -->
+<section id="entities">
+  <div class="snum">§ 3</div>
+  <div class="sbody">
+    <h2>Entity relations</h2>
+    <p>The site should read as a small knowledge graph rather than a pile of pages. That means brands, aspects and authors are real collections with typed relations — not strings in a text field on the product.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 480" role="img" aria-label="Entity graph centred on Product. Category contains Product and has parent-child relations with itself. Brand manufactures Product and links out to Wikidata and an official site via sameAs. Author reviews Product. Product hasAspect pointing to Aspect, which appliesTo Category. Product competesWith itself, is ranked in Collections and appears in Comparisons; Collection sits in a silo Category.">
+          <defs>
+            <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <rect class="card" x="400" y="50" width="200" height="56" rx="3"/>
+          <text class="ttl" x="418" y="74">Category</text>
+          <text class="sub" x="418" y="92">silo root · pack · hub copy</text>
+
+          <path class="ln" d="M400 62 H 360 V 94 H 400" marker-end="url(#g1)"/>
+          <text class="mn" x="352" y="82" text-anchor="end">parent / child</text>
+
+          <rect class="card" x="60" y="50" width="180" height="56" rx="3"/>
+          <text class="ttl" x="78" y="74">Author</text>
+          <text class="sub" x="78" y="92">E-E-A-T · sameAs</text>
+
+          <rect class="card" x="60" y="180" width="180" height="56" rx="3"/>
+          <text class="ttl" x="78" y="204">Brand</text>
+          <text class="sub" x="78" y="222">hub page · sameAs</text>
+
+          <rect class="card-a" x="400" y="180" width="200" height="80" rx="3"/>
+          <text class="ttl" x="418" y="206">Product</text>
+          <text class="sub" x="418" y="224">the review page</text>
+          <text class="sub" x="418" y="241">exactly one primary category</text>
+
+          <rect class="card" x="760" y="180" width="180" height="56" rx="3"/>
+          <text class="ttl" x="778" y="204">Aspect</text>
+          <text class="sub" x="778" y="222">topic hub · explainer</text>
+
+          <rect class="card" x="400" y="330" width="200" height="56" rx="3"/>
+          <text class="ttl" x="418" y="354">Collection</text>
+          <text class="sub" x="418" y="372">best-of · promoted tag</text>
+
+          <rect class="card" x="730" y="330" width="210" height="56" rx="3"/>
+          <text class="ttl" x="748" y="354">Comparison</text>
+          <text class="sub" x="748" y="372">head-to-head page</text>
+
+          <rect class="card" x="60" y="400" width="180" height="48" rx="3"/>
+          <text class="sub" x="78" y="422">Wikidata · official site</text>
+          <text class="sub" x="78" y="438">external graph anchor</text>
+
+          <path class="ln" d="M500 106 V 180" marker-end="url(#g1)"/>
+          <text class="mn" x="510" y="148">contains</text>
+
+          <path class="ln" d="M240 220 H 400" marker-end="url(#g1)"/>
+          <text class="mn" x="320" y="212" text-anchor="middle">manufactures</text>
+
+          <path class="ln" d="M240 78 H 330 V 196 H 400" marker-end="url(#g1)"/>
+          <text class="mn" x="338" y="150">reviewedBy</text>
+
+          <path class="ln" d="M600 208 H 760" marker-end="url(#g1)"/>
+          <text class="mn" x="680" y="200" text-anchor="middle">hasAspect</text>
+
+          <path class="ln" d="M850 180 V 78 H 600" marker-end="url(#g1)"/>
+          <text class="mn" x="725" y="70" text-anchor="middle">appliesTo</text>
+
+          <path class="ln" d="M400 240 H 350 V 276 H 400" marker-end="url(#g1)"/>
+          <text class="mn" x="342" y="262" text-anchor="end">competesWith</text>
+
+          <path class="ln" d="M500 260 V 330" marker-end="url(#g1)"/>
+          <text class="mn" x="510" y="300">rankedIn</text>
+
+          <path class="ln" d="M600 246 H 665 V 358 H 730" marker-end="url(#g1)"/>
+          <text class="mn" x="672" y="306">comparedIn</text>
+
+          <path class="ln" d="M400 358 H 300 V 78 H 400" marker-end="url(#g1)"/>
+          <text class="mn" x="292" y="310" text-anchor="end">inSilo</text>
+
+          <path class="ln-d" d="M150 236 V 400" marker-end="url(#g2)"/>
+          <text class="mn" x="158" y="330">sameAs</text>
+        </svg>
+      </div>
+      <figcaption><b><code>sameAs</code> is the cheapest entity win available.</b> One field per brand and per author, linking to a Wikidata entity, an official site, or a real professional profile — and your entities connect to the wider graph instead of floating. <b>E-E-A-T isn't optional for commercial-intent review content</b>: a named human on every verdict, a <code>/methodology</code> page linked from every score block, and a <code>/sources</code> page listing what you aggregate. You get it nearly free, because a human already approves every page.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 4 ========== -->
+<section id="links">
+  <div class="snum">§ 4</div>
+  <div class="sbody">
+    <h2>Internal linking as a computed graph</h2>
+    <p>Editors will not remember to add links, and hand-added links are inconsistent and incomplete. So <strong>no editor adds a navigational link.</strong> The CMS stores typed relations, templates render links from them, and the CMS reports on the resulting graph. Editors write judgement; the machine writes structure.</p>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>From</th><th>To</th><th>Rule</th><th>Anchor</th></tr></thead>
+        <tbody>
+          <tr><td class="nw">Product</td><td class="nw">Silo + sub hub</td><td>Always — breadcrumb</td><td>Category name</td></tr>
+          <tr><td class="nw">Product</td><td class="nw">Brand hub</td><td>Always</td><td>Brand name</td></tr>
+          <tr><td class="nw">Product</td><td class="nw">4 alternatives</td><td>Same silo, nearest composite score</td><td>Product name</td></tr>
+          <tr><td class="nw">Product</td><td class="nw">Comparisons</td><td>Where it participates, max 3</td><td>"X vs Y"</td></tr>
+          <tr><td class="nw">Product</td><td class="nw">Topic hubs</td><td>One per aspect flagged notable</td><td>Aspect phrase</td></tr>
+          <tr><td class="nw">Product</td><td class="nw">/methodology</td><td>Always, from the score block</td><td>"how we score"</td></tr>
+          <tr><td class="nw">Silo hub</td><td class="nw">Top 12 products</td><td>Curated first, then by composite</td><td>Product name</td></tr>
+          <tr><td class="nw">Silo hub</td><td class="nw">Sub-hubs · parent · siblings</td><td>Always</td><td>Category names</td></tr>
+          <tr><td class="nw">Silo hub</td><td class="nw">Best-of pages in silo</td><td>Always</td><td>List title</td></tr>
+          <tr><td class="nw">Best-of</td><td class="nw">Ranked products</td><td>Always, in order</td><td>Product name + rank</td></tr>
+          <tr><td class="nw">Topic hub</td><td class="nw">Products with that aspect</td><td>Computed, max 20</td><td>Product name</td></tr>
+          <tr><td class="nw">Brand hub</td><td class="nw">All published products</td><td>Always</td><td>Product name</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="tight"><strong>Anchor text comes from a template set with variation</strong>, not one hardcoded string — identical anchors repeated across a thousand pages are a footprint, and varied anchors carry more semantic range.</p>
+
+    <h3>Graph health, surfaced in the admin</h3>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Metric</th><th>Threshold</th><th>Consequence</th></tr></thead>
+        <tbody>
+          <tr><td class="nw">Orphan</td><td class="nw">0 inbound internal links</td><td><span class="pill c">Blocks publish</span></td></tr>
+          <tr><td class="nw">Click depth</td><td class="nw">&gt; 3 from home</td><td><span class="pill c">Blocks publish</span></td></tr>
+          <tr><td class="nw">Outbound internal</td><td class="nw">&gt; ~100 per page</td><td><span class="pill w">Warns</span> — beyond this, links stop distributing meaningful signal</td></tr>
+          <tr><td class="nw">Inbound distribution</td><td class="nw">reported, not gated</td><td>Shows which pages are starved of internal signal</td></tr>
+          <tr><td class="nw">Broken internal link</td><td class="nw">any</td><td>Structurally impossible — links come from relations. Asserted in CI anyway.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tight">At 1,000 pages you cannot reason about depth, orphans and inbound distribution from a list view — and those three numbers are most of what determines whether the silo actually works. Hence the dedicated Link graph screen in §8.</p>
+  </div>
+</section>
+
+<!-- ========== 5 ========== -->
+<section id="markup">
+  <div class="snum">§ 5</div>
+  <div class="sbody">
+    <h2>Semantic HTML and citable anchors</h2>
+    <p>The static output has no excuse for div soup. Every region is a real element with a real label, and every claim has a stable id so an answer engine can deep-link the fact rather than the page.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 620" role="img" aria-label="The product page HTML outline as nested bands inside an article element with Product itemtype: breadcrumb nav, header with h1 and answer-first paragraph and a definition list of metadata, then sections for verdict, pros and cons, aspects, alternatives, FAQ and reviews, then a footer. Each band is annotated with its stable anchor id and the structured data it carries.">
+          <defs>
+            <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+          </defs>
+
+          <text class="eb" x="40" y="26">SEMANTIC OUTLINE</text>
+          <text class="eb" x="768" y="26">ANCHOR + STRUCTURED DATA</text>
+
+          <rect class="card" x="40" y="40" width="700" height="540" rx="4"/>
+          <text class="mn" x="56" y="60">&lt;article itemtype="…/Product"&gt;</text>
+
+          <rect class="card" x="60" y="70" width="660" height="40" rx="2"/>
+          <text class="mn" x="76" y="94">&lt;nav aria-label="Breadcrumb"&gt;&lt;ol&gt;</text>
+          <text class="sub" x="704" y="94" text-anchor="end">silo path</text>
+          <text class="mn" x="768" y="94">BreadcrumbList</text>
+
+          <rect class="card-a" x="60" y="118" width="660" height="58" rx="2"/>
+          <text class="mn" x="76" y="140">&lt;header&gt; &lt;h1&gt; · p.answer · &lt;dl&gt;</text>
+          <text class="sub" x="76" y="158">verdict stated in the first paragraph, ≤320 chars</text>
+          <text class="sub" x="704" y="140" text-anchor="end">one h1</text>
+          <text class="mn" x="768" y="140">#top</text>
+          <text class="sub" x="768" y="158">answer-first — extractable whole</text>
+
+          <rect class="card" x="60" y="184" width="660" height="40" rx="2"/>
+          <text class="mn" x="76" y="208">&lt;time datetime="2026-08-12"&gt;</text>
+          <text class="sub" x="704" y="208" text-anchor="end">+ review count</text>
+          <text class="mn" x="768" y="208">dateModified</text>
+
+          <rect class="card" x="60" y="232" width="660" height="44" rx="2"/>
+          <text class="mn" x="76" y="252">&lt;section id="verdict" aria-labelledby&gt;</text>
+          <text class="sub" x="76" y="268">h2: "Should you buy it?"</text>
+          <text class="mn" x="768" y="252">#verdict</text>
+          <text class="sub" x="768" y="268">Review.reviewRating</text>
+
+          <rect class="card-a" x="60" y="284" width="660" height="48" rx="2"/>
+          <text class="mn" x="76" y="304">&lt;section id="pros-cons"&gt; ul.pros / ul.cons</text>
+          <text class="sub" x="76" y="321">each &lt;li&gt; carries &lt;cite&gt; → its evidence reviews</text>
+          <text class="mn" x="768" y="304">#pros-cons</text>
+          <text class="sub" x="768" y="321">positiveNotes / negativeNotes</text>
+
+          <rect class="card" x="60" y="340" width="660" height="48" rx="2"/>
+          <text class="mn" x="76" y="360">&lt;section id="aspects"&gt; &lt;table&gt;&lt;caption&gt;</text>
+          <text class="sub" x="76" y="377">th scope="col" · tabular-nums · one row per pack aspect</text>
+          <text class="mn" x="768" y="360">#aspect-digestion</text>
+          <text class="sub" x="768" y="377">one anchor per aspect row</text>
+
+          <rect class="card" x="60" y="396" width="660" height="40" rx="2"/>
+          <text class="mn" x="76" y="420">&lt;section id="alternatives"&gt;</text>
+          <text class="sub" x="704" y="420" text-anchor="end">same silo</text>
+          <text class="mn" x="768" y="420">ItemList</text>
+
+          <rect class="card" x="60" y="444" width="660" height="40" rx="2"/>
+          <text class="mn" x="76" y="468">&lt;section id="faq"&gt; &lt;dl&gt;</text>
+          <text class="sub" x="704" y="468" text-anchor="end">answers 40–60 words</text>
+          <text class="mn" x="768" y="468">FAQPage</text>
+
+          <rect class="card" x="60" y="492" width="660" height="44" rx="2"/>
+          <text class="mn" x="76" y="512">&lt;section id="reviews"&gt;</text>
+          <text class="sub" x="76" y="528">top 50 in HTML · rest from a static JSON chunk</text>
+          <text class="mn" x="768" y="512">#rv-123</text>
+          <text class="sub" x="768" y="528">per-review anchor for citations</text>
+
+          <rect class="card" x="60" y="544" width="660" height="30" rx="2"/>
+          <text class="mn" x="76" y="564">&lt;footer&gt; methodology · sources · disclosure</text>
+          <text class="mn" x="768" y="564">Organization</text>
+        </svg>
+      </div>
+      <figcaption><b>Anchors are what make you quotable rather than merely readable.</b> <code>#verdict</code>, <code>#aspect-digestion</code>, <code>#rv-123</code> — an answer engine can cite the specific claim, and the link it hands its reader lands on the exact fact. Non-negotiables elsewhere: one <code>h1</code>; every <code>section</code> labelled via <code>aria-labelledby</code>; <code>time datetime</code> on every date; <code>table</code> with <code>caption</code> and scoped headers; <code>cite</code> on every sourced claim.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 6 ========== -->
+<section id="schema">
+  <div class="snum">§ 6</div>
+  <div class="sbody">
+    <h2>Structured data, and the trap</h2>
+    <p>Most of the schema work here is routine. One decision is not, and getting it wrong is the kind of thing that gets a site's markup ignored — or worse.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 380" role="img" aria-label="Aggregated marketplace ratings from Amazon, Flipkart and HealthKart branch two ways. The wrong option emits an aggregateRating of 4.3 from 1,362 third-party ratings, claiming other sites' reviews as your own aggregate. The correct option emits a Review authored by the publication with its own editorial rating plus positiveNotes and negativeNotes, keeping marketplace numbers as visible attributed content.">
+          <defs>
+            <marker id="q1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+          </defs>
+
+          <rect class="card" x="250" y="26" width="500" height="52" rx="3"/>
+          <text class="eb" x="266" y="46">AGGREGATED SOURCE DATA</text>
+          <text class="mn" x="266" y="66">Amazon.in 4.3 (847) · Flipkart 4.1 (203) · HealthKart 4.5 (312)</text>
+
+          <path class="ln" d="M400 78 V 100 H 255 V 120" marker-end="url(#q1)"/>
+          <path class="ln" d="M600 78 V 100 H 745 V 120" marker-end="url(#q1)"/>
+
+          <rect class="card-x" x="40" y="120" width="430" height="220" rx="3"/>
+          <text class="eb cr" x="58" y="142">DON'T</text>
+          <text class="mn" x="58" y="168">"aggregateRating": {</text>
+          <text class="mn" x="58" y="186">   "ratingValue": 4.3,</text>
+          <text class="mn" x="58" y="204">   "ratingCount": 1362</text>
+          <text class="mn" x="58" y="222">}</text>
+          <path class="rl" d="M58 244 H 452"/>
+          <text class="sub" x="58" y="268">Claims other sites' reviews as your own</text>
+          <text class="sub" x="58" y="286">aggregate. Aggregate ratings are meant to</text>
+          <text class="sub" x="58" y="304">represent reviews you collected — this gets</text>
+          <text class="sub" x="58" y="322">markup ignored, or penalised.</text>
+
+          <rect class="card-a" x="530" y="120" width="430" height="220" rx="3"/>
+          <text class="eb" x="548" y="142">DO</text>
+          <text class="mn" x="548" y="168">"@type": "Review",</text>
+          <text class="mn" x="548" y="186">"author": { "name": "ReviewLens" },</text>
+          <text class="mn" x="548" y="204">"reviewRating": { "ratingValue": 4.0 },</text>
+          <text class="mn" x="548" y="222">"positiveNotes": { … },</text>
+          <text class="mn" x="548" y="240">"negativeNotes": { … }</text>
+          <path class="rl" d="M548 258 H 942"/>
+          <text class="sub" x="548" y="282">Your editorial verdict — genuinely yours.</text>
+          <text class="sub" x="548" y="300">Marketplace numbers stay on the page as</text>
+          <text class="sub" x="548" y="318">visible content, attributed per source.</text>
+        </svg>
+      </div>
+      <figcaption><b>You lose nothing extractable.</b> "Amazon.in: 4.3 from 847 ratings" as attributed page content is <em>more</em> citable than an unattributed blended star, because the provenance travels with the number. And <code>positiveNotes</code>/<code>negativeNotes</code> on <code>Review</code> is the feature built for exactly this product — pros-and-cons markup on editorial product reviews, which your pipeline already produces as structured cited lists.</figcaption>
+    </figure>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Page type</th><th>Emit</th></tr></thead>
+        <tbody>
+          <tr><td class="nw">Product review</td><td><code>Product</code> + <code>Review</code> (author, reviewRating, positiveNotes, negativeNotes, dateModified) + <code>BreadcrumbList</code> + <code>FAQPage</code></td></tr>
+          <tr><td class="nw">Silo / sub hub</td><td><code>CollectionPage</code> + <code>ItemList</code> + <code>BreadcrumbList</code></td></tr>
+          <tr><td class="nw">Ranked list</td><td><code>ItemList</code> with <code>ListItem.position</code> + <code>FAQPage</code></td></tr>
+          <tr><td class="nw">Comparison</td><td><code>ItemList</code> + both <code>Product</code>s</td></tr>
+          <tr><td class="nw">Brand hub</td><td><code>Brand</code> + <code>sameAs</code> + <code>ItemList</code></td></tr>
+          <tr><td class="nw">Topic hub</td><td><code>Article</code> + <code>FAQPage</code> + <code>ItemList</code></td></tr>
+          <tr><td class="nw">Sitewide</td><td><code>Organization</code> (logo, sameAs, publishingPrinciples) + <code>WebSite</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 7 ========== -->
+<section id="crawl">
+  <div class="snum">§ 7</div>
+  <div class="sbody">
+    <h2>Crawl control</h2>
+    <p>A review site with filters is a crawl-trap generator. The cleanest fix isn't a directive — it's making the bad URLs impossible to exist in the first place.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 380" role="img" aria-label="Three zones. Indexed pages: product reviews, silo and sub hubs, ranked lists, comparisons, brand hubs and topic hubs, each with a unique-content minimum. Noindex follow: utility tags, internal search results and thin-data products. A third zone lists URLs that never exist at all: facet parameter combinations and review pagination, because filters are client-side. An arrow shows tags being promoted into indexable collections.">
+          <defs>
+            <marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <rect class="card-a" x="40" y="56" width="430" height="220" rx="3"/>
+          <text class="eb" x="58" y="78">INDEX, FOLLOW</text>
+          <text class="mn" x="58" y="104">/reviews/[product]</text>
+          <text class="mn" x="58" y="126">/category/[silo]/  ·  /category/[silo]/[sub]/</text>
+          <text class="mn" x="58" y="148">/best/[query]</text>
+          <text class="mn" x="58" y="170">/compare/[a]-vs-[b]</text>
+          <text class="mn" x="58" y="192">/brands/[brand]</text>
+          <text class="mn" x="58" y="214">/topics/[aspect]</text>
+          <path class="rl" d="M58 236 H 452"/>
+          <text class="sub" x="58" y="260">each with a unique-content floor enforced at publish</text>
+
+          <path class="ln-a" d="M570 100 H 470" marker-end="url(#c1)"/>
+          <text class="tag" x="520" y="92" text-anchor="middle">promote</text>
+
+          <rect class="card" x="570" y="56" width="390" height="130" rx="3"/>
+          <text class="eb" x="588" y="78">NOINDEX, FOLLOW</text>
+          <text class="mn" x="588" y="102">utility tags — filter helpers</text>
+          <text class="mn" x="588" y="122">internal search results</text>
+          <text class="mn" x="588" y="142">THIN DATA products (default)</text>
+          <path class="rl" d="M588 158 H 942"/>
+          <text class="sub" x="588" y="176">navigational value, no thin-page dilution</text>
+
+          <rect class="frame-x" x="570" y="214" width="390" height="126" rx="3"/>
+          <text class="eb cr" x="588" y="236">URLS THAT NEVER EXIST</text>
+          <text class="mn" x="588" y="262">?source=&amp;aspect=&amp;rating=</text>
+          <text class="mn" x="588" y="282">?page=2 … N</text>
+          <path class="rl" d="M588 300 H 942"/>
+          <text class="sub" x="588" y="320">filters are client-side, no URL change;</text>
+          <text class="sub" x="588" y="336">top 50 reviews ship in the HTML</text>
+        </svg>
+      </div>
+      <figcaption><b>Prevention beats directives.</b> Because the page is static with reviews already embedded, filtering needs no server round-trip — so facet combinations generate no URLs to trap a crawler. Same with pagination: ship the top 50 reviews in HTML and load the rest from a static JSON chunk, which avoids both thin <code>?page=N</code> pages and hiding all your content.</figcaption>
+    </figure>
+
+    <div class="note"><b>Tags need a promotion rule or they will dilute the site.</b> Most tags stay <code>noindex</code> filter helpers. A tag becomes an indexable <code>Collection</code> only when an editor has written unique intro copy <em>and</em> it holds ≥8 published products. The CMS enforces the threshold — it will not let anyone tick "index" on a tag with four products and no copy. <b>Sitemaps split by page type</b>, each with accurate <code>lastmod</code>, so an indexing problem is diagnosable per type instead of one opaque number.</div>
+  </div>
+</section>
+
+<!-- ========== 8 ========== -->
+<section id="cms">
+  <div class="snum">§ 8</div>
+  <div class="sbody">
+    <h2>The CMS</h2>
+    <p>Payload CMS 3 inside the Next.js app, Postgres via Drizzle. What changes in v4 is its job: the CMS is now the <strong>enforcement layer for the information architecture</strong>, not a catalogue editor with SEO fields bolted on.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 640" role="img" aria-label="On the left, admin screens in three groups: catalogue with products, bulk import, review queue and stale queue; structure with silos, entities, collections, comparisons, link graph, and redirects with the SEO queue; and ops with providers, budget and audit log. On the right, the public product page as stacked bands with their anchor ids.">
+          <defs>
+            <marker id="u1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+          </defs>
+
+          <text class="eb" x="30" y="26">ADMIN · CATALOGUE</text>
+          <rect class="card-a" x="30" y="38" width="440" height="48" rx="3"/>
+          <text class="ttl" x="46" y="60">Products</text>
+          <text class="sub" x="46" y="77">Details · Sources · Fetch · Analysis · SEO · Links · Reviews</text>
+
+          <rect class="card" x="30" y="96" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="114">Bulk import</text>
+          <text class="sub" x="300" y="114">paste URLs → drafts</text>
+
+          <rect class="card" x="30" y="142" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="160">Review queue</text>
+          <text class="sub" x="300" y="160">verdicts awaiting approval</text>
+
+          <rect class="card" x="30" y="188" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="206">Stale queue</text>
+          <text class="sub" x="300" y="206">past refresh threshold</text>
+
+          <text class="eb" x="30" y="256">ADMIN · STRUCTURE</text>
+          <rect class="card" x="30" y="268" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="286">Silos</text>
+          <text class="sub" x="300" y="286">tree · hub copy · orphans</text>
+
+          <rect class="card" x="30" y="314" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="332">Entities</text>
+          <text class="sub" x="300" y="332">Brands · Aspects · Authors</text>
+
+          <rect class="card" x="30" y="360" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="378">Collections</text>
+          <text class="sub" x="300" y="378">best-of · promoted tags</text>
+
+          <rect class="card" x="30" y="406" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="424">Comparisons</text>
+          <text class="sub" x="300" y="424">curated + auto-suggested</text>
+
+          <rect class="card-a" x="30" y="452" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="470">Link graph</text>
+          <text class="sub" x="300" y="470">depth · orphans · inbound</text>
+
+          <rect class="card" x="30" y="498" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="516">Redirects · SEO queue</text>
+          <text class="sub" x="300" y="516">audit trail · failing pages</text>
+
+          <text class="eb" x="30" y="568">ADMIN · OPS</text>
+          <rect class="card" x="30" y="580" width="440" height="36" rx="3"/>
+          <text class="ttl" x="46" y="598">Providers · Budget · Audit log</text>
+
+          <text class="eb" x="520" y="26">PUBLIC · /reviews/[product] · STATIC</text>
+          <rect class="card" x="520" y="38" width="450" height="530" rx="4"/>
+
+          <rect class="card" x="536" y="54" width="418" height="34" rx="2"/>
+          <text class="sub" x="552" y="76">Breadcrumb</text>
+          <text class="tag" x="938" y="76" text-anchor="end">BreadcrumbList</text>
+
+          <rect class="card-a" x="536" y="96" width="418" height="46" rx="2"/>
+          <text class="sub" x="552" y="116">h1 + answer-first verdict paragraph</text>
+          <text class="tag" x="552" y="132">≤320 chars, extractable whole</text>
+          <text class="tag" x="938" y="116" text-anchor="end">#top</text>
+
+          <rect class="card" x="536" y="150" width="418" height="30" rx="2"/>
+          <text class="sub" x="552" y="170">1,050 reviews · updated 12 Aug 2026</text>
+          <text class="tag" x="938" y="170" text-anchor="end">dateModified</text>
+
+          <rect class="card-a" x="536" y="188" width="418" height="42" rx="2"/>
+          <text class="sub" x="552" y="214">Verdict — buy / caveats / skip / thin data</text>
+          <text class="tag" x="938" y="214" text-anchor="end">#verdict</text>
+
+          <rect class="card" x="536" y="238" width="418" height="42" rx="2"/>
+          <text class="sub" x="552" y="264">Raw ★ vs credibility-weighted ★</text>
+          <text class="tag" x="938" y="264" text-anchor="end">attributed</text>
+
+          <rect class="card" x="536" y="288" width="418" height="46" rx="2"/>
+          <text class="sub" x="552" y="308">Pros &amp; cons — each claim cited</text>
+          <text class="tag" x="552" y="325">mention % computed, not generated</text>
+          <text class="tag" x="938" y="308" text-anchor="end">#pros-cons</text>
+
+          <rect class="card" x="536" y="342" width="418" height="42" rx="2"/>
+          <text class="sub" x="552" y="368">Aspect table on pack axes</text>
+          <text class="tag" x="938" y="368" text-anchor="end">#aspect-*</text>
+
+          <rect class="card" x="536" y="392" width="418" height="38" rx="2"/>
+          <text class="sub" x="552" y="416">Alternatives — same silo</text>
+          <text class="tag" x="938" y="416" text-anchor="end">ItemList</text>
+
+          <rect class="card" x="536" y="438" width="418" height="38" rx="2"/>
+          <text class="sub" x="552" y="462">FAQ — answers 40–60 words</text>
+          <text class="tag" x="938" y="462" text-anchor="end">FAQPage</text>
+
+          <rect class="card" x="536" y="484" width="418" height="38" rx="2"/>
+          <text class="sub" x="552" y="508">Reviews — top 50 in HTML</text>
+          <text class="tag" x="938" y="508" text-anchor="end">#rv-*</text>
+
+          <rect class="card" x="536" y="530" width="418" height="30" rx="2"/>
+          <text class="sub" x="552" y="550">Methodology · sources · disclosure</text>
+          <text class="tag" x="938" y="550" text-anchor="end">E-E-A-T</text>
+        </svg>
+      </div>
+      <figcaption><b>The Structure group is what's new</b>, and the Link graph screen earns its place — at 1,000 pages, depth, orphans and inbound distribution are not knowable from a list view, and they're most of what determines whether the silo works. <code>Review</code> and <code>ReviewAspect</code> stay pipeline-owned (~10⁶ rows) and appear here only as read-only views; a generic CRUD admin over them is the wrong tool.</figcaption>
+    </figure>
+
+    <h3>The three behaviours that make the IA real</h3>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Behaviour</th><th>Mechanism</th><th>What it prevents</th></tr></thead>
+        <tbody>
+          <tr><td>Slugs lock at first publish</td><td>Editable until published, then locked. Changing one requires a reason and <em>auto-writes a 301</em> into the <code>Redirect</code> collection.</td><td>The single most common way a well-built site loses its rankings. Entirely preventable in the CMS.</td></tr>
+          <tr><td>Structure is generated, not authored</td><td>Editors write judgement — verdict wording, buying-guide intro, comparison calls. Never a link, breadcrumb, canonical, or JSON-LD block.</td><td>Inconsistency at scale. This is what keeps 1,000 pages coherent.</td></tr>
+          <tr><td>The publish gate is hard</td><td>21 structural checks; failure blocks publication, overrides logged with a reason. See §9.</td><td>Thin, orphaned, unschematised pages reaching the index.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Collections</h3>
+    <pre>Entity          Product · Category · Brand · Aspect · Author
+                Collection (best-of | promoted-tag) · Comparison · Tag
+
+SEO infra       SeoMeta      title · description · canonical · robots
+                             validated on save: length + uniqueness sitewide
+                Redirect     from · to · code · reason · createdBy
+                LinkEdge     from · to · relation · anchorTemplate   (derived)
+                GraphHealth  page · clickDepth · inboundCount · isOrphan (derived)
+
+Ops             Analysis (versioned) · FetchJob · SourceRoute · ProviderCredential
+
+Pipeline-owned  Review · ReviewAspect · SourceRun · RawPayload · PriceSnapshot
+                written via Drizzle · read-only views in admin</pre>
+    <p class="tight"><code>LinkEdge</code> and <code>GraphHealth</code> rebuild on publish and are never hand-edited — that's the entire point of them.</p>
+  </div>
+</section>
+
+<!-- ========== 9 ========== -->
+<section id="gate">
+  <div class="snum">§ 9</div>
+  <div class="sbody">
+    <h2>The publish gate</h2>
+    <p>You already had an approval gate for the verdict. This extends it with machine checks that run <em>before</em> an editor looks — so nobody spends time reviewing a page that can't ship — and re-assert at the moment of publishing.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 400" role="img" aria-label="A strip showing Analysed feeding a structural validator, then In review, then Publish, then Published, with failure paths returning from the validator and from publish. Below, four cards list the checks: content, metadata, structure, and schema plus trust.">
+          <defs>
+            <marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+          </defs>
+
+          <rect class="card" x="40" y="40" width="130" height="48" rx="3"/>
+          <text class="ttl" x="105" y="70" text-anchor="middle">ANALYSED</text>
+          <path class="ln" d="M170 64 H 210" marker-end="url(#p1)"/>
+
+          <rect class="card-a" x="210" y="40" width="180" height="48" rx="3"/>
+          <text class="ttl" x="300" y="62" text-anchor="middle">Structural validator</text>
+          <text class="sub" x="300" y="78" text-anchor="middle">machine · runs first</text>
+          <path class="ln" d="M390 64 H 430" marker-end="url(#p1)"/>
+
+          <rect class="card" x="430" y="40" width="150" height="48" rx="3"/>
+          <text class="ttl" x="505" y="62" text-anchor="middle">IN REVIEW</text>
+          <text class="sub" x="505" y="78" text-anchor="middle">human judgement</text>
+          <path class="ln" d="M580 64 H 620" marker-end="url(#p1)"/>
+
+          <rect class="card-a" x="620" y="40" width="130" height="48" rx="3"/>
+          <text class="ttl" x="685" y="70" text-anchor="middle">PUBLISH</text>
+          <path class="ln" d="M750 64 H 790" marker-end="url(#p1)"/>
+
+          <rect class="card" x="790" y="40" width="150" height="48" rx="3"/>
+          <text class="ttl" x="865" y="70" text-anchor="middle">PUBLISHED</text>
+
+          <path class="ln" d="M300 88 V 120 H 105 V 88" marker-end="url(#p1)"/>
+          <text class="tag" x="205" y="112" text-anchor="middle">blocked + fix list</text>
+
+          <path class="ln" d="M685 88 V 152 H 505 V 88" marker-end="url(#p1)"/>
+          <text class="tag" x="595" y="146" text-anchor="middle">re-asserted at publish</text>
+
+          <rect class="card" x="40" y="190" width="221" height="170" rx="3"/>
+          <text class="eb" x="54" y="212">CONTENT</text>
+          <text class="chk" x="54" y="236">answer-first ¶, ≤320 chars</text>
+          <text class="chk" x="54" y="256">…that states the verdict</text>
+          <text class="chk" x="54" y="276">≥3 question-shaped H2s</text>
+          <text class="chk" x="54" y="296">≥2 FAQ entries, 40–60 words</text>
+          <text class="chk" x="54" y="316">unique-content floor for type</text>
+
+          <rect class="card" x="273" y="190" width="221" height="170" rx="3"/>
+          <text class="eb" x="287" y="212">METADATA</text>
+          <text class="chk" x="287" y="236">title 30–60 ch, unique sitewide</text>
+          <text class="chk" x="287" y="256">meta desc 120–158, unique</text>
+          <text class="chk" x="287" y="276">exactly one H1, names entity</text>
+          <text class="chk" x="287" y="296">self-referencing canonical</text>
+          <text class="chk" x="287" y="316">primary image: alt + dimensions</text>
+
+          <rect class="card" x="506" y="190" width="221" height="170" rx="3"/>
+          <text class="eb" x="520" y="212">STRUCTURE</text>
+          <text class="chk" x="520" y="236">breadcrumb → published hub</text>
+          <text class="chk" x="520" y="256">click depth ≤ 3</text>
+          <text class="chk" x="520" y="276">≥6 generated outbound links</text>
+          <text class="chk" x="520" y="296">≥1 inbound from a hub</text>
+          <text class="chk" x="520" y="316">brand + primary category set</text>
+
+          <rect class="card" x="739" y="190" width="221" height="170" rx="3"/>
+          <text class="eb" x="753" y="212">SCHEMA + TRUST</text>
+          <text class="chk" x="753" y="236">JSON-LD valid for page type</text>
+          <text class="chk" x="753" y="256">no third-party aggregateRating</text>
+          <text class="chk" x="753" y="276">dateModified = last publish</text>
+          <text class="chk" x="753" y="296">named author assigned</text>
+          <text class="chk" x="753" y="316">methodology link present</text>
+          <text class="chk" x="753" y="336">affiliate disclosure if needed</text>
+        </svg>
+      </div>
+      <figcaption><b>A soft gate is no gate.</b> These are hard blocks with logged overrides, because the entire value of the curated model is that nothing reaches the index without passing. The validator running <em>before</em> human review is the detail that keeps editorial throughput up — an editor never reads a verdict for a page that would have been refused anyway.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 10 ========== -->
+<section id="workflow">
+  <div class="snum">§ 10</div>
+  <div class="sbody">
+    <h2>Editorial workflow</h2>
+    <p>The state machine the whole system exists to move products through. The transition worth arguing about is at the bottom: what happens when a scheduled refresh finishes.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 500" role="img" aria-label="Editorial state machine. Draft goes to Fetching on Run full fetch, then Analysed, then In review after structural validation, then Published on editor approval. A failed source branches Fetching to Partial. In review loops for edit, regenerate or refetch. Published becomes Stale when the cadence elapses; a refresh with an unchanged verdict auto-republishes, while a changed verdict routes back to In review.">
+          <defs>
+            <marker id="w1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="w2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <rect class="card" x="420" y="30" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="54">DRAFT</text>
+          <text class="sub" x="440" y="71">category · brand · tags · sources</text>
+          <path class="ln" d="M550 82 V 106" marker-end="url(#w1)"/>
+          <text class="mn" x="410" y="99" text-anchor="end">Run full fetch</text>
+
+          <rect class="card" x="420" y="106" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="130">FETCHING</text>
+          <text class="sub" x="440" y="147">per-source progress in admin</text>
+          <path class="ln" d="M680 132 H 786" marker-end="url(#w1)"/>
+          <text class="tag" x="733" y="124" text-anchor="middle">a source fails</text>
+          <rect class="card" x="786" y="108" width="184" height="48" rx="3"/>
+          <text class="ttl" x="800" y="130">PARTIAL</text>
+          <text class="sub" x="800" y="147">publishable, flagged</text>
+
+          <path class="ln" d="M550 158 V 182" marker-end="url(#w1)"/>
+          <text class="mn" x="410" y="175" text-anchor="end">6 stages complete</text>
+
+          <rect class="card" x="420" y="182" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="206">ANALYSED</text>
+          <text class="sub" x="440" y="223">verdict drafted · validator runs</text>
+
+          <path class="ln" d="M550 234 V 258" marker-end="url(#w1)"/>
+          <text class="mn" x="410" y="251" text-anchor="end">structural checks pass</text>
+
+          <rect class="card-a" x="420" y="258" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="282">IN REVIEW</text>
+          <text class="sub" x="440" y="299">an editor reads the verdict</text>
+          <path class="ln" d="M680 266 H 730 V 278 H 680" marker-end="url(#w1)"/>
+          <text class="mn" x="740" y="272">edit · regenerate · refetch</text>
+
+          <path class="ln" d="M550 310 V 334" marker-end="url(#w1)"/>
+          <text class="mn" x="410" y="327" text-anchor="end">Publish (named editor)</text>
+
+          <rect class="card" x="420" y="334" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="358">PUBLISHED</text>
+          <text class="sub" x="440" y="375">static page live · sitemap updated</text>
+
+          <path class="ln" d="M550 386 V 410" marker-end="url(#w1)"/>
+          <text class="mn" x="410" y="403" text-anchor="end">cadence elapsed</text>
+
+          <rect class="card" x="420" y="410" width="260" height="52" rx="3"/>
+          <text class="ttl" x="440" y="434">STALE</text>
+          <text class="sub" x="440" y="451">incremental refresh runs</text>
+
+          <path class="ln-a" d="M420 436 H 340 V 360 H 420" marker-end="url(#w2)"/>
+          <text class="mn" x="332" y="392" text-anchor="end">verdict unchanged</text>
+          <text class="mn" x="332" y="408" text-anchor="end">→ auto-republish</text>
+
+          <path class="ln" d="M680 436 H 850 V 294 H 680" marker-end="url(#w1)"/>
+          <text class="mn" x="860" y="360">verdict changed</text>
+          <text class="mn" x="860" y="376">→ back to review</text>
+        </svg>
+      </div>
+      <figcaption><b>Auto-republish on an unchanged verdict is what makes this operable.</b> Gating every refresh would bury editors in review load for products whose verdict never moved. Route to a human only when the verdict state flips. Note also that <code>dateModified</code> moves only when content actually changed — bumping it on a no-op refresh is a transparent freshness trick and gets discounted.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 11 ========== -->
+<section id="pipeline">
+  <div class="snum">§ 11</div>
+  <div class="sbody">
+    <h2>Pipeline and providers</h2>
+    <p>Six stages, triggered from the admin. Resolution and classification are human input, which is why this is the part that got dramatically cheaper to build. The <code>CategoryPack</code> parameterises three of what remains.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 470" role="img" aria-label="A FetchJob runs six stages — fetch, normalise, enrich, aggregate, synthesise, alternatives — producing a draft analysis for review. A CategoryPack config box drives a bus into the fetch, enrich and aggregate stages. Normalise and aggregate are tagged code-only.">
+          <defs>
+            <marker id="n1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="n2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+
+          <rect class="card-a" x="90" y="20" width="430" height="36" rx="3"/>
+          <text class="mn" x="106" y="43">FetchJob — kind: full | refresh | price</text>
+          <path class="ln" d="M112 56 V 70" marker-end="url(#n1)"/>
+
+          <rect class="card" x="90" y="70" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="97">01</text><text class="ttl" x="138" y="90">FETCH</text>
+          <text class="sub" x="138" y="105">routed per configured source → RawReview[]</text>
+          <text class="tag" x="508" y="97" text-anchor="end">providers</text>
+
+          <rect class="card" x="90" y="128" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="155">02</text><text class="ttl" x="138" y="148">NORMALISE</text>
+          <text class="sub" x="138" y="163">rating scale · language · dedupe · spam</text>
+          <text class="tag" x="508" y="155" text-anchor="end">code</text>
+
+          <rect class="card" x="90" y="186" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="213">03</text><text class="ttl" x="138" y="206">ENRICH</text>
+          <text class="sub" x="138" y="221">stratified sample n ≈ 300 → aspects + sentiment</text>
+          <text class="tag" x="508" y="213" text-anchor="end">llm × N</text>
+
+          <rect class="card" x="90" y="244" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="271">04</text><text class="ttl" x="138" y="264">AGGREGATE</text>
+          <text class="sub" x="138" y="279">composite · confidence · aspect scores · value</text>
+          <text class="tag" x="508" y="271" text-anchor="end">code only</text>
+
+          <rect class="card" x="90" y="302" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="329">05</text><text class="ttl" x="138" y="322">SYNTHESISE</text>
+          <text class="sub" x="138" y="337">cited pros · cons · verdict draft · FAQ</text>
+          <text class="tag" x="508" y="329" text-anchor="end">llm</text>
+
+          <rect class="card" x="90" y="360" width="430" height="44" rx="3"/>
+          <text class="mn" x="104" y="387">06</text><text class="ttl" x="138" y="380">ALTERNATIVES</text>
+          <text class="sub" x="138" y="395">from your own catalogue, same pack axes</text>
+          <text class="tag" x="508" y="387" text-anchor="end">code</text>
+
+          <path class="ln" d="M112 404 V 428" marker-end="url(#n1)"/>
+          <text class="eb" x="90" y="446">ANALYSIS (DRAFT) → VALIDATOR → IN REVIEW</text>
+
+          <rect class="card" x="640" y="120" width="310" height="212" rx="3"/>
+          <text class="ttl" x="660" y="146">CategoryPack</text>
+          <text class="mn" x="660" y="172">aspects       weight · dealBreaker</text>
+          <text class="mn" x="660" y="192">sources       weight · maxRecords</text>
+          <text class="mn" x="660" y="212">specs         listing fields</text>
+          <text class="mn" x="660" y="232">valueMetric   ₹ per unit</text>
+          <text class="mn" x="660" y="252">thresholds    buy · skip</text>
+          <text class="mn" x="660" y="272">refresh_days  cadence</text>
+          <text class="mn" x="660" y="292">disclaimers</text>
+          <path class="rl" d="M660 306 H 930"/>
+          <text class="sub" x="660" y="322">versioned · inherits from root pack</text>
+
+          <path class="ln-d" d="M640 226 H 575"/>
+          <path class="ln-d" d="M575 92 V 266"/>
+          <path class="ln-d" d="M575 92 H 520" marker-end="url(#n2)"/>
+          <path class="ln-d" d="M575 208 H 520" marker-end="url(#n2)"/>
+          <path class="ln-d" d="M575 266 H 520" marker-end="url(#n2)"/>
+          <text class="mn" x="607" y="218" text-anchor="middle">drives</text>
+        </svg>
+      </div>
+      <figcaption><b>Stages 02 and 04 carry no model at all, and that's where the AEO value comes from.</b> Composite rating, confidence, aspect frequencies and value score are computed, so every published statistic traces to rows. That's what makes a sentence citable — and it's why the model's only job is prose plus citations, never counting. Synthesis requires ≥2 evidence ids per claim, validated against the input set, reject-and-retry on an unresolvable citation.</figcaption>
+    </figure>
+
+    <h3>Provider routing</h3>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Source</th><th>Primary</th><th>Fallback</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="nw">Amazon.in reviews</td><td class="nw">BD Scraper API</td><td class="nw">Apify actor</td><td>Structured collector, per-record pricing</td></tr>
+          <tr><td class="nw">Flipkart reviews</td><td class="nw">Apify actor</td><td class="nw">BD Unlocker</td><td>Bright Data's Flipkart coverage is thinner</td></tr>
+          <tr><td class="nw">YouTube · Reddit</td><td class="nw"><span class="pill p">Official API</span></td><td class="nw">Apify actor</td><td>Free at this volume — don't pay an actor for it</td></tr>
+          <tr><td class="nw">Nykaa · Myntra</td><td class="nw">Apify actor</td><td class="nw">BD Unlocker</td><td>Beauty and fashion packs</td></tr>
+          <tr><td class="nw">HealthKart · 1mg · Croma</td><td class="nw">BD Unlocker + parser</td><td class="nw">Apify recipe</td><td>Own-brand stores are biased — down-weighted</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tight">Keys are leased from a credential broker with per-provider circuit breakers; every adapter output is Zod-validated with a golden-file test in CI; raw payloads go to R2 so re-parses are free. Both providers are async — the workflow step suspends and a webhook wakes it.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 300" role="img" aria-label="Sequence diagram with a workflow lane and a provider lane. The workflow posts a trigger, the provider returns a handle, the workflow suspends on waitForEvent while the provider collects records, then a webhook wakes the workflow which collects, validates against a schema and persists.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+          <text class="eb" x="30" y="92">WORKFLOW</text>
+          <text class="eb" x="30" y="212">PROVIDER</text>
+          <path class="rl" d="M150 88 H 420"/>
+          <path class="rl" d="M620 88 H 700"/>
+          <path class="rl" d="M150 208 H 960"/>
+          <path class="ln" d="M210 88 V 202" marker-end="url(#a1)"/>
+          <text class="mn" x="222" y="128">POST trigger + inputs</text>
+          <path class="ln" d="M330 202 V 94" marker-end="url(#a1)"/>
+          <text class="mn" x="342" y="176">→ handle (snapshot_id / run_id)</text>
+          <rect class="card-a" x="420" y="66" width="200" height="44" rx="3"/>
+          <text class="ttl" x="520" y="86" text-anchor="middle">waitForEvent(handle)</text>
+          <text class="sub" x="520" y="102" text-anchor="middle">step suspends · no polling</text>
+          <rect class="bar-a" x="330" y="200" width="370" height="16" rx="2"/>
+          <text class="mn" x="515" y="236" text-anchor="middle">collecting records…</text>
+          <path class="ln-a" d="M700 200 V 94" marker-end="url(#a2)"/>
+          <text class="mn" x="712" y="150">webhook: ready</text>
+          <path class="ln" d="M700 88 H 760" marker-end="url(#a1)"/>
+          <rect class="card" x="760" y="66" width="200" height="44" rx="3"/>
+          <text class="ttl" x="860" y="86" text-anchor="middle">collect() → validate</text>
+          <text class="sub" x="860" y="102" text-anchor="middle">Zod · persist · store raw</text>
+        </svg>
+      </div>
+      <figcaption><b>Validate before you trust.</b> Provider response shapes drift without notice, and a silent schema change becomes thousands of rows of nulls that look like data. The validation-failure rate is your earliest warning of parser drift.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 12 ========== -->
+<section id="freshness">
+  <div class="snum">§ 12</div>
+  <div class="sbody">
+    <h2>Freshness</h2>
+    <p>A curated catalogue rots silently, and staleness is now both a data-quality problem and a ranking problem. Answer engines discount undated commercial content, correctly.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 330" role="img" aria-label="Two refresh lanes. The review lane runs from published through a long gap where nothing happens unless scheduled, to stale, then an incremental newest-first refresh, then a verdict comparison that either auto-republishes or routes to review. The price lane below runs many cheap fetches on a daily to weekly tick.">
+          <defs>
+            <marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+            <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah-a"/></marker>
+          </defs>
+          <text class="eb" x="30" y="42">REVIEW REFRESH · 2–12 WEEKS, SET PER CATEGORY</text>
+          <path class="rl" d="M30 100 H 970"/>
+          <circle class="dot" cx="90" cy="100" r="5"/>
+          <text class="mn" x="90" y="84" text-anchor="middle">published</text>
+          <path class="ln-g" d="M100 100 H 386"/>
+          <text class="sub" x="243" y="122" text-anchor="middle">nothing happens unless you schedule it</text>
+          <circle class="dot-m" cx="396" cy="100" r="5"/>
+          <text class="mn" x="396" y="84" text-anchor="middle">stale</text>
+          <path class="ln" d="M406 100 H 460" marker-end="url(#f1)"/>
+          <rect class="card" x="460" y="76" width="210" height="48" rx="3"/>
+          <text class="ttl" x="474" y="98">Incremental refresh</text>
+          <text class="sub" x="474" y="115">newest-first, stop on known id</text>
+          <path class="ln" d="M670 100 H 720" marker-end="url(#f1)"/>
+          <rect class="card-a" x="720" y="76" width="120" height="48" rx="3"/>
+          <text class="ttl" x="780" y="98" text-anchor="middle">compare</text>
+          <text class="sub" x="780" y="115" text-anchor="middle">verdict</text>
+          <path class="ln-a" d="M840 88 H 892" marker-end="url(#f2)"/>
+          <text class="mn" x="898" y="92">auto-republish</text>
+          <path class="ln" d="M840 112 H 892" marker-end="url(#f1)"/>
+          <text class="mn" x="898" y="116">→ review</text>
+
+          <text class="eb" x="30" y="196">PRICE REFRESH · DAILY TO WEEKLY · ONE PAGE FETCH</text>
+          <path class="rl" d="M30 250 H 720"/>
+          <circle class="dot-m" cx="90" cy="250" r="3.5"/><circle class="dot-m" cx="134" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="178" cy="250" r="3.5"/><circle class="dot-m" cx="222" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="266" cy="250" r="3.5"/><circle class="dot-m" cx="310" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="354" cy="250" r="3.5"/><circle class="dot-m" cx="398" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="442" cy="250" r="3.5"/><circle class="dot-m" cx="486" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="530" cy="250" r="3.5"/><circle class="dot-m" cx="574" cy="250" r="3.5"/>
+          <circle class="dot-m" cx="618" cy="250" r="3.5"/><circle class="dot-m" cx="662" cy="250" r="3.5"/>
+          <text class="mn" x="736" y="254">≈ $0.01 each</text>
+          <text class="sub" x="90" y="284">price is the field users notice first when it's wrong — so it gets its own cheap lane</text>
+        </svg>
+      </div>
+      <figcaption><b><code>dateModified</code> discipline is the SEO half of this.</b> Move it when the verdict, pros/cons, aspect scores or review count materially change — never on a no-op refresh. Sitemap <code>lastmod</code> follows the same rule. Bumping dates on unchanged content is a transparent trick and gets discounted; moving them honestly is a real freshness signal.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ========== 13 ========== -->
+<section id="cost">
+  <div class="snum">§ 13</div>
+  <div class="sbody">
+    <h2>Cost, bottleneck, build order</h2>
+    <p>Spend is predictable — it happens when an editor presses a button, not when traffic arrives. Which means the constraint sits somewhere less obvious.</p>
+
+    <figure class="plate">
+      <div class="plate-scroll">
+        <svg class="dgm" viewBox="0 0 1000 330" role="img" aria-label="Two tracks. An editor pressing Run full fetch costs about 45 cents to a dollar in provider records and model calls. A user, crawler or answer engine opening a page costs nothing, served as static HTML from the edge. A planning panel gives 1,000 products at roughly 450 to 1,000 dollars to onboard and 50 to 150 dollars a month to keep fresh.">
+          <defs>
+            <marker id="k1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="ah"/></marker>
+          </defs>
+          <text class="eb" x="30" y="40">SPEND FOLLOWS EDITOR ACTION, NOT TRAFFIC</text>
+          <rect class="card" x="30" y="62" width="200" height="52" rx="3"/>
+          <text class="ttl" x="45" y="85">Editor</text>
+          <text class="sub" x="45" y="102">presses Run full fetch</text>
+          <path class="ln" d="M230 88 H 288" marker-end="url(#k1)"/>
+          <rect class="card" x="288" y="62" width="220" height="52" rx="3"/>
+          <text class="ttl" x="303" y="85">~400 records + llm</text>
+          <text class="sub" x="303" y="102">providers · haiku · opus</text>
+          <path class="ln" d="M508 88 H 566" marker-end="url(#k1)"/>
+          <rect class="card-a" x="566" y="62" width="160" height="52" rx="3"/>
+          <text class="ttl" x="646" y="94" text-anchor="middle">$0.45 – 1.00</text>
+
+          <rect class="card" x="30" y="164" width="200" height="52" rx="3"/>
+          <text class="ttl" x="45" y="187">User or crawler</text>
+          <text class="sub" x="45" y="204">opens a product page</text>
+          <path class="ln" d="M230 190 H 288" marker-end="url(#k1)"/>
+          <rect class="card" x="288" y="164" width="220" height="52" rx="3"/>
+          <text class="ttl" x="303" y="187">static HTML</text>
+          <text class="sub" x="303" y="204">served from the edge</text>
+          <path class="ln" d="M508 190 H 566" marker-end="url(#k1)"/>
+          <rect class="card" x="566" y="164" width="160" height="52" rx="3"/>
+          <text class="ttl" x="646" y="196" text-anchor="middle">$0.00</text>
+
+          <rect class="card" x="766" y="62" width="204" height="154" rx="3"/>
+          <text class="eb" x="782" y="84">PLANNING SHAPE</text>
+          <text class="mn" x="782" y="108">1,000 products</text>
+          <text class="ttl" x="782" y="130">$450 – 1,000</text>
+          <text class="sub" x="782" y="146">to onboard</text>
+          <path class="rl" d="M782 160 H 954"/>
+          <text class="ttl" x="782" y="182">$50 – 150 / mo</text>
+          <text class="sub" x="782" y="198">monthly review cadence</text>
+
+          <rect class="frame" x="30" y="252" width="696" height="52" rx="3"/>
+          <text class="ttl" x="46" y="276">The bottleneck is editorial minutes, not rupees</text>
+          <text class="sub" x="46" y="293">20 min/product × 1,000 = 330 hours — far more than the ~$700 of provider spend</text>
+        </svg>
+      </div>
+      <figcaption><b>Measure minutes-per-product in Phase 1 and treat it as the number that governs the roadmap.</b> Bulk import, generated structure, auto-republish, and rule-transparent verdicts all exist to push it down. The validator running before human review is part of this too — an editor should never spend time on a page that would be refused.</figcaption>
+    </figure>
+
+    <h3>Build order</h3>
+    <p>SEO structure is <strong>not a later phase.</strong> Silos, entities, schema and the publish gate must exist before the first page is indexed — retrofitting an IA onto 500 published pages means 500 redirects and a ranking dip you didn't need.</p>
+
+    <div class="phases">
+      <div class="phase">
+        <span class="pn">PHASE 0</span><h4>Spike</h4><span class="dur">3–4 days</span>
+        <p>One product end to end: script → drafted verdict → one hand-built page with full semantic markup and JSON-LD. Validate the schema, then answer honestly whether the verdict beats reading the star rating.</p>
+      </div>
+      <div class="phase">
+        <span class="pn">PHASE 1</span><h4>Operator loop, structurally correct</h4><span class="dur">3–4 weeks</span>
+        <p>Payload with Product, Category, Brand, Author · resolution assist · bulk import · both providers · full-fetch workflow · sampled extraction · rules verdict · <strong>publish gate with structural checks</strong> · semantic page with JSON-LD · silo hubs with intro copy · generated breadcrumbs and links · split sitemaps · slug locking and auto-redirects. Two divergent packs.</p>
+      </div>
+      <div class="phase">
+        <span class="pn">PHASE 2</span><h4>Entity depth</h4><span class="dur">2–3 weeks</span>
+        <p>Aspect topic hubs · Collection best-of pages generated from scores · Comparison pages · link graph screen with orphan and depth reporting · SEO queue · analysis versioning · fake-review scoring · Hinglish · dedupe · tag promotion rule.</p>
+      </div>
+      <div class="phase">
+        <span class="pn">PHASE 3</span><h4>AEO and freshness</h4><span class="dur">2 weeks</span>
+        <p>FAQ generation and validation · answer-first enforcement · markdown mirrors · <code>llms.txt</code> · scheduled refresh with the dateModified discipline · price fast lane · stale queue · auto-republish · methodology, sources and author pages.</p>
+      </div>
+      <div class="phase">
+        <span class="pn">PHASE 4</span><h4>Growth</h4><span class="dur">ongoing</span>
+        <p>Affiliate links with disclosure · price-drop alerts · saved comparisons · more packs and silos · editor roles and audit log.</p>
+      </div>
+    </div>
+
+    <div class="note"><b>What actually earns citations here is honesty.</b> "Not enough data to judge" and "4.3★ raw versus 3.9★ credibility-weighted" are differentiated, verifiable claims that no affiliate-farm competitor will make. Answer engines are getting better at preferring sources that qualify their claims — which makes the honest engineering and the growth strategy the same decision.</div>
+  </div>
+</section>
+
+<footer>
+  <span>ReviewLens · architecture reference v4</span>
+  <span>Companion to PLAN.md</span>
+  <span>Figures: 13</span>
+</footer>
+
+</div>

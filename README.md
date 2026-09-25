@@ -14,7 +14,7 @@ ReviewLens collects every review of a product from across the internet (Amazon, 
 | Payload admin | Running at `/admin` (Payload 3.90). Collections so far: `Users`, `Media`, `Review requests`. Catalogue collections not built yet. |
 | Database | Neon Postgres via `@payloadcms/db-postgres`. Project `spring-meadow-84090481` (Singapore). Local dev uses the `dev` branch; `production` is kept clean for migrations. |
 | Scrapers | Existing scraper code to be integrated. The Amazon scraper runs a headful browser, so it needs a long-running server, not Vercel functions. |
-| Hosting | Local for now; Vercel later. |
+| Hosting | Vercel (free Hobby plan) with the Neon `production` branch. See [Deploying to Vercel](#deploying-to-vercel). |
 
 ## Stack
 
@@ -50,8 +50,9 @@ Payload 3.90 supports pnpm 9–11. pnpm 12 ignores the build-script allow-list i
 | `DATABASE_URL_UNPOOLED` | Neon **direct** connection string. For migrations and schema work. |
 | `PAYLOAD_SECRET` | Signs Payload auth tokens. Generate with `openssl rand -hex 32`. |
 | `NEXT_PUBLIC_SITE_URL` | Public origin for canonical URLs, sitemaps and JSON-LD. |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob store for uploaded images. Vercel sets it when you connect a Blob store. Leave it unset locally: images are then saved to `/media`. |
 
-Local development points at the Neon **`dev` branch**, never `production`. In development Payload syncs the schema automatically ("push"); production only ever changes through migrations.
+Local development points at the Neon **`dev` branch**, never `production`. Under `pnpm dev` Payload syncs the schema automatically ("push"); nothing else does, not even `pnpm seed`. Production only ever changes through migrations.
 
 The folder is linked to Neon with the `neon` CLI (`.neon` context file, `neon.ts` policy). Useful commands:
 
@@ -72,7 +73,51 @@ neon branches create --name <name>              # a throwaway branch to test a m
 | `pnpm generate:types` | Regenerate `src/payload-types.ts` from the Payload config |
 | `pnpm generate:importmap` | Regenerate the admin import map after adding admin components |
 | `pnpm payload migrate:create` / `pnpm payload migrate` | Create / run database migrations |
+| `pnpm seed` | Load the catalogue (`src/data`, `src/data/real`) into the database in `DATABASE_URL`. Safe to re-run. |
+| `pnpm build:vercel` | Vercel's build: run pending migrations (over `DATABASE_URL_UNPOOLED`), then build |
 | `pnpm test` | Vitest integration tests + Playwright e2e tests |
+
+## Deploying to Vercel
+
+`vercel.json` sets the build command, puts the server in Singapore (`sin1`, next to the Neon database) and builds **production only**: pushes to other branches are skipped, because a preview would need a database of its own.
+
+### First deploy
+
+1. **Neon:** open the `production` branch → **Connect**. Copy the pooled connection string (pooling on) and the direct one (pooling off).
+2. **Vercel:** Add New → Project → import this repository. Leave the build settings alone; `vercel.json` sets them.
+3. **Storage** tab → create a **Blob** store and connect it to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+4. **Settings → Environment Variables**, for **Production** only:
+
+   | Variable | Value |
+   |---|---|
+   | `DATABASE_URL` | the pooled `production` string |
+   | `DATABASE_URL_UNPOOLED` | the direct `production` string |
+   | `PAYLOAD_SECRET` | a new one (`openssl rand -hex 32`), not your local one |
+   | `NEXT_PUBLIC_SITE_URL` | the site's address, e.g. `https://reviewlens.vercel.app` |
+
+5. **Deploy.** The build creates the tables on `production`, then builds an empty site.
+6. Open `https://<your-site>/admin` and create your account. The first account is always an admin.
+7. From your machine, load the catalogue into `production` (the direct string, in quotes):
+
+   ```bash
+   pnpm exec cross-env DATABASE_URL="<production direct string>" pnpm seed
+   ```
+
+8. Back in the admin, open **Settings → Site settings** and click **Save**. Every save refreshes the site's pages; this first one replaces the empty pages built in step 5.
+
+Team members added in your local admin live in the `dev` database. Add them again in the live admin.
+
+### Changing the schema
+
+1. Change the collections and work against `dev` with `pnpm dev` as usual.
+2. Before merging, run `pnpm payload migrate:create <what-changed>` and commit the new files in `src/migrations`.
+3. Merge to `main`. The deploy runs the migration on `production` before building.
+
+**Never run `pnpm dev` with `production` connection strings.** It syncs the schema directly and marks the database as dev-managed; the next deploy then waits forever at "It looks like you've run Payload in dev mode". If that happens, check `production` still matches the migrations, delete the row named `dev` from the `payload_migrations` table in Neon's SQL editor, and redeploy.
+
+### Free plan limits
+
+The Hobby plan is for personal, non-commercial use and has no team seats on Vercel (editors only need a Payload account, not a Vercel one). Move to Pro before turning on affiliate links. The scrapers keep running on your machine.
 
 ## Project structure
 

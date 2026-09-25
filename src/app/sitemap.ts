@@ -15,6 +15,7 @@ import {
 } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { absoluteUrl, SITEMAPS } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 // One sitemap per page type (docs/PLAN.md §7), so indexing problems show up per type.
 // lastModified comes from content dates, never from build time.
@@ -26,6 +27,7 @@ export async function generateSitemaps() {
 const latest = (dates: string[]) => dates.sort().at(-1)
 
 export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
+  await ensureCatalog()
   const id = (await props.id) as (typeof SITEMAPS)[number]
   const entry = (path: string, lastModified?: string) => ({ url: absoluteUrl(path), lastModified })
   const updated = (slugs: string[]) => latest(slugs.map((s) => allProducts().find((p) => p.slug === s)!.updatedAt))
@@ -34,12 +36,13 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
     case 'products':
       // Thin-data products are noindex, so they stay out of the sitemap too.
       return allProducts()
-        .filter((p) => p.verdict !== 'thin-data')
+        .filter((p) => p.verdict !== 'thin-data' && !p.draft)
         .map((p) => entry(routes.product(p.slug), p.updatedAt))
     case 'hubs':
       return [
         entry(routes.home(), latest(allProducts().map((p) => p.updatedAt))),
-        ...[...silos(), ...leafCategories()].map((c) =>
+        entry(routes.categories(), latest(allProducts().map((p) => p.updatedAt))),
+        ...[...silos(), ...leafCategories()].filter((c) => productsIn(c.slug).length > 0).map((c) =>
           entry(routes.category(c), latest(productsIn(c.slug).map((p) => p.updatedAt))),
         ),
       ]

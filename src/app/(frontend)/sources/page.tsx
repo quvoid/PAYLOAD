@@ -6,6 +6,7 @@ import { Container, Section } from '@/components/ui'
 import { allProducts, allSources } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 export const metadata: Metadata = pageMetadata({
   title: 'Where our reviews come from',
@@ -13,9 +14,16 @@ export const metadata: Metadata = pageMetadata({
   path: routes.sources(),
 })
 
-const kindLabel = { marketplace: 'Marketplace', 'brand-store': 'Brand store', community: 'Community', video: 'Video' }
+const kindLabel = {
+  marketplace: 'Marketplace',
+  'brand-store': 'Brand store',
+  'app-store': 'App store',
+  community: 'Community',
+  video: 'Video',
+}
 
-export default function SourcesPage() {
+export default async function SourcesPage() {
+  await ensureCatalog()
   const crumbs = [
     { name: 'Home', path: routes.home() },
     { name: 'Sources', path: routes.sources() },

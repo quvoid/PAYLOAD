@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, Faq, ProductCard, SovChart } from '@/components/review'
+import { SearchForm } from '@/components/SearchForm'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, PillLink, Prose, Section, Stat } from '@/components/ui'
 import {
@@ -16,16 +17,16 @@ import {
   leafCategories,
   productsIn,
 } from '@/lib/catalog'
-import { formatCount, formatDate, isoDate } from '@/lib/format'
+import { formatCount, formatDate, inSentence, isoDate } from '@/lib/format'
 import { countedReviews, shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ silo: string; sub: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return leafCategories().map((c) => ({ silo: c.parent!, sub: c.slug }))
 }
 
@@ -36,21 +37,40 @@ const load = async (params: Params) => {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const category = await load(params)
   if (!category) return {}
   return pageMetadata({
     title: `${category.name} reviews and buying guide`,
     description: category.tagline,
     path: routes.category(category),
+    // Nothing published yet: nothing worth indexing.
+    noindex: productsIn(category.slug).length === 0,
   })
 }
 
 export default async function CategoryPage({ params }: { params: Params }) {
+  await ensureCatalog()
   const category = await load(params)
   if (!category) notFound()
 
   const products = productsIn(category.slug)
   const crumbs = categoryCrumbs(category.slug)
+  if (products.length === 0) {
+    return (
+      <PageShell track="light">
+        <Container className="pb-24">
+          <Breadcrumbs crumbs={crumbs} />
+          <h1 className="font-display text-display-sm md:text-display-lg">{category.name}</h1>
+          <p className="mt-4 max-w-[60ch] text-body-lg">{category.tagline}</p>
+          <p className="mt-8 max-w-[60ch] text-shade-60">
+            We haven&apos;t published any reviews in this category yet. Search for a product to request one.
+          </p>
+          <SearchForm size="lg" className="mt-6 max-w-2xl" />
+        </Container>
+      </PageShell>
+    )
+  }
   const reviews = products.reduce((n, p) => n + countedReviews(p).length, 0)
   const lastUpdated = products.map((p) => p.updatedAt).sort().at(-1)!
   const lists = bestOfFor(category.slug)
@@ -76,7 +96,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
           </dl>
         </header>
 
-        <Section id="guide" title={`What should you look for in ${category.name.toLowerCase()}?`}>
+        <Section id="guide" title={`What should you look for in ${inSentence(category.name)}?`}>
           <Prose paragraphs={category.intro} />
           <ul className="mt-8 flex flex-wrap gap-2">
             {category.aspects.map((a) => {
@@ -97,7 +117,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
           </ul>
         </Section>
 
-        <Section id="products" title={`Every ${category.name.toLowerCase()} we've reviewed`} lead="Best composite score first.">
+        <Section id="products" title={`All the ${inSentence(category.name)} we've reviewed`} lead="Best composite score first.">
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {products.map((p) => (
               <li key={p.slug}>
@@ -110,15 +130,15 @@ export default async function CategoryPage({ params }: { params: Params }) {
         {products.length > 1 && (
           <Section
             id="voice"
-            title={`Which ${category.name.toLowerCase()} gets talked about most?`}
-            lead="Share of voice: each product's share of all marketplace ratings and Reddit and YouTube discussion in this category."
+            title={`Which ${inSentence(category.name)} do people talk about most?`}
+            lead="Share of voice: each product's share of all ratings on the stores we track, plus Reddit and YouTube discussion, in this category."
           >
             <div className="max-w-3xl">
               <SovChart rows={shareOfVoice(products[0]).peers} />
             </div>
             {hasTable && (
               <PillLink href={routes.compare(category.slug)} variant="outline-light" className="mt-8">
-                Compare every {category.name.toLowerCase()} side by side
+                Compare all {inSentence(category.name)} side by side
               </PillLink>
             )}
           </Section>
@@ -150,7 +170,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
         )}
 
         {category.faq.length > 0 && (
-          <Section id="faq" title={`Questions about ${category.name.toLowerCase()}`}>
+          <Section id="faq" title={`Questions about ${inSentence(category.name)}`}>
             <Faq items={category.faq} />
           </Section>
         )}

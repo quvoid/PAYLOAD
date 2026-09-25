@@ -7,6 +7,7 @@ import { Container, Section } from '@/components/ui'
 import { allBestOf, getCategory, rankBestOf } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 export const metadata: Metadata = pageMetadata({
   title: 'Ranked lists — best products by what matters',
@@ -14,7 +15,8 @@ export const metadata: Metadata = pageMetadata({
   path: routes.bestIndex(),
 })
 
-export default function BestIndexPage() {
+export default async function BestIndexPage() {
+  await ensureCatalog()
   return (
     <PageShell track="light">
       <Container>

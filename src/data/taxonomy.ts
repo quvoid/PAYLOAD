@@ -1,6 +1,6 @@
 import type { Aspect, Author, Brand, Category, Source } from '@/lib/types'
 
-// SAMPLE DATA. Every brand, product, person and review in src/data is fictional.
+// SAMPLE DATA. Every brand, product and review in src/data is fictional; the author is the real editor.
 // It stands in for Payload + the scraper pipeline until those are connected.
 
 export const sources: Source[] = [
@@ -36,6 +36,23 @@ export const sources: Source[] = [
     hasRatings: true,
     collection:
       "Reviews on the manufacturer's own store. Down-weighted: the seller controls what stays up.",
+  },
+  {
+    id: 'play-store',
+    name: 'Google Play',
+    kind: 'app-store',
+    weight: 1,
+    hasRatings: true,
+    collection: 'App details, rating counts and every written review, collected from the Play Store listing.',
+  },
+  {
+    id: 'app-store',
+    name: 'App Store',
+    kind: 'app-store',
+    weight: 1,
+    hasRatings: true,
+    collection:
+      "App details from Apple's app lookup, and written reviews from Apple's customer-reviews feed (most recent and most helpful).",
   },
   {
     id: 'reddit',
@@ -86,6 +103,30 @@ export const aspects: Aspect[] = [
   { slug: 'breakouts', label: 'Breakouts', question: 'Does it cause breakouts?' },
   { slug: 'protection', label: 'Sun protection', question: 'Does it prevent tanning?' },
   { slug: 'fragrance', label: 'Fragrance', question: 'Does it smell strong?' },
+  { slug: 'delivery-speed', label: 'Delivery speed', question: 'Does food arrive on time?' },
+  { slug: 'order-accuracy', label: 'Order accuracy', question: 'Do orders arrive complete and correct?' },
+  {
+    slug: 'refunds-support',
+    label: 'Refunds & support',
+    question: 'Does support help when something goes wrong?',
+  },
+  { slug: 'fees', label: 'Fees & charges', question: 'Are the fees fair?' },
+  { slug: 'app-stability', label: 'Crashes & bugs', question: 'Does the app work reliably?' },
+  {
+    slug: 'payment-success',
+    label: 'Payment success',
+    question: 'Do payments go through?',
+    topic: 'upi-payment-failures',
+  },
+  { slug: 'security', label: 'Security & privacy', question: 'Is my money and data safe?' },
+  { slug: 'ease-of-use', label: 'Ease of use', question: 'Is it easy to use?' },
+  { slug: 'ads-spam', label: 'Ads & notifications', question: 'Is it full of ads and spam?' },
+  { slug: 'sound-quality', label: 'Sound quality', question: 'How does it sound?' },
+  { slug: 'battery-life', label: 'Battery life', question: 'How long does the battery last?' },
+  { slug: 'call-quality', label: 'Call quality', question: 'Can people hear you on calls?' },
+  { slug: 'connectivity', label: 'Connectivity', question: 'Does Bluetooth stay connected?' },
+  { slug: 'comfort', label: 'Comfort & fit', question: 'Are they comfortable to wear?' },
+  { slug: 'build-quality', label: 'Build & durability', question: 'Do they last?' },
 ]
 
 const proteinFaq = [
@@ -191,9 +232,115 @@ export const categories: Category[] = [
       },
     ],
   },
+  {
+    slug: 'apps',
+    name: 'Apps',
+    tagline: 'Android and iPhone apps, judged by what their users report on Google Play and the App Store.',
+    intro: [
+      'An app store rating is an average of millions of taps. It hides the thing you actually want to know: what goes wrong, how often, and whether anyone fixes it. We read the written reviews on both stores and count what people report.',
+      'Every app here is scored on the same measures as its competitors, so a comparison between two apps is a comparison of like with like.',
+    ],
+    aspects: [],
+    refreshDays: 14,
+    faq: [],
+  },
+  {
+    slug: 'food-delivery-apps',
+    parent: 'apps',
+    name: 'Food Delivery Apps',
+    tagline: 'Food delivery apps scored on delivery, order accuracy, refunds and fees.',
+    intro: [
+      'Food delivery apps are judged on the worst order, not the average one. A cold meal or a missing item is annoying; a missing item with no refund is the reason people uninstall. Reviews on Google Play and the App Store are full of exactly these stories, and we count them.',
+      'Order accuracy and refunds & support are deal-breakers: an app that regularly gets orders wrong, or refuses to make it right, is marked Skip however fast it delivers.',
+    ],
+    aspects: [
+      { aspect: 'delivery-speed', weight: 1 },
+      { aspect: 'order-accuracy', weight: 1.2, dealBreaker: true },
+      { aspect: 'refunds-support', weight: 1.2, dealBreaker: true },
+      { aspect: 'fees', weight: 1 },
+      { aspect: 'app-stability', weight: 0.8 },
+    ],
+    appCategory: 'LifestyleApplication',
+    refreshDays: 14,
+    faq: [
+      {
+        q: 'Why do you score apps on reviews and not the star rating?',
+        a: 'Store ratings are dominated by quick five-star taps and are rarely updated. Written reviews say what actually happened: late orders, missing items, refunds refused. We count those reports per aspect, so you can see how often each problem comes up rather than one blended number.',
+      },
+    ],
+  },
+  {
+    slug: 'payment-apps',
+    parent: 'apps',
+    name: 'UPI & Payment Apps',
+    tagline: 'UPI and payment apps scored on failed payments, security, support and ease of use.',
+    intro: [
+      'A payment app has one job. When a UPI payment fails, money is often debited and returned days later, and the reviews that describe it are the most useful thing on the store page. We count how often reviewers report failed or stuck payments, security worries, and support that does or does not respond.',
+      'Payment success, security & privacy and refunds & support are deal-breakers. A payment app that loses track of money is marked Skip regardless of how pleasant it is to use.',
+    ],
+    aspects: [
+      { aspect: 'payment-success', weight: 1.3, dealBreaker: true },
+      { aspect: 'security', weight: 1.2, dealBreaker: true },
+      { aspect: 'refunds-support', weight: 1.1, dealBreaker: true },
+      { aspect: 'app-stability', weight: 1 },
+      { aspect: 'ease-of-use', weight: 0.8 },
+      { aspect: 'ads-spam', weight: 0.6 },
+    ],
+    appCategory: 'FinanceApplication',
+    refreshDays: 14,
+    faq: [
+      {
+        q: 'What happens when a UPI payment fails but money is debited?',
+        a: 'Banks are required to reverse a failed UPI debit automatically, normally by the next working day. In reviews, the apps that score well on refunds & support are the ones that track the reversal and tell you when it lands. Raise it in the app first, then with your bank if it does not arrive.',
+      },
+    ],
+  },
+  {
+    slug: 'electronics',
+    name: 'Electronics',
+    tagline: 'Everyday electronics, judged on what owners report after the first month.',
+    intro: [
+      'Electronics reviews are front-loaded: most are written in the first week, before batteries fade or hinges loosen. We read them all and weight the problems that show up later.',
+    ],
+    aspects: [],
+    refreshDays: 21,
+    faq: [],
+  },
+  {
+    slug: 'wireless-earbuds',
+    parent: 'electronics',
+    name: 'Wireless Earbuds',
+    tagline: 'True wireless earbuds scored on sound, battery, calls, connection and how long they last.',
+    intro: [
+      'Budget earbuds sell on battery hours and bass. Reviews tell you the rest: whether calls are clear, whether one bud keeps disconnecting, and whether they still work after six months.',
+      'Build & durability is a deal-breaker: earbuds that commonly stop working are marked Skip, however good they sound out of the box.',
+    ],
+    aspects: [
+      { aspect: 'sound-quality', weight: 1 },
+      { aspect: 'battery-life', weight: 1 },
+      { aspect: 'call-quality', weight: 0.8 },
+      { aspect: 'connectivity', weight: 1 },
+      { aspect: 'comfort', weight: 0.7 },
+      { aspect: 'build-quality', weight: 1.2, dealBreaker: true },
+      { aspect: 'value', weight: 1 },
+    ],
+    refreshDays: 21,
+    faq: [],
+  },
 ]
 
 export const brands: Brand[] = [
+  { slug: 'muscleblaze', name: 'MuscleBlaze', about: ['MuscleBlaze is an Indian sports nutrition brand.'], sameAs: [] },
+  { slug: 'minimalist', name: 'Minimalist', about: ['Minimalist is an Indian skincare brand.'], sameAs: [] },
+  { slug: 'boat', name: 'boAt', about: ['boAt is an Indian consumer electronics brand.'], sameAs: [] },
+  { slug: 'zomato', name: 'Zomato', about: ['Zomato is an Indian food delivery and restaurant discovery app.'], sameAs: [] },
+  { slug: 'phonepe', name: 'PhonePe', about: ['PhonePe is an Indian UPI payments app.'], sameAs: [] },
+  { slug: 'zapeat', name: 'Zapeat', about: ['Zapeat is a sample food delivery app.'], sameAs: [] },
+  { slug: 'tiffora', name: 'Tiffora', about: ['Tiffora is a sample home-style meal delivery app.'], sameAs: [] },
+  { slug: 'biteloop', name: 'Biteloop', about: ['Biteloop is a sample discount food delivery app.'], sameAs: [] },
+  { slug: 'paynest', name: 'PayNest', about: ['PayNest is a sample UPI payments app.'], sameAs: [] },
+  { slug: 'rupeeflow', name: 'Rupeeflow', about: ['Rupeeflow is a sample UPI and bill-payments app.'], sameAs: [] },
+  { slug: 'tapsy', name: 'Tapsy Pay', about: ['Tapsy Pay is a sample wallet and UPI app.'], sameAs: [] },
   {
     slug: 'brawnly',
     name: 'Brawnly',
@@ -254,19 +401,12 @@ export const brands: Brand[] = [
 
 export const authors: Author[] = [
   {
-    slug: 'priya-menon',
-    name: 'Priya Menon',
-    role: 'Senior editor, supplements',
+    slug: 'omkar',
+    name: 'Omkar',
+    role: 'Editor',
     bio: [
-      'Sample author profile. In production every verdict carries the name of the editor who approved it, with a real bio and credentials.',
+      'Omkar reads every verdict on ReviewLens before it goes live and approves the wording. The numbers behind each verdict are computed from reviews; the judgement about whether it reads fairly is Omkar’s.',
     ],
-    credentials: 'Sample credentials',
-  },
-  {
-    slug: 'arjun-shah',
-    name: 'Arjun Shah',
-    role: 'Editor, skincare',
-    bio: ['Sample author profile.'],
-    credentials: 'Sample credentials',
+    credentials: '',
   },
 ]

@@ -10,16 +10,17 @@ import { formatCount, formatRating } from '@/lib/format'
 import { countedReviews, weightedRating } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ brand: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return allBrands().map((b) => ({ brand: b.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const brand = getBrand((await params).brand)
   if (!brand) return {}
   return pageMetadata({
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function BrandPage({ params }: { params: Params }) {
+  await ensureCatalog()
   const brand = getBrand((await params).brand)
   if (!brand) notFound()
 

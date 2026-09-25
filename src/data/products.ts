@@ -1,6 +1,7 @@
 import type { Product } from '@/lib/types'
 
 import { generateReviews, type ReviewPlan } from './generate'
+import { realProducts } from './real'
 
 // SAMPLE DATA — fictional products. Prose (answer, verdict, pros/cons wording, FAQ) stands in for
 // the editor-approved synthesis; every statistic on the site is computed from `reviews`.
@@ -20,13 +21,29 @@ const seeds: Seed[] = [
       'Worth buying for most people. It is well priced per gram of protein and the chocolate flavour holds up, but digestion complaints are common enough to plan around — if whey usually upsets your stomach, start with a smaller tub or pick an isolate.',
     verdictBody: [
       'Brawnly Performance Whey clears the bar on taste, mixability and value, and nothing in its reviews points to fakes or a short-filled label. That covers most of what you want from an everyday whey.',
-      "The catch is digestion. Bloating comes up far more often here than for the other whey proteins we track, and it is the complaint that makes people stop using a tub. If whey has troubled you before, the alternatives below with stronger digestion scores are the safer buy.",
+      'The catch is digestion. Bloating comes up far more often here than for the other whey proteins we track, and it is the complaint that makes people stop using a tub. If whey has troubled you before, the alternatives below with stronger digestion scores are the safer buy.',
     ],
     claims: [
-      { aspect: 'taste', sentiment: 'positive', text: 'Chocolate flavour tastes like a milkshake, not chalky' },
-      { aspect: 'mixability', sentiment: 'positive', text: 'Mixes cleanly in a shaker without lumps' },
-      { aspect: 'value', sentiment: 'positive', text: 'Good value per gram of protein, especially on sale' },
-      { aspect: 'digestion', sentiment: 'negative', text: 'Bloating and a heavy stomach after a scoop' },
+      {
+        aspect: 'taste',
+        sentiment: 'positive',
+        text: 'Chocolate flavour tastes like a milkshake, not chalky',
+      },
+      {
+        aspect: 'mixability',
+        sentiment: 'positive',
+        text: 'Mixes cleanly in a shaker without lumps',
+      },
+      {
+        aspect: 'value',
+        sentiment: 'positive',
+        text: 'Good value per gram of protein, especially on sale',
+      },
+      {
+        aspect: 'digestion',
+        sentiment: 'negative',
+        text: 'Bloating and a heavy stomach after a scoop',
+      },
     ],
     faq: [
       {
@@ -55,7 +72,7 @@ const seeds: Seed[] = [
       { source: 'flipkart', rating: 4.1, total: 203 },
       { source: 'brand-store', rating: 4.6, total: 312 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-06-02',
     updatedAt: '2026-09-12',
     plan: {
@@ -87,11 +104,27 @@ const seeds: Seed[] = [
       'What they do mention is price and fakes. It costs noticeably more per gram of protein than the value picks, and authenticity complaints are real enough that the seller you buy from matters.',
     ],
     claims: [
-      { aspect: 'mixability', sentiment: 'positive', text: 'Dissolves almost instantly, even in cold water' },
-      { aspect: 'digestion', sentiment: 'positive', text: 'Easy on the stomach, including for sensitive reviewers' },
-      { aspect: 'taste', sentiment: 'positive', text: 'Flavours taste good without being too sweet' },
+      {
+        aspect: 'mixability',
+        sentiment: 'positive',
+        text: 'Dissolves almost instantly, even in cold water',
+      },
+      {
+        aspect: 'digestion',
+        sentiment: 'positive',
+        text: 'Easy on the stomach, including for sensitive reviewers',
+      },
+      {
+        aspect: 'taste',
+        sentiment: 'positive',
+        text: 'Flavours taste good without being too sweet',
+      },
       { aspect: 'value', sentiment: 'negative', text: 'Expensive per gram of protein' },
-      { aspect: 'authenticity', sentiment: 'negative', text: 'Suspected fake tubs from third-party sellers' },
+      {
+        aspect: 'authenticity',
+        sentiment: 'negative',
+        text: 'Suspected fake tubs from third-party sellers',
+      },
     ],
     faq: [
       {
@@ -118,7 +151,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 4.5, total: 2140 },
       { source: 'flipkart', rating: 4.4, total: 611 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-05-20',
     updatedAt: '2026-09-08',
     plan: {
@@ -182,7 +215,7 @@ const seeds: Seed[] = [
       { source: 'flipkart', rating: 4.3, total: 402 },
       { source: 'brand-store', rating: 4.7, total: 190 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-06-18',
     updatedAt: '2026-09-18',
     plan: {
@@ -215,7 +248,11 @@ const seeds: Seed[] = [
     ],
     claims: [
       { aspect: 'value', sentiment: 'positive', text: 'Low sticker price for a 1 kg tub' },
-      { aspect: 'label-accuracy', sentiment: 'negative', text: 'Protein content below what the label claims' },
+      {
+        aspect: 'label-accuracy',
+        sentiment: 'negative',
+        text: 'Protein content below what the label claims',
+      },
       { aspect: 'taste', sentiment: 'negative', text: 'Hard to drink with just water' },
       { aspect: 'mixability', sentiment: 'negative', text: 'Clumps unless blended' },
     ],
@@ -244,7 +281,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 3.9, total: 618 },
       { source: 'flipkart', rating: 3.7, total: 150 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-07-04',
     updatedAt: '2026-09-02',
     plan: {
@@ -276,7 +313,11 @@ const seeds: Seed[] = [
       'A small, early sample is exactly where review manipulation is easiest and most effective, so we are not putting a verdict on it yet. This page updates automatically as reviews come in.',
     ],
     claims: [
-      { aspect: 'taste', sentiment: 'positive', text: 'Early reviewers like the cafe mocha flavour' },
+      {
+        aspect: 'taste',
+        sentiment: 'positive',
+        text: 'Early reviewers like the cafe mocha flavour',
+      },
       { aspect: 'digestion', sentiment: 'positive', text: 'No early reports of bloating' },
     ],
     faq: [
@@ -301,7 +342,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 4.4, total: 64 },
       { source: 'flipkart', rating: 4.0, total: 11 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-09-10',
     updatedAt: '2026-09-21',
     plan: {
@@ -325,14 +366,18 @@ const seeds: Seed[] = [
     variant: '1 kg · Chocolate',
     verdict: 'buy-with-caveats',
     answer:
-      "Buy it if you need a plant protein that is easy to digest — that is where it shines. But taste is the most common complaint by a distance: expect a gritty, earthy shake unless you blend it with milk or fruit.",
+      'Buy it if you need a plant protein that is easy to digest — that is where it shines. But taste is the most common complaint by a distance: expect a gritty, earthy shake unless you blend it with milk or fruit.',
     verdictBody: [
       'Verdant Plant Protein does the job plant proteins exist for. Digestion reviews are excellent, and label accuracy holds up.',
       'Taste is the catch. Grittiness and an earthy aftertaste come up in a large share of taste mentions, and mixability is only middling. Reviewers who blend it into smoothies are much happier than those drinking it with water.',
     ],
     claims: [
       { aspect: 'digestion', sentiment: 'positive', text: 'Very easy on the stomach' },
-      { aspect: 'label-accuracy', sentiment: 'positive', text: 'Protein content matches the label' },
+      {
+        aspect: 'label-accuracy',
+        sentiment: 'positive',
+        text: 'Protein content matches the label',
+      },
       { aspect: 'taste', sentiment: 'negative', text: 'Gritty, earthy taste with water' },
       { aspect: 'mixability', sentiment: 'negative', text: 'Needs a blender for a smooth shake' },
     ],
@@ -363,7 +408,7 @@ const seeds: Seed[] = [
       { source: 'flipkart', rating: 3.9, total: 120 },
       { source: 'brand-store', rating: 4.5, total: 88 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-07-11',
     updatedAt: '2026-09-15',
     plan: {
@@ -394,8 +439,16 @@ const seeds: Seed[] = [
       'Price is the only real point against it, and that is a category-wide issue rather than a Brawnly one.',
     ],
     claims: [
-      { aspect: 'taste', sentiment: 'positive', text: 'Vanilla flavour without the usual earthy aftertaste' },
-      { aspect: 'digestion', sentiment: 'positive', text: 'No bloating, including for lactose-intolerant reviewers' },
+      {
+        aspect: 'taste',
+        sentiment: 'positive',
+        text: 'Vanilla flavour without the usual earthy aftertaste',
+      },
+      {
+        aspect: 'digestion',
+        sentiment: 'positive',
+        text: 'No bloating, including for lactose-intolerant reviewers',
+      },
       { aspect: 'mixability', sentiment: 'positive', text: 'Mixes smoothly in a shaker' },
     ],
     faq: [
@@ -423,7 +476,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 4.2, total: 310 },
       { source: 'flipkart', rating: 4.1, total: 74 },
     ],
-    author: 'priya-menon',
+    author: 'omkar',
     publishedAt: '2026-07-11',
     updatedAt: '2026-09-15',
     plan: {
@@ -454,8 +507,16 @@ const seeds: Seed[] = [
       'Protection reviews are solid and breakout reports are low, including from reviewers with acne-prone skin. Fragrance is barely mentioned, which for sunscreen is a good sign.',
     ],
     claims: [
-      { aspect: 'white-cast', sentiment: 'positive', text: 'No white cast, including on darker skin tones' },
-      { aspect: 'texture', sentiment: 'positive', text: 'Light gel that stays non-greasy in humidity' },
+      {
+        aspect: 'white-cast',
+        sentiment: 'positive',
+        text: 'No white cast, including on darker skin tones',
+      },
+      {
+        aspect: 'texture',
+        sentiment: 'positive',
+        text: 'Light gel that stays non-greasy in humidity',
+      },
       { aspect: 'breakouts', sentiment: 'positive', text: 'Rarely causes breakouts' },
     ],
     faq: [
@@ -485,7 +546,7 @@ const seeds: Seed[] = [
       { source: 'nykaa', rating: 4.4, total: 2210 },
       { source: 'flipkart', rating: 4.2, total: 640 },
     ],
-    author: 'arjun-shah',
+    author: 'omkar',
     publishedAt: '2026-06-25',
     updatedAt: '2026-09-19',
     plan: {
@@ -520,7 +581,11 @@ const seeds: Seed[] = [
       { aspect: 'protection', sentiment: 'positive', text: 'Little or no tanning, even outdoors' },
       { aspect: 'breakouts', sentiment: 'positive', text: 'Does not clog pores' },
       { aspect: 'texture', sentiment: 'positive', text: 'Matte finish that suits oily skin' },
-      { aspect: 'white-cast', sentiment: 'negative', text: 'Visible white cast on medium and deeper skin' },
+      {
+        aspect: 'white-cast',
+        sentiment: 'negative',
+        text: 'Visible white cast on medium and deeper skin',
+      },
     ],
     faq: [
       {
@@ -547,7 +612,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 4.2, total: 1840 },
       { source: 'nykaa', rating: 4.1, total: 1520 },
     ],
-    author: 'arjun-shah',
+    author: 'omkar',
     publishedAt: '2026-06-25',
     updatedAt: '2026-09-11',
     plan: {
@@ -580,7 +645,11 @@ const seeds: Seed[] = [
     ],
     claims: [
       { aspect: 'white-cast', sentiment: 'positive', text: 'The tint avoids a white cast' },
-      { aspect: 'breakouts', sentiment: 'negative', text: 'Breakouts within the first week or two' },
+      {
+        aspect: 'breakouts',
+        sentiment: 'negative',
+        text: 'Breakouts within the first week or two',
+      },
       { aspect: 'fragrance', sentiment: 'negative', text: 'Strong added fragrance' },
     ],
     faq: [
@@ -608,7 +677,7 @@ const seeds: Seed[] = [
       { source: 'amazon', rating: 4.1, total: 980 },
       { source: 'nykaa', rating: 3.8, total: 610 },
     ],
-    author: 'arjun-shah',
+    author: 'omkar',
     publishedAt: '2026-07-30',
     updatedAt: '2026-09-05',
     plan: {
@@ -625,9 +694,439 @@ const seeds: Seed[] = [
       burst: 11,
     },
   },
+  {
+    slug: 'zapeat',
+    name: 'Zapeat',
+    shortName: 'Zapeat',
+    brand: 'zapeat',
+    category: 'food-delivery-apps',
+    variant: 'Android & iPhone · v14.2',
+    verdict: 'buy-with-caveats',
+    answer:
+      'Worth using for most orders — it has the widest restaurant choice and deliveries are usually on time. The catch is support: when an order goes wrong, many reviewers say getting a refund was a fight. Screenshot problem orders before you complain.',
+    verdictBody: [
+      'Zapeat does the everyday job well. Deliveries are usually on time, the app is stable, and nothing in its reviews points to a pattern of wrong orders.',
+      'Where it falls down is what happens after a bad order. Refund complaints are common, and reviewers describe support closing tickets without a fix. Fees are the other recurring gripe: the total at checkout is often well above the menu price.',
+    ],
+    claims: [
+      {
+        aspect: 'delivery-speed',
+        sentiment: 'positive',
+        text: 'Deliveries usually arrive on or before time',
+      },
+      { aspect: 'app-stability', sentiment: 'positive', text: 'Stable app that rarely crashes' },
+      {
+        aspect: 'refunds-support',
+        sentiment: 'negative',
+        text: 'Refunds for bad orders are hard to get',
+      },
+      {
+        aspect: 'fees',
+        sentiment: 'negative',
+        text: 'Platform and packing fees add up at checkout',
+      },
+    ],
+    faq: [
+      {
+        q: 'How do I get a refund on Zapeat?',
+        a: 'Reviewers who got refunds usually reported the problem in the app within the hour and attached photos. Tickets without photos, or raised the next day, are the ones reviewers most often say were closed without a refund. Escalating through the help section works better than the chatbot.',
+      },
+      {
+        q: 'Is Zapeat membership worth it?',
+        a: 'Reviewers who order several times a week say it pays for itself through free delivery. Occasional users are more likely to call it poor value, because platform and packing fees still apply. Check how often you order before subscribing.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'Zapeat Technologies (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '100M+' },
+      { label: 'In-app purchases', value: 'Membership' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.1, total: 6820000 },
+      { source: 'app-store', rating: 4.5, total: 312000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-02',
+    updatedAt: '2026-09-20',
+    plan: {
+      seed: 101,
+      profile: {
+        'delivery-speed': { mention: 0.4, positive: 0.8 },
+        'order-accuracy': { mention: 0.25, positive: 0.78 },
+        'refunds-support': { mention: 0.35, positive: 0.5 },
+        fees: { mention: 0.3, positive: 0.45 },
+        'app-stability': { mention: 0.15, positive: 0.82 },
+      },
+      collect: { 'play-store': 55, 'app-store': 20, reddit: 10 },
+      burst: 6,
+      burstSource: 'play-store',
+    },
+  },
+  {
+    slug: 'tiffora',
+    name: 'Tiffora',
+    shortName: 'Tiffora',
+    brand: 'tiffora',
+    category: 'food-delivery-apps',
+    variant: 'Android & iPhone · v6.8',
+    verdict: 'buy',
+    answer:
+      'Use it if it delivers in your area. Orders arrive complete, support fixes problems quickly, and fees are shown upfront. The restaurant list is smaller than on the big apps, which is the main thing reviewers wish were different.',
+    verdictBody: [
+      'Tiffora is the most dependable food delivery app we track. Order accuracy and support both score highly, and reviewers rarely describe a problem that was not put right.',
+      'Its limits are coverage and choice rather than quality: it operates in fewer cities and lists fewer restaurants.',
+    ],
+    claims: [
+      {
+        aspect: 'order-accuracy',
+        sentiment: 'positive',
+        text: 'Orders arrive complete and correct',
+      },
+      {
+        aspect: 'refunds-support',
+        sentiment: 'positive',
+        text: 'Support resolves problems quickly',
+      },
+      { aspect: 'fees', sentiment: 'positive', text: 'Fees are shown upfront and stay reasonable' },
+    ],
+    faq: [
+      {
+        q: 'Is Tiffora available in my city?',
+        a: 'Tiffora covers fewer cities than the largest delivery apps, and coverage is the most common reason reviewers give for switching away. Check the app with your address before relying on it; within its delivery areas, reviews are consistently positive.',
+      },
+      {
+        q: 'Is Tiffora cheaper than other food delivery apps?',
+        a: 'Not always on menu prices, but reviewers say the total is more predictable because fees are shown before checkout. Fees are one of its better-scoring aspects in our data, where the larger apps are often criticised for charges added late.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'Tiffora Foods (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '5M+' },
+      { label: 'In-app purchases', value: 'None' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.4, total: 420000 },
+      { source: 'app-store', rating: 4.6, total: 38000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-02',
+    updatedAt: '2026-09-16',
+    plan: {
+      seed: 103,
+      profile: {
+        'delivery-speed': { mention: 0.35, positive: 0.8 },
+        'order-accuracy': { mention: 0.3, positive: 0.9 },
+        'refunds-support': { mention: 0.3, positive: 0.88 },
+        fees: { mention: 0.25, positive: 0.82 },
+        'app-stability': { mention: 0.15, positive: 0.85 },
+      },
+      collect: { 'play-store': 45, 'app-store': 18, reddit: 8 },
+      burst: 2,
+      burstSource: 'play-store',
+    },
+  },
+  {
+    slug: 'biteloop',
+    name: 'Biteloop',
+    shortName: 'Biteloop',
+    brand: 'biteloop',
+    category: 'food-delivery-apps',
+    variant: 'Android & iPhone · v3.1',
+    verdict: 'skip',
+    answer:
+      "Skip it. The discounts are real, but missing and wrong items are the most common complaint by a distance, and support rarely refunds them. Cheap food that doesn't arrive isn't cheap.",
+    verdictBody: [
+      'Order accuracy is a deal-breaker for us, and Biteloop fails it: reviewers reporting missing or wrong items outnumber those who say orders arrive correctly.',
+      'The low prices are genuine and reviewers like them. But with support also scoring poorly, a bad order usually stays a bad order.',
+    ],
+    claims: [
+      {
+        aspect: 'fees',
+        sentiment: 'positive',
+        text: 'Genuinely low prices and frequent discounts',
+      },
+      { aspect: 'order-accuracy', sentiment: 'negative', text: 'Missing or wrong items' },
+      {
+        aspect: 'refunds-support',
+        sentiment: 'negative',
+        text: 'Support rarely refunds problem orders',
+      },
+    ],
+    faq: [
+      {
+        q: 'Why is Biteloop marked Skip?',
+        a: 'Order accuracy is one of our deal-breakers for food delivery, and more reviewers report missing or wrong items with Biteloop than report correct orders. Support also scores poorly, so problem orders are rarely refunded. The discounts do not make up for that.',
+      },
+      {
+        q: 'Are the Biteloop discounts real?',
+        a: 'Yes. Price is its best-scoring aspect, and reviewers consistently say it is cheaper than the larger apps. The complaints are about what happens after you order, not the price you pay.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'Biteloop Labs (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '10M+' },
+      { label: 'In-app purchases', value: 'None' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.0, total: 2150000 },
+      { source: 'app-store', rating: 3.6, total: 41000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-20',
+    updatedAt: '2026-09-09',
+    plan: {
+      seed: 107,
+      profile: {
+        'delivery-speed': { mention: 0.35, positive: 0.55 },
+        'order-accuracy': { mention: 0.45, positive: 0.28 },
+        'refunds-support': { mention: 0.35, positive: 0.35 },
+        fees: { mention: 0.35, positive: 0.85 },
+        'app-stability': { mention: 0.25, positive: 0.5 },
+      },
+      collect: { 'play-store': 50, 'app-store': 12, reddit: 8 },
+      burst: 14,
+      burstSource: 'play-store',
+    },
+  },
+  {
+    slug: 'paynest-upi',
+    name: 'PayNest UPI',
+    shortName: 'PayNest',
+    brand: 'paynest',
+    category: 'payment-apps',
+    variant: 'Android & iPhone · v22.4',
+    verdict: 'buy',
+    answer:
+      'Use it. Payments go through reliably, the app is simple enough for parents, and reviewers rarely report security scares. Support is slow on the rare occasions a payment gets stuck — but that is the exception here, not the pattern.',
+    verdictBody: [
+      'PayNest scores well on the measure that matters most for a payment app: payments go through. It is also the easiest app to use in this category, according to reviewers.',
+      'Support is its weakest aspect, but complaints are infrequent because problems are infrequent.',
+    ],
+    claims: [
+      {
+        aspect: 'payment-success',
+        sentiment: 'positive',
+        text: 'Payments go through reliably, even at small shops',
+      },
+      {
+        aspect: 'ease-of-use',
+        sentiment: 'positive',
+        text: 'Simple enough for first-time UPI users',
+      },
+      {
+        aspect: 'security',
+        sentiment: 'positive',
+        text: 'Payment alerts and app lock reassure reviewers',
+      },
+    ],
+    faq: [
+      {
+        q: 'Is PayNest UPI safe to use?',
+        a: 'Security worries are rare in its reviews, and reviewers who reported fraud say accounts were blocked quickly. As with any UPI app, never share your PIN or approve a collect request you did not start; most fraud reviewers describe begins that way.',
+      },
+      {
+        q: 'Why did my PayNest payment fail?',
+        a: 'Failed payments are uncommon in its reviews. When they happen, reviewers usually trace them to the bank being down rather than the app. Debited amounts from failed payments are normally reversed by the bank automatically.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'PayNest Payments (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '100M+' },
+      { label: 'In-app purchases', value: 'None' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.5, total: 9400000 },
+      { source: 'app-store', rating: 4.7, total: 820000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-10',
+    updatedAt: '2026-09-22',
+    plan: {
+      seed: 109,
+      profile: {
+        'payment-success': { mention: 0.4, positive: 0.88 },
+        security: { mention: 0.2, positive: 0.85 },
+        'refunds-support': { mention: 0.2, positive: 0.72 },
+        'app-stability': { mention: 0.2, positive: 0.85 },
+        'ease-of-use': { mention: 0.35, positive: 0.9 },
+        'ads-spam': { mention: 0.1, positive: 0.8 },
+      },
+      collect: { 'play-store': 55, 'app-store': 22, reddit: 10 },
+      burst: 3,
+      burstSource: 'play-store',
+    },
+  },
+  {
+    slug: 'rupeeflow',
+    name: 'Rupeeflow',
+    shortName: 'Rupeeflow',
+    brand: 'rupeeflow',
+    category: 'payment-apps',
+    variant: 'Android & iPhone · v9.12',
+    verdict: 'buy-with-caveats',
+    answer:
+      'A dependable UPI app buried under ads. Payments and bill reminders work well, but loan offers and promotional notifications are the most common complaint. Use it if you can live with the noise, or turn notifications off on day one.',
+    verdictBody: [
+      'Rupeeflow passes every deal-breaker: payments go through, security complaints are rare, and support resolves most stuck transactions.',
+      'The catch is everything around the payments. Ads, loan offers and promotional notifications dominate its negative reviews, and they are the reason it is not a straight recommendation.',
+    ],
+    claims: [
+      {
+        aspect: 'payment-success',
+        sentiment: 'positive',
+        text: 'Payments and bill payments work reliably',
+      },
+      { aspect: 'security', sentiment: 'positive', text: 'Few security complaints' },
+      {
+        aspect: 'ads-spam',
+        sentiment: 'negative',
+        text: 'Loan offers, ads and constant notifications',
+      },
+    ],
+    faq: [
+      {
+        q: 'How do I stop Rupeeflow notifications?',
+        a: 'Reviewers say turning off promotional notifications in the app settings removes most of them, while payment alerts keep working. Loan offers inside the app cannot be turned off. It is the most common complaint in its reviews.',
+      },
+      {
+        q: 'Is Rupeeflow good for paying bills?',
+        a: 'Bill payments and reminders are among the features reviewers praise most. Payments go through reliably, and reminders help avoid late fees. The trade-off is the advertising around them.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'Rupeeflow Fintech (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '50M+' },
+      { label: 'In-app purchases', value: 'None' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.3, total: 5600000 },
+      { source: 'app-store', rating: 4.4, total: 290000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-10',
+    updatedAt: '2026-09-14',
+    plan: {
+      seed: 113,
+      profile: {
+        'payment-success': { mention: 0.35, positive: 0.85 },
+        security: { mention: 0.2, positive: 0.82 },
+        'refunds-support': { mention: 0.2, positive: 0.72 },
+        'app-stability': { mention: 0.2, positive: 0.75 },
+        'ease-of-use': { mention: 0.3, positive: 0.72 },
+        'ads-spam': { mention: 0.4, positive: 0.2 },
+      },
+      collect: { 'play-store': 50, 'app-store': 18, reddit: 8 },
+      burst: 5,
+      burstSource: 'play-store',
+    },
+  },
+  {
+    slug: 'tapsy-pay',
+    name: 'Tapsy Pay',
+    shortName: 'Tapsy Pay',
+    brand: 'tapsy',
+    category: 'payment-apps',
+    variant: 'Android & iPhone · v4.0',
+    verdict: 'skip',
+    answer:
+      'Skip it. Failed payments with money debited are the most common complaint, and reviewers say support is slow to track them down. For a payment app, that outweighs the cashback offers.',
+    verdictBody: [
+      'Payment success is a deal-breaker for us, and Tapsy Pay fails it: reviewers reporting failed or stuck payments outnumber those who say payments go through.',
+      'Cashback offers keep some reviewers loyal, but support is slow and security worries come up more than for the other payment apps we track.',
+    ],
+    claims: [
+      { aspect: 'ease-of-use', sentiment: 'positive', text: 'Easy to set up' },
+      {
+        aspect: 'payment-success',
+        sentiment: 'negative',
+        text: 'Failed payments with money debited',
+      },
+      {
+        aspect: 'refunds-support',
+        sentiment: 'negative',
+        text: 'Support is slow to trace stuck money',
+      },
+    ],
+    faq: [
+      {
+        q: 'Why is Tapsy Pay marked Skip?',
+        a: 'Payment success is one of our deal-breakers for payment apps, and more reviewers report failed or stuck payments with Tapsy Pay than report payments going through. Support is also slow to trace the money. Cashback does not make up for that.',
+      },
+      {
+        q: 'Is Tapsy Pay cashback worth it?',
+        a: 'Reviewers who stay mostly mention cashback. But the amounts are small next to the risk of a stuck payment, which is the most common complaint in its reviews. A more reliable app is the safer choice for everyday payments.',
+      },
+    ],
+    specs: [
+      { label: 'Developer', value: 'Tapsy Payments (sample)' },
+      { label: 'Platforms', value: 'Android, iPhone' },
+      { label: 'Installs (Google Play)', value: '10M+' },
+      { label: 'In-app purchases', value: 'None' },
+    ],
+    valueQuantity: 0,
+    offers: [
+      { source: 'play-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+      { source: 'app-store', price: 0, mrp: 0, inStock: true, checkedAt: '2026-09-24' },
+    ],
+    platformStats: [
+      { source: 'play-store', rating: 4.2, total: 1300000 },
+      { source: 'app-store', rating: 3.9, total: 22000 },
+    ],
+    author: 'omkar',
+    publishedAt: '2026-07-24',
+    updatedAt: '2026-09-06',
+    plan: {
+      seed: 127,
+      profile: {
+        'payment-success': { mention: 0.5, positive: 0.33 },
+        security: { mention: 0.25, positive: 0.5 },
+        'refunds-support': { mention: 0.35, positive: 0.3 },
+        'app-stability': { mention: 0.3, positive: 0.45 },
+        'ease-of-use': { mention: 0.25, positive: 0.68 },
+        'ads-spam': { mention: 0.2, positive: 0.4 },
+      },
+      collect: { 'play-store': 50, 'app-store': 12, reddit: 8 },
+      burst: 10,
+      burstSource: 'play-store',
+    },
+  },
 ]
 
-export const products: Product[] = seeds.map(({ plan, ...product }) => ({
+const sampleProducts: Product[] = seeds.map(({ plan, ...product }) => ({
   ...product,
+  sample: true,
   reviews: generateReviews({ ...plan, updatedAt: product.updatedAt }),
 }))
+
+/** Fictional sample products, plus real products collected by the pipeline (drafts). */
+export const products: Product[] = [...realProducts, ...sampleProducts]

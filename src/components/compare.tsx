@@ -2,7 +2,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { getAspect } from '@/lib/catalog'
-import { formatINR, formatPct, formatRating, formatScore } from '@/lib/format'
+import { formatINR, formatPct, formatPrice, formatRate, formatRating, formatScore } from '@/lib/format'
 import {
   aspectStat,
   compositeScore,
@@ -31,7 +31,7 @@ interface Metric {
 }
 
 export const compareMetrics = (category: Category): Metric[] => [
-  { key: 'score', label: 'Composite score', value: compositeScore, format: (n) => `${formatScore(n)} / 10`, better: 'higher' },
+  { key: 'score', label: 'Satisfaction score', value: compositeScore, format: (n) => `${formatScore(n)} / 10`, better: 'higher' },
   { key: 'weighted', label: 'Credibility-weighted ★', value: weightedRating, format: formatRating, better: 'higher' },
   { key: 'market', label: 'Marketplace average ★', value: (p) => marketplaceAverage(p).rating, format: formatRating },
   ...(category.valueMetric
@@ -46,14 +46,21 @@ export const compareMetrics = (category: Category): Metric[] => [
     format: (n) => `${n >= 0 ? '+' : '−'}${Math.round(Math.abs(n) * 100)}`,
     better: 'higher',
   },
+  // Per aspect: the share of all reviewers reporting a problem. Lower is better.
   ...category.aspects.map((a) => ({
     key: `aspect-${a.aspect}`,
-    label: getAspect(a.aspect)!.label,
-    value: (p: Product) => aspectStat(p, a.aspect)?.score ?? undefined,
-    format: formatScore,
-    better: 'higher' as const,
+    label: `${getAspect(a.aspect)!.label} problems`,
+    value: (p: Product) => {
+      const s = aspectStat(p, a.aspect)
+      return s?.scored ? s.problemRate : undefined
+    },
+    format: formatRate,
+    better: 'lower' as const,
   })),
-  { key: 'price', label: 'Lowest price', value: (p) => lowestOffer(p)?.price, format: formatINR, better: 'lower' },
+  // Apps are all free, so a price row would compare nothing.
+  ...(category.appCategory
+    ? []
+    : [{ key: 'price', label: 'Lowest price', value: (p: Product) => lowestOffer(p)?.price, format: formatPrice, better: 'lower' as const }]),
 ]
 
 const winnerOf = (metric: Metric, products: Product[]) => {
@@ -99,7 +106,7 @@ export function PairTable({ products, category }: { products: Product[]; categor
                   {p.shortName}
                 </Link>
                 <div className="mt-3">
-                  <VerdictBadge verdict={p.verdict} />
+                  <VerdictBadge verdict={p.verdict} app={Boolean(category.appCategory)} />
                 </div>
               </th>
             ))}
@@ -156,7 +163,7 @@ export function CategoryTable({ products, category }: { products: Product[]; cat
                 </Link>
               </th>
               <td className="px-4 py-3">
-                <VerdictBadge verdict={p.verdict} />
+                <VerdictBadge verdict={p.verdict} app={Boolean(category.appCategory)} />
               </td>
               {metrics.map((m) => (
                 <Cell key={m.key} metric={m} product={p} winner={winnerOf(m, products)} />

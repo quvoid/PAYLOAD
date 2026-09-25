@@ -88,6 +88,46 @@ export const phrases: Record<string, Phrases> = {
     positive: ['Barely any smell, which I like.'],
     negative: ['Strong perfume smell that gave me a headache.'],
   },
+  'delivery-speed': {
+    positive: ['Food arrived before the estimated time, still hot.', 'Delivery is consistently quick in my area.'],
+    negative: ['Delivery took over an hour and the food was cold.', 'The estimated time keeps increasing after I order.'],
+  },
+  'order-accuracy': {
+    positive: ['Orders always arrive complete and correct.', 'Never had a missing item so far.'],
+    negative: ['Items missing from my order twice this month.', 'Received someone else’s order.'],
+  },
+  'refunds-support': {
+    positive: ['Support refunded a missing item within minutes.', 'Customer care actually solved my problem.'],
+    negative: [
+      'Support closed my complaint without a refund.',
+      'Only a chatbot, no way to reach a real person.',
+      'Money was debited but support keeps saying wait.',
+    ],
+  },
+  fees: {
+    positive: ['Delivery fee is reasonable and shown upfront.', 'Membership pays for itself if you order often.'],
+    negative: ['Platform fee, packing fee, rain fee — the total keeps growing.', 'Prices are higher than in the restaurant.'],
+  },
+  'app-stability': {
+    positive: ['App is smooth and never crashes.', 'Works fine even on my old phone.'],
+    negative: ['App crashes at checkout.', 'Keeps logging me out after the latest update.'],
+  },
+  'payment-success': {
+    positive: ['Payments go through instantly, even at small shops.', 'Never had a failed transaction.'],
+    negative: ['Payment failed but money was debited from my account.', 'Transactions keep getting stuck in pending.'],
+  },
+  security: {
+    positive: ['Feels secure — app lock and alerts for every payment.', 'Quick to block my account when I reported fraud.'],
+    negative: ['Got a fraud call right after signing up.', 'Asks for too many permissions I do not need.'],
+  },
+  'ease-of-use': {
+    positive: ['Clean, simple interface — easy for my parents too.', 'Scanning and paying takes two taps.'],
+    negative: ['Too many screens before I can pay.', 'The new design hides the scan button.'],
+  },
+  'ads-spam': {
+    positive: ['No ads, no pointless notifications.'],
+    negative: ['Full of loan offers and ads.', 'Spam notifications every hour.'],
+  },
 }
 
 // Reviews written in Hindi or Hinglish. The English is what analysis runs on; the original is shown.
@@ -152,6 +192,28 @@ export const originals: Record<
       },
     ],
   },
+  'delivery-speed': {
+    negative: [
+      { text: 'Delivery bahut late hoti hai, khana thanda aata hai.', lang: 'hi-Latn', en: 'Delivery is very late and the food arrives cold.' },
+    ],
+  },
+  'payment-success': {
+    negative: [
+      {
+        text: 'Paisa kat gaya par payment fail dikha raha hai.',
+        lang: 'hi-Latn',
+        en: 'Money was deducted but it shows the payment as failed.',
+      },
+    ],
+    positive: [
+      { text: 'पेमेंट तुरंत हो जाता है, कोई दिक्कत नहीं।', lang: 'hi', en: 'Payments go through instantly, no problems.' },
+    ],
+  },
+  'refunds-support': {
+    negative: [
+      { text: 'Customer care se koi reply nahi aata.', lang: 'hi-Latn', en: 'Customer care never replies.' },
+    ],
+  },
 }
 
 /** The generic one-liners that show up in bursts of manipulated 5★ reviews. */
@@ -179,4 +241,5 @@ export const reviewers = {
   ],
   reddit: ['u/lifts_in_pune', 'u/desi_gains', 'u/sunscreen_nerd', 'u/budget_bulk', 'u/skin_in_blr'],
   youtube: ['FitWithRahul', 'Gym Truths India', 'Skin Science Hindi', 'LabTested', 'Budget Gains'],
+  appStore: ['Rahul Verma', 'Neha', 'A Google user', 'Sandeep K', 'Divya R', 'techie_ravi', 'Farhan', 'Kavya'],
 }

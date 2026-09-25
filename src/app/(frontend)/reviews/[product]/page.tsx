@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -28,10 +29,13 @@ import {
   getBrand,
   getCategory,
   getProduct,
+  getProductForPreview,
+  isApp,
 } from '@/lib/catalog'
-import { formatDate, formatPct, isoDate } from '@/lib/format'
+import { formatDate, formatPct, inSentence, isoDate } from '@/lib/format'
 import {
   aspectStats,
+  claimQuotes,
   confidence,
   countedReviews,
   productSentiment,
@@ -42,30 +46,34 @@ import {
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
 import { breadcrumbLd, faqLd, graph, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
-import { verdictMeta } from '@/lib/verdict'
+import { verdictLabel } from '@/lib/verdict'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ product: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return allProducts().map((p) => ({ product: p.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const p = getProduct((await params).product)
   if (!p) return {}
   return pageMetadata({
-    title: `${p.name} Review: ${verdictMeta[p.verdict].label}`,
+    title: `${p.name} Review: ${verdictLabel(p.verdict, isApp(p))}`,
     description: p.answer.length > 158 ? `${p.answer.slice(0, 155).trimEnd()}…` : p.answer,
     path: routes.product(p.slug),
-    // Thin-data products stay out of the index by default (docs/PLAN.md §7).
-    noindex: p.verdict === 'thin-data',
+    // Thin-data products and unapproved drafts stay out of the index (docs/PLAN.md §7).
+    noindex: p.verdict === 'thin-data' || Boolean(p.draft),
   })
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
-  const product = getProduct((await params).product)
+  await ensureCatalog()
+  const { isEnabled: previewing } = await draftMode()
+  const slug = (await params).product
+  const product = previewing ? getProductForPreview(slug) : getProduct(slug)
   if (!product) notFound()
 
   const category = getCategory(product.category)!
@@ -80,12 +88,24 @@ export default async function ProductPage({ params }: { params: Params }) {
   const lists = bestOfListing(product)
   const hasCategoryTable = categoryComparisons().includes(category)
   const stats = aspectStats(product)
+  const app = isApp(product)
+  // Ship the newest reviews plus every quoted one in the HTML; the rest load on demand.
+  const quoted = new Set([...claimQuotes(product).values()].map((r) => r.id))
+  // In preview (editors only) ship everything: drafts have no public reviews file yet.
+  const initialReviews = previewing ? product.reviews : product.reviews.filter((r, i) => i < 60 || quoted.has(r.id))
 
   return (
     <PageShell track="light">
       <Container>
         <article>
           <Breadcrumbs crumbs={crumbs} />
+          {product.draft && (
+            <p role="note" className="mb-6 rounded-lg bg-peach px-5 py-4 text-caption">
+              <strong className="text-body-strong">Draft, not yet approved.</strong> Collected {formatDate(product.updatedAt)}{' '}
+              from {used.map((s) => s.name).join(', ')}. Every figure is computed from real reviews; the wording is an
+              unreviewed draft, and no editor has signed it off.
+            </p>
+          )}
 
           <header className="grid gap-8 border-b border-hairline pb-10 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-10">
             <div className="hidden sm:block">
@@ -106,7 +126,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 {product.name} review
               </h1>
               <div className="mt-6">
-                <VerdictBadge verdict={product.verdict} size="lg" />
+                <VerdictBadge verdict={product.verdict} size="lg" app={app} />
               </div>
               {/* Answer first: the verdict in one extractable paragraph (≤320 chars). */}
               <p className="answer mt-5 max-w-[62ch] text-body-lg">{product.answer}</p>
@@ -114,7 +134,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <div>
                   <dt className="text-shade-60">Based on</dt>
                   <dd className="tabular-nums">
-                    {counted.length} reviews across {used.length} sources
+                    {counted.length.toLocaleString('en-IN')} reviews across {used.length} sources
                   </dd>
                 </div>
                 <div>
@@ -123,7 +143,12 @@ export default async function ProductPage({ params }: { params: Params }) {
                     <time dateTime={isoDate(product.updatedAt)}>{formatDate(product.updatedAt)}</time>
                   </dd>
                 </div>
-                {author && (
+                {product.draft ? (
+                  <div>
+                    <dt className="text-shade-60">Status</dt>
+                    <dd>Draft, awaiting approval</dd>
+                  </div>
+                ) : author && (
                   <div>
                     <dt className="text-shade-60">Approved by</dt>
                     <dd>
@@ -139,7 +164,7 @@ export default async function ProductPage({ params }: { params: Params }) {
 
           <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="min-w-0">
-              <Section id="verdict" title={`Should you buy the ${product.name}?`}>
+              <Section id="verdict" title={app ? `Should you use ${product.name}?` : `Should you buy the ${product.name}?`}>
                 <div className="max-w-[70ch] space-y-4">
                   {product.verdictBody.map((p) => (
                     <p key={p.slice(0, 40)}>{p}</p>
@@ -168,17 +193,17 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <ProsCons product={product} />
               </Section>
 
-              <Section id="aspects" title={`How does it perform on what matters for ${category.name.toLowerCase()}?`}>
+              <Section id="aspects" title={`How does it perform on what matters for ${inSentence(category.name)}?`}>
                 <AspectTable
                   stats={stats}
-                  caption={`Counted from ${counted.length} reviews. Score is the share of mentions that are positive, with neutral mentions counted as half.`}
+                  caption={`Counted from ${counted.length.toLocaleString('en-IN')} reviews. “Problems reported by” is the share of all reviewers who describe a problem with that aspect — the figure the verdict uses.`}
                 />
               </Section>
 
               <Section
                 id="voice"
                 title="How much are people talking about it?"
-                lead={`Share of voice is this product's share of all ratings and mentions across the ${sov.peers.length} ${category.name.toLowerCase()} products we track: each marketplace's own rating count, plus the Reddit and YouTube discussions we collected.`}
+                lead={`Share of voice is this product's share of all ratings and mentions across the ${sov.peers.length} products we track in ${category.name}: each store's own rating count, plus the Reddit and YouTube discussions we collected.`}
               >
                 <div className="grid gap-10 xl:grid-cols-2">
                   <div>
@@ -191,7 +216,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                     </div>
                     {hasCategoryTable && (
                       <Link href={routes.compare(category.slug)} className="mt-6 inline-block text-caption underline decoration-pink underline-offset-4">
-                        Compare every {category.name.toLowerCase()} side by side
+                        Compare all {inSentence(category.name)} side by side
                       </Link>
                     )}
                   </div>
@@ -208,7 +233,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <Section
                   id="alternatives"
                   title="What else should you consider?"
-                  lead={`The ${category.name.toLowerCase()} products closest in score, measured on exactly the same aspects.`}
+                  lead={`The closest-scoring alternatives in ${category.name}, measured on exactly the same aspects.`}
                 >
                   <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {alternatives.map((alt) => (
@@ -234,7 +259,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 </Section>
               )}
 
-              <Section id="faq" title={`Questions about the ${product.shortName}`}>
+              <Section id="faq" title={`Questions about ${app ? '' : 'the '}${product.shortName}`}>
                 <Faq items={product.faq} />
               </Section>
 
@@ -244,7 +269,9 @@ export default async function ProductPage({ params }: { params: Params }) {
                 lead="Every review we collected, most recent first. Hindi and Hinglish reviews are shown as written, with the translation we analysed."
               >
                 <ReviewList
-                  reviews={product.reviews}
+                  reviews={initialReviews}
+                  total={product.reviews.length}
+                  allUrl={`${routes.product(product.slug)}/reviews.json`}
                   sources={used.map((s) => ({ id: s.id, name: s.name }))}
                   aspects={stats.map((s) => ({ slug: s.aspect.slug, label: s.aspect.label }))}
                   suspiciousBelow={RULES.suspiciousBelow}

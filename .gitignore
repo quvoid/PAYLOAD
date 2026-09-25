@@ -49,3 +49,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .neon
+
+# pipeline: raw scraped data stays local (re-parse is free, re-scrape is not)
+/pipeline/raw/
+__pycache__/

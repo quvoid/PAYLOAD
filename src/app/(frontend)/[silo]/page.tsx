@@ -4,31 +4,64 @@ import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, ProductCard } from '@/components/review'
+import { SearchForm } from '@/components/SearchForm'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
-import { bestOfFor, childrenOf, comparisonsIn, getCategory, getProduct, productsIn, silos, topicsIn } from '@/lib/catalog'
+import {
+  bestOfFor,
+  comparisonsIn,
+  getCategory,
+  getProduct,
+  listedChildren,
+  productsIn,
+  silos,
+  topicsIn,
+} from '@/lib/catalog'
+import { inSentence } from '@/lib/format'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ silo: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return silos().map((s) => ({ silo: s.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const silo = getCategory((await params).silo)
   if (!silo || silo.parent) return {}
-  return pageMetadata({ title: `${silo.name} reviews`, description: silo.tagline, path: routes.category(silo) })
+  return pageMetadata({
+    title: `${silo.name} reviews`,
+    description: silo.tagline,
+    path: routes.category(silo),
+    noindex: productsIn(silo.slug).length === 0,
+  })
 }
 
 export default async function SiloPage({ params }: { params: Params }) {
+  await ensureCatalog()
   const silo = getCategory((await params).silo)
   if (!silo || silo.parent) notFound()
 
-  const children = childrenOf(silo.slug)
+  const children = listedChildren(silo.slug)
+  if (children.length === 0) {
+    return (
+      <PageShell track="light">
+        <Container className="pb-24">
+          <Breadcrumbs crumbs={categoryCrumbs(silo.slug)} />
+          <h1 className="font-display text-display-sm md:text-display-lg">{silo.name}</h1>
+          <p className="mt-4 max-w-[60ch] text-body-lg">{silo.tagline}</p>
+          <p className="mt-8 max-w-[60ch] text-shade-60">
+            We haven&apos;t published any reviews in this section yet. Search for a product to request one.
+          </p>
+          <SearchForm size="lg" className="mt-6 max-w-2xl" />
+        </Container>
+      </PageShell>
+    )
+  }
   const top = productsIn(silo.slug).slice(0, 12)
   const crumbs = categoryCrumbs(silo.slug)
   const lists = bestOfFor(silo.slug)
@@ -45,7 +78,7 @@ export default async function SiloPage({ params }: { params: Params }) {
           <Prose paragraphs={silo.intro} className="mt-6 text-shade-60" />
         </header>
 
-        <Section id="categories" title={`Which kind of ${silo.name.split(' & ')[0].toLowerCase()} do you need?`}>
+        <Section id="categories" title={`Which kind of ${inSentence(silo.name.split(' & ')[0])} do you need?`}>
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {children.map((c) => (
               <li key={c.slug} className="relative rounded-lg bg-peach p-8">
@@ -61,7 +94,7 @@ export default async function SiloPage({ params }: { params: Params }) {
           </ul>
         </Section>
 
-        <Section id="top" title={`The best-scoring ${silo.name.toLowerCase()}`}>
+        <Section id="top" title={`The best-scoring ${inSentence(silo.name)}`}>
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {top.map((p) => (
               <li key={p.slug}>

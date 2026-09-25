@@ -17,3 +17,12 @@ export const verdictMeta: Record<
     summary: "Too few reviews to judge fairly — we'd rather say so.",
   },
 }
+
+// Apps are free, so "Buy" reads wrong: the same verdict states get app wording.
+const appLabels: Partial<Record<Verdict, string>> = {
+  buy: 'Use it',
+  'buy-with-caveats': 'Use it, with caveats',
+}
+
+export const verdictLabel = (verdict: Verdict, app = false) =>
+  (app && appLabels[verdict]) || verdictMeta[verdict].label

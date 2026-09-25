@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { getAspect } from '@/lib/catalog'
-import { formatDate, formatINR, formatPct, formatScore } from '@/lib/format'
+import { getAspect, isApp } from '@/lib/catalog'
+import { formatCount, formatDate, formatINR, formatPct, formatPrice, formatRate, formatScore } from '@/lib/format'
 import {
   claimEvidence,
   compositeScore,
@@ -9,16 +9,15 @@ import {
   countedReviews,
   failedDealBreakers,
   lowestOffer,
+  claimQuotes,
   notableCons,
-  pickQuote,
   sourceById,
   suspiciousCount,
   valueFor,
 } from '@/lib/metrics'
 import { reviewAnchor } from '@/lib/routes'
-import { RULES } from '@/lib/rules'
 import type { Category, Claim, Product, Review } from '@/lib/types'
-import { verdictMeta } from '@/lib/verdict'
+import { verdictLabel } from '@/lib/verdict'
 
 function ClaimItem({ product, claim, quote }: { product: Product; claim: Claim; quote: Review }) {
   const evidence = claimEvidence(product, claim)
@@ -47,16 +46,9 @@ function ClaimItem({ product, claim, quote }: { product: Product; claim: Claim; 
 
 /** Pros and cons with receipts: a claim is only shown when enough reviews back it. */
 export function ProsCons({ product }: { product: Product }) {
-  const backed = product.claims.filter((c) => claimEvidence(product, c).count >= RULES.minEvidencePerClaim)
   // One quote per claim, never the same review twice on the page.
-  const used = new Set<string>()
-  const quotes = new Map(
-    backed.map((c) => {
-      const quote = pickQuote(product, c, used) ?? claimEvidence(product, c).reviews[0]
-      used.add(quote.id)
-      return [c, quote] as const
-    }),
-  )
+  const quotes = claimQuotes(product)
+  const backed = product.claims.filter((c) => quotes.has(c))
   const columns = [
     { title: 'What reviewers praise', claims: backed.filter((c) => c.sentiment === 'positive'), className: 'pros' },
     { title: 'What reviewers criticise', claims: backed.filter((c) => c.sentiment === 'negative'), className: 'cons' },
@@ -89,21 +81,21 @@ export function VerdictRationale({ product }: { product: Product }) {
   const failed = failedDealBreakers(product)
   const counted = countedReviews(product).length
   const rows: { label: string; value: string }[] = [
-    { label: 'Reviews counted', value: `${counted} (${confidence(product)} confidence)` },
-    { label: 'Composite score', value: `${formatScore(compositeScore(product))} / 10` },
+    { label: 'Reviews counted', value: `${formatCount(counted)} (${confidence(product)} confidence)` },
+    { label: 'Satisfaction score', value: `${formatScore(compositeScore(product))} / 10` },
     {
       label: 'Deal-breakers failed',
-      value: failed.length ? failed.map((s) => `${s.aspect.label} (${formatPct(s.negativeShare)} negative)`).join(', ') : 'None',
+      value: failed.length ? failed.map((s) => `${s.aspect.label} (${formatRate(s.problemRate)} of reviewers report a problem)`).join(', ') : 'None',
     },
     {
       label: 'Notable cons',
-      value: cons.length ? cons.map((s) => `${s.aspect.label} (${formatPct(s.negativeShare)} negative)`).join(', ') : 'None',
+      value: cons.length ? cons.map((s) => `${s.aspect.label} (${formatRate(s.problemRate)} of reviewers)`).join(', ') : 'None',
     },
     { label: 'Flagged as likely manipulated', value: `${suspiciousCount(product)} reviews, excluded from counts` },
   ]
   return (
     <div className="rounded-lg border border-hairline p-6">
-      <p className="text-body-strong">Why “{verdictMeta[product.verdict].label}”</p>
+      <p className="text-body-strong">Why “{verdictLabel(product.verdict, isApp(product))}”</p>
       <dl className="mt-4 grid gap-x-6 gap-y-3 text-caption sm:grid-cols-[auto_minmax(0,1fr)]">
         {rows.map((r) => (
           <React.Fragment key={r.label}>
@@ -120,9 +112,10 @@ export function VerdictRationale({ product }: { product: Product }) {
 export function PriceTable({ product, category }: { product: Product; category: Category }) {
   const lowest = lowestOffer(product)
   const value = valueFor(product)
+  const free = product.offers.every((o) => o.price === 0)
   return (
     <div className="rounded-lg bg-cream p-6">
-      <h2 className="text-heading-md">Where to buy</h2>
+      <h2 className="text-heading-md">{free ? 'Where to get it' : 'Where to buy'}</h2>
       <table className="mt-4 w-full text-left text-caption">
         <caption className="sr-only">Current prices and platform ratings by store</caption>
         <thead className="sr-only">
@@ -147,8 +140,8 @@ export function PriceTable({ product, category }: { product: Product; category: 
                 <td className="py-3 text-right tabular-nums">
                   {o.inStock ? (
                     <>
-                      <span className="block text-body-strong">{formatINR(o.price)}</span>
-                      {o === lowest && (
+                      <span className="block text-body-strong">{formatPrice(o.price)}</span>
+                      {o === lowest && !free && (
                         <span className="mt-1 inline-block rounded-pill bg-blush px-2 py-0.5 text-micro">Lowest</span>
                       )}
                     </>
@@ -168,7 +161,7 @@ export function PriceTable({ product, category }: { product: Product; category: 
         </p>
       )}
       <p className="mt-3 text-micro text-shade-60">
-        Prices checked {formatDate(product.offers[0].checkedAt)}. We earn nothing from these links.
+        {free ? 'Checked' : 'Prices checked'} {formatDate(product.offers[0].checkedAt)}. We earn nothing from these links.
       </p>
     </div>
   )

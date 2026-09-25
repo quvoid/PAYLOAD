@@ -12,8 +12,10 @@ export interface ReviewPlan {
   profile: AspectProfile
   /** Reviews collected per source. */
   collect: Partial<Record<SourceId, number>>
-  /** Size of a burst of generic 5★ reviews on Amazon, flagged as likely manipulated. */
+  /** Size of a burst of generic 5★ reviews, flagged as likely manipulated. */
   burst?: number
+  /** Where the burst lands. Defaults to Amazon. */
+  burstSource?: SourceId
 }
 
 // mulberry32: small seeded PRNG so the sample catalogue is identical on every build.
@@ -60,7 +62,8 @@ export function generateReviews(plan: ReviewPlan): Review[] {
       const sentences: string[] = []
       for (const t of tagged) {
         const translated = originals[t.aspect]?.[t.sentiment]
-        if (!original && source.kind === 'marketplace' && translated && rand() < 0.35) {
+        const writesHindi = source.kind === 'marketplace' || source.kind === 'app-store'
+        if (!original && writesHindi && translated && rand() < 0.35) {
           const o = pick(translated)
           original = { text: o.text, lang: o.lang }
           sentences.push(o.en)
@@ -91,7 +94,9 @@ export function generateReviews(plan: ReviewPlan): Review[] {
             ? pick(reviewers.reddit)
             : sourceId === 'youtube'
               ? pick(reviewers.youtube)
-              : pick(reviewers.marketplace),
+              : source.kind === 'app-store'
+                ? pick(reviewers.appStore)
+                : pick(reviewers.marketplace),
         date: new Date(end - Math.floor(rand() * 330) * DAY).toISOString(),
         body,
         original,
@@ -107,7 +112,7 @@ export function generateReviews(plan: ReviewPlan): Review[] {
   for (let i = 0; i < (plan.burst ?? 0); i++) {
     reviews.push({
       id: nextId(),
-      source: 'amazon',
+      source: plan.burstSource ?? 'amazon',
       rating: 5,
       author: pick(reviewers.marketplace),
       date: new Date(burstStart + Math.floor(rand() * 3) * DAY).toISOString(),

@@ -11,7 +11,7 @@ ReviewLens collects every review of a product from across the internet (Amazon, 
 | Area | State |
 |---|---|
 | Public site | Built. Every page type from the plan, running on **fictional sample data** (`src/data`). Fully static. |
-| Payload admin | Scaffolded (Payload 3.90, `Users` + `Media` only). ReviewLens collections not built yet. |
+| Payload admin | Running at `/admin` (Payload 3.90). Collections so far: `Users`, `Media`, `Review requests`. Catalogue collections not built yet. |
 | Database | Neon Postgres via `@payloadcms/db-postgres`. Project `spring-meadow-84090481` (Singapore). Local dev uses the `dev` branch; `production` is kept clean for migrations. |
 | Scrapers | Existing scraper code to be integrated. The Amazon scraper runs a headful browser, so it needs a long-running server, not Vercel functions. |
 | Hosting | Local for now; Vercel later. |
@@ -83,7 +83,8 @@ src/
 ├── app/
 │   ├── (frontend)/          Public site — every route is statically generated
 │   │   ├── page.tsx                 Home (night track)
-│   │   ├── category/[silo]/…        Top-level and sub-category hubs
+│   │   ├── [silo]/[sub]/            Category hubs at the root: /apps, /apps/payment-apps
+│   │   ├── categories/              All categories (target of the header's Categories menu)
 │   │   ├── reviews/[product]/       Product review — the core page
 │   │   ├── best/[slug]/             Ranked lists
 │   │   ├── compare/[slug]/          Head-to-head pairs and whole-category tables
@@ -111,16 +112,16 @@ src/
 **Numbers come from code, never from prose.** `src/lib/metrics.ts` computes everything:
 
 - **Marketplace average vs credibility-weighted rating.** The first is the platforms' own rating, weighted by their rating counts. The second is our average of collected ratings, weighted by credibility and source (brand stores are down-weighted).
-- **Aspect scores.** An aspect's score is the share of its mentions that are positive, with neutral mentions counting as half. The composite score is the category-weighted average of aspect scores.
+- **Problem rates and satisfaction.** For each aspect: how many of all reviewers report a problem with it. For the product: how positive all reviews are overall.
 - **Share of voice (SOV).** A product's share of its category's discussion. It uses each marketplace's reported rating count plus the Reddit/YouTube items we collected. **Share of positive voice** weights that by the share of reviews that are positive.
 - **Suspicious reviews.** Reviews below the credibility threshold are flagged, shown with a label, and excluded from every count.
 
-**Verdicts follow the rules in `src/lib/rules.ts`.** In order:
+**Verdicts follow the rules in `src/lib/rules.ts`.** Each aspect has a *problem rate*: the share of **all** counted reviewers who report a problem with it. It is not the share of those who mention it, because specific reviews are mostly complaints. The satisfaction score (0–10) is how positive all reviews are. In order:
 
 1. Too few reviews → Not enough data.
-2. A deal-breaker aspect is mostly negative → Skip.
-3. Composite score under 6 → Skip.
-4. Composite score of 7.5 or more with no notable con → Buy.
+2. A deal-breaker aspect with a problem rate of 20% or more → Skip.
+3. Satisfaction under 6 → Skip.
+4. Satisfaction of 7.5 or more and no aspect at 10% problem rate or more → Buy ("Use it" for apps).
 5. Anything else → Buy with caveats.
 
 Each review page shows which rule fired, under "Why this verdict".
@@ -135,7 +136,27 @@ Each review page shows which rule fired, under "Why this verdict".
 - Split sitemaps.
 - AI search crawlers deliberately allowed in robots.
 
+**Apps are a category like any other.** The `Apps` section (Food Delivery Apps, UPI & Payment Apps) uses Google Play and the App Store as sources. Categories with `appCategory` set get app wording: "Use it" instead of "Buy", "Free" and "Where to get it", store rating counts instead of a price-per-unit figure, and `SoftwareApplication` structured data instead of `Product`. Verdict rules, share of voice and the publish logic are the same as for physical products.
+
+**Search is catalogue-only.** `/search` looks through published products, brands and categories (`searchCatalogue` in `catalog.ts`) and is never indexed. Nothing is scraped when a reader searches. If their product isn't there, they can **request a review**. The server action in `src/app/(frontend)/search/actions.ts` saves it to the `review-requests` collection, merging repeat requests for the same product and counting them. The admin list (Editorial → Review requests) is sorted by demand. Public REST/GraphQL can't read or create requests.
+
 **Two canvas tracks** (DESIGN.md): the home page uses the indigo night track, and every other page uses the light track. The palette is electric aqua, indigo, deep pink, powder blush and peach fuzz, with contrast rules in DESIGN.md → Colors. After editing DESIGN.md, run `npx @google/design.md lint DESIGN.md`.
+
+## Real data pipeline (`pipeline/`)
+
+Five real products (MuscleBlaze Biozyme, Minimalist SPF 50, boAt Airdopes 141 Gen 2, Zomato, PhonePe) are collected with the existing Python scrapers and shown as **drafts**. They are not approved, are hidden from search engines, and are left out of the sitemaps.
+
+```bash
+PY=/home/omkar/Desktop/agent-reach/.venv/bin/python   # has selenium, google-play-scraper, transformers
+$PY pipeline/collect.py discover                      # find the Flipkart listings (title, price, rating)
+$PY pipeline/collect.py collect --sources flipkart,apps,reddit [--only <slug>]
+$PY pipeline/analyse.py [--only <slug>]               # → src/data/real/<slug>.json
+```
+
+- **Sources:** Flipkart (the Selenium scraper in `agent-reach`), Google Play and the App Store (`appstoreplay.py/scraper.py`), and Reddit (Reddit-wide relevance search). Up to 1,000 newest reviews per source, from the last two years.
+- **Analysis:** every review and every sentence mentioning a topic gets a sentiment label from `cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual`, run locally, which handles Hindi and Hinglish. Topics are found by keyword rules per category. For payments, orders, delivery and crashes, a negative sentence only counts as a *problem* if it describes one. Deal alerts are dropped from Reddit.
+- **Raw scrapes** stay in `pipeline/raw/` (git-ignored), with a sentiment cache, so re-analysing is fast and doesn't re-scrape.
+- **Verdicts** are never stored. `src/lib/catalog.ts` runs every draft through the same rules as every other product. The draft wording lives in `src/data/real/editorial.ts` and contains no numbers.
 
 ## Next steps
 

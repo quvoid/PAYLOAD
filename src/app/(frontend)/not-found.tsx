@@ -1,8 +1,10 @@
 import { PageShell } from '@/components/SiteChrome'
 import { Container, PillLink } from '@/components/ui'
 import { routes } from '@/lib/routes'
+import { ensureCatalog } from '@/lib/store'
 
-export default function NotFound() {
+export default async function NotFound() {
+  await ensureCatalog()
   return (
     <PageShell track="light">
       <Container className="py-24">

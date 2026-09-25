@@ -10,6 +10,7 @@ import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
 import { pageMetadata } from '@/lib/seo'
 import { verdictMeta } from '@/lib/verdict'
+import { ensureCatalog } from '@/lib/store'
 
 // Every threshold on this page is read from src/lib/rules.ts and the category data — the same
 // values the scoring code uses — so the published method can't drift from the real one.
@@ -20,7 +21,8 @@ export const metadata: Metadata = pageMetadata({
   path: routes.methodology(),
 })
 
-export default function MethodologyPage() {
+export default async function MethodologyPage() {
+  await ensureCatalog()
   const crumbs = [
     { name: 'Home', path: routes.home() },
     { name: 'How we score', path: routes.methodology() },
@@ -40,7 +42,8 @@ export default function MethodologyPage() {
         <div className="max-w-[80ch]">
           <Section id="collect" title="Where do the reviews come from?">
             <p>
-              We collect reviews for one exact product from marketplaces, the brand&apos;s own store, Reddit and YouTube.
+              We collect reviews for one exact product from marketplaces, the brand&apos;s own store, Google Play and the
+              App Store, Reddit and YouTube.
               Reviews in Hindi or Hinglish are translated for analysis and shown as written.{' '}
               <Link href={routes.sources()} className="underline decoration-pink underline-offset-4">
                 Every source we use
@@ -64,9 +67,15 @@ export default function MethodologyPage() {
 
           <Section id="aspects" title="What do we measure?">
             <p>
-              Each category has its own aspects and weights. An aspect needs at least {RULES.minMentionsPerAspect}{' '}
-              mentions to be scored. Its score out of 10 is the share of mentions that are positive, with neutral
-              mentions counted as half. The composite score is the weighted average of aspect scores.
+              Each category has its own aspects. For every aspect we count how many of <em>all</em> reviewers report a
+              problem with it — its problem rate. We divide by everyone, not only the people who mention the aspect,
+              because specific reviews are mostly complaints: satisfied reviewers tend to write &ldquo;great app&rdquo;
+              and name nothing, so judging an aspect by its mentions alone makes every popular product look bad. An
+              aspect needs at least {RULES.minMentionsPerAspect} mentions before we judge it at all.
+            </p>
+            <p className="mt-4">
+              The satisfaction score out of 10 is how positive all counted reviews are overall, with neutral reviews
+              counted as half. Aspects marked as deal-breakers below can override it.
             </p>
             <div className="mt-8 space-y-8">
               {leafCategories().map((c) => (
@@ -76,7 +85,6 @@ export default function MethodologyPage() {
                     <thead>
                       <tr className="border-b border-hairline text-eyebrow uppercase text-shade-60">
                         <th scope="col" className="py-2 font-normal">Aspect</th>
-                        <th scope="col" className="py-2 font-normal">Weight</th>
                         <th scope="col" className="py-2 font-normal">Deal-breaker</th>
                       </tr>
                     </thead>
@@ -84,7 +92,6 @@ export default function MethodologyPage() {
                       {c.aspects.map((a) => (
                         <tr key={a.aspect} className="border-b border-hairline">
                           <th scope="row" className="py-2 font-normal">{getAspect(a.aspect)!.label}</th>
-                          <td className="py-2 tabular-nums">{a.weight}</td>
                           <td className="py-2">{a.dealBreaker ? 'Yes' : '—'}</td>
                         </tr>
                       ))}
@@ -102,21 +109,25 @@ export default function MethodologyPage() {
                 We say so rather than guess.
               </li>
               <li>
-                More than {formatPct(RULES.dealBreakerNegativeShare)} of a deal-breaker aspect&apos;s mentions negative:{' '}
-                <strong>{verdictMeta.skip.label}</strong>, however good the rest is.
+                A deal-breaker aspect with a problem rate of {formatPct(RULES.dealBreakerProblemRate)} or more — one in
+                five reviewers reporting a problem: <strong>{verdictMeta.skip.label}</strong>, however good the rest is.
               </li>
               <li>
-                Composite score below {RULES.verdict.caveats}: <strong>{verdictMeta.skip.label}</strong>.
+                Satisfaction score below {RULES.verdict.caveats}: <strong>{verdictMeta.skip.label}</strong>.
               </li>
               <li>
-                Composite score of {RULES.verdict.buy} or more with no notable con: <strong>{verdictMeta.buy.label}</strong>.
+                Satisfaction score of {RULES.verdict.buy} or more with no notable con:{' '}
+                <strong>{verdictMeta.buy.label}</strong>.
               </li>
               <li>
-                Anything else: <strong>{verdictMeta['buy-with-caveats'].label}</strong>. A notable con is an aspect
-                mentioned by at least {formatPct(RULES.notableCon.mentionShare)} of reviewers with at least{' '}
-                {formatPct(RULES.notableCon.negativeShare)} of those mentions negative.
+                Anything else: <strong>{verdictMeta['buy-with-caveats'].label}</strong>. A notable con is any aspect
+                with a problem rate of {formatPct(RULES.notableConProblemRate)} or more.
               </li>
             </ol>
+            <p className="mt-4">
+              Apps get the same verdicts in app wording: &ldquo;Use it&rdquo; and &ldquo;Use it, with caveats&rdquo;
+              instead of &ldquo;Buy&rdquo;.
+            </p>
             <p className="mt-4">
               A pro or con is only published when at least {RULES.minEvidencePerClaim} real reviews back it, and each one
               links to them. Products with fewer than {RULES.confidence.medium} counted reviews are kept out of search

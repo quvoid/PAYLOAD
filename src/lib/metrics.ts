@@ -1,5 +1,4 @@
-import { products } from '@/data/products'
-import { aspects, categories, sources } from '@/data/taxonomy'
+import { aspects, categories, products, sources } from './store'
 
 import { RULES } from './rules'
 import type { Aspect, Offer, Product, Review, Sentiment, Source, SourceId, Verdict } from './types'
@@ -19,7 +18,11 @@ export interface AspectStat {
   mentionShare: number
   positiveShare: number
   negativeShare: number
-  /** 0–10, or null when there are too few mentions to score. */
+  /** Share of ALL counted reviewers who report a problem with this aspect. Drives the verdict. */
+  problemRate: number
+  /** Enough mentions to judge the aspect at all. */
+  scored: boolean
+  /** Positive share among the reviews that mention it, 0–10, or null when too few mentions. */
   score: number | null
 }
 
@@ -84,6 +87,8 @@ export const aspectStats = memo((p): AspectStat[] => {
       mentionShare: counted.length ? mentions / counted.length : 0,
       positiveShare: mentions ? positive / mentions : 0,
       negativeShare: mentions ? negative / mentions : 0,
+      problemRate: counted.length ? negative / counted.length : 0,
+      scored: mentions >= RULES.minMentionsPerAspect,
       score:
         mentions >= RULES.minMentionsPerAspect ? (10 * (positive + neutral / 2)) / mentions : null,
     }
@@ -93,11 +98,13 @@ export const aspectStats = memo((p): AspectStat[] => {
 export const aspectStat = (p: Product, slug: string) =>
   aspectStats(p).find((s) => s.aspect.slug === slug)
 
-/** Weighted average of aspect scores (0–10), using the category's aspect weights. */
+/**
+ * Satisfaction score (0–10): how positive all counted reviews are, with neutral counted as half.
+ * Problems are judged separately, per aspect, by problem rate.
+ */
 export const compositeScore = memo((p) => {
-  const scored = aspectStats(p).filter((s) => s.score !== null)
-  const weight = sum(scored.map((s) => s.weight))
-  return weight ? sum(scored.map((s) => s.score! * s.weight)) / weight : 0
+  const s = productSentiment(p)
+  return 10 * (s.positive + s.neutral / 2)
 })
 
 export type Confidence = 'high' | 'medium' | 'low'
@@ -108,18 +115,20 @@ export const confidence = (p: Product): Confidence => {
 }
 
 /** Aspects negative enough to turn Buy into Buy with caveats. */
+/** Aspects enough reviewers report problems with to turn Buy into Buy with caveats. */
 export const notableCons = (p: Product) =>
-  aspectStats(p).filter(
-    (s) =>
-      s.score !== null &&
-      s.negativeShare >= RULES.notableCon.negativeShare &&
-      s.mentionShare >= RULES.notableCon.mentionShare,
-  )
+  aspectStats(p).filter((s) => s.scored && s.problemRate >= RULES.notableConProblemRate)
 
 export const failedDealBreakers = (p: Product) =>
-  aspectStats(p).filter(
-    (s) => s.dealBreaker && s.score !== null && s.negativeShare > RULES.dealBreakerNegativeShare,
-  )
+  aspectStats(p).filter((s) => s.dealBreaker && s.scored && s.problemRate >= RULES.dealBreakerProblemRate)
+
+/** Fewer problems first; aspects too thinly discussed to judge sort last. */
+export const byFewestProblems = (aspect: string) => (a: Product, b: Product) => {
+  const x = aspectStat(a, aspect)
+  const y = aspectStat(b, aspect)
+  const rate = (s?: AspectStat) => (s && s.scored ? s.problemRate : Number.POSITIVE_INFINITY)
+  return rate(x) - rate(y)
+}
 
 /** The verdict the rules produce. The model writes prose around it; it never picks it. */
 export const ruleVerdict = (p: Product): Verdict => {
@@ -148,15 +157,32 @@ export const pickQuote = (
   claim: { aspect: string; sentiment: Sentiment },
   exclude: Set<string> = new Set(),
 ) => {
+  // Both the stars and the review's overall tone must point the same way as the claim.
   const agrees = (r: Review) =>
-    r.rating === undefined || (claim.sentiment === 'positive' ? r.rating >= 4 : r.rating <= 3)
+    (r.rating === undefined || (claim.sentiment === 'positive' ? r.rating >= 4 : r.rating <= 3)) &&
+    (r.sentiment === undefined || r.sentiment === claim.sentiment)
   const fit = (r: Review) => r.credibility - 0.2 * (r.aspects.length - 1) + (agrees(r) ? 0.5 : 0)
   const candidates = claimEvidence(p, claim).reviews.filter((r) => !exclude.has(r.id))
   return candidates.sort((a, b) => fit(b) - fit(a))[0]
 }
 
+/** The quoted review for every claim with enough evidence, never quoting one review twice. */
+export const claimQuotes = memo((p) => {
+  const used = new Set<string>()
+  const quotes = new Map<Product['claims'][number], Review>()
+  for (const claim of p.claims) {
+    const evidence = claimEvidence(p, claim)
+    if (evidence.count < RULES.minEvidencePerClaim) continue
+    const quote = pickQuote(p, claim, used) ?? evidence.reviews[0]
+    used.add(quote.id)
+    quotes.set(claim, quote)
+  }
+  return quotes
+})
+
 export const reviewSentiment = (r: Review): Sentiment => {
   if (r.rating !== undefined) return r.rating >= 4 ? 'positive' : r.rating === 3 ? 'neutral' : 'negative'
+  if (r.sentiment) return r.sentiment
   const pos = r.aspects.filter((a) => a.sentiment === 'positive').length
   const neg = r.aspects.filter((a) => a.sentiment === 'negative').length
   return pos > neg ? 'positive' : neg > pos ? 'negative' : 'neutral'
@@ -194,7 +220,9 @@ const leafProducts = (category: string) => products.filter((p) => p.category ===
 
 /** Share of voice within the product's category, and share of positive voice. */
 export const shareOfVoice = memo((p) => {
-  const peers = leafProducts(p.category)
+  // A draft being previewed isn't in the published list yet; measure it against its future peers.
+  const published = leafProducts(p.category)
+  const peers = published.some((q) => q.slug === p.slug) ? published.map((q) => (q.slug === p.slug ? p : q)) : [...published, p]
   const totalVoice = sum(peers.map(voice))
   const totalPositive = sum(peers.map(positiveVoice))
   const rows = peers
@@ -215,7 +243,7 @@ export const lowestOffer = (p: Product): Offer | undefined =>
 export const valueFor = (p: Product): number | undefined => {
   const metric = categoryOf(p).valueMetric
   const offer = lowestOffer(p)
-  if (!metric || !offer) return undefined
+  if (!metric || !offer || p.valueQuantity <= 0) return undefined
   return (offer.price / p.valueQuantity) * metric.basis
 }
 

@@ -1,16 +1,22 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Review, Sentiment } from '@/lib/types'
 
 // Filtering happens in the browser with no URL change, so review facets can never become
-// crawlable URLs (docs/PLAN.md §7). Every review is in the server HTML; filters only hide.
+// crawlable URLs (docs/PLAN.md §7). The first reviews ship in the server HTML; the rest load from
+// a static JSON file the first time a reader filters or asks for them.
 
 const INITIAL = 20
+const EXCERPT = 600
 
 interface Props {
+  /** Reviews included in the HTML. */
   reviews: Review[]
+  /** How many reviews exist in total; more than `reviews.length` means the rest are in `allUrl`. */
+  total: number
+  allUrl: string
   sources: { id: string; name: string }[]
   aspects: { slug: string; label: string }[]
   suspiciousBelow: number
@@ -55,38 +61,62 @@ function FilterGroup<T extends string>({
   )
 }
 
-export function ReviewList({ reviews, sources, aspects, suspiciousBelow }: Props) {
+export function ReviewList({ reviews, total, allUrl, sources, aspects, suspiciousBelow }: Props) {
   const [source, setSource] = useState('all')
   const [stars, setStars] = useState('all')
   const [aspect, setAspect] = useState('all')
   const [expanded, setExpanded] = useState(false)
+  const [all, setAll] = useState<Review[] | null>(total > reviews.length ? null : reviews)
+  const [loading, setLoading] = useState(false)
+  const list = all ?? reviews
 
-  // A citation link (#rv-123) must always land on its review: clear filters and expand.
+  const loadAll = useCallback(async () => {
+    if (all || loading) return all
+    setLoading(true)
+    try {
+      const data: Review[] = await (await fetch(allUrl)).json()
+      setAll(data)
+      return data
+    } finally {
+      setLoading(false)
+    }
+  }, [all, allUrl, loading])
+
+  // Filters apply to every review, so the first one used loads the rest.
+  const filterWith = (set: (v: string) => void) => (v: string) => {
+    set(v)
+    if (v !== 'all') void loadAll()
+  }
+
+  // A citation link (#rv-123) must always land on its review: clear filters, load, expand.
   useEffect(() => {
-    const reveal = () => {
+    const reveal = async () => {
       const id = window.location.hash.slice(1)
       if (!id.startsWith('rv-')) return
       setSource('all')
       setStars('all')
       setAspect('all')
       setExpanded(true)
+      if (!document.getElementById(id)) await loadAll()
       requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'center' }))
     }
-    reveal()
+    void reveal()
     window.addEventListener('hashchange', reveal)
     return () => window.removeEventListener('hashchange', reveal)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once; loadAll is stable enough for a hash jump
   }, [])
 
   const filtered = useMemo(
     () =>
-      reviews.filter(
+      list.filter(
         (r) =>
           (source === 'all' || r.source === source) &&
           (stars === 'all' || r.rating === Number(stars)) &&
           (aspect === 'all' || r.aspects.some((a) => a.aspect === aspect)),
       ),
-    [reviews, source, stars, aspect],
+    [list, source, stars, aspect],
   )
+  const shown = all ? filtered.length : total
 
   const sourceName = (id: string) => sources.find((s) => s.id === id)?.name ?? id
   const aspectLabel = (slug: string) => aspects.find((a) => a.slug === slug)?.label ?? slug
@@ -97,26 +127,29 @@ export function ReviewList({ reviews, sources, aspects, suspiciousBelow }: Props
         <FilterGroup
           label="Source"
           value={source}
-          onChange={setSource}
+          onChange={filterWith(setSource)}
           options={[{ value: 'all', label: 'All' }, ...sources.map((s) => ({ value: s.id, label: s.name }))]}
         />
         <FilterGroup
           label="Stars"
           value={stars}
-          onChange={setStars}
+          onChange={filterWith(setStars)}
           options={[{ value: 'all', label: 'All' }, ...['5', '4', '3', '2', '1'].map((s) => ({ value: s, label: `${s}★` }))]}
         />
         <FilterGroup
           label="Mentions"
           value={aspect}
-          onChange={setAspect}
+          onChange={filterWith(setAspect)}
           options={[{ value: 'all', label: 'All' }, ...aspects.map((a) => ({ value: a.slug, label: a.label }))]}
         />
       </div>
 
       <p className="mt-6 text-caption text-shade-60" aria-live="polite">
-        Showing {Math.min(filtered.length, expanded ? filtered.length : INITIAL)} of {filtered.length} reviews
-        {filtered.length !== reviews.length && ` (filtered from ${reviews.length})`}
+        {loading
+          ? 'Loading every review…'
+          : `Showing ${Math.min(filtered.length, expanded ? filtered.length : INITIAL)} of ${shown} reviews${
+              all && filtered.length !== all.length ? ` (filtered from ${all.length})` : ''
+            }`}
       </p>
 
       <ol className="mt-4 divide-y divide-hairline border-y border-hairline">
@@ -151,8 +184,18 @@ export function ReviewList({ reviews, sources, aspects, suspiciousBelow }: Props
                 )}
                 <p className={`mt-2 ${r.original ? 'text-caption text-shade-60' : ''}`}>
                   {r.original && <span className="text-micro uppercase">Translated · </span>}
-                  {r.body}
+                  {r.body.length > EXCERPT ? `${r.body.slice(0, EXCERPT).trimEnd()}…` : r.body}
                 </p>
+                {r.url && (
+                  <a
+                    href={r.url}
+                    target="_blank"
+                    rel="nofollow noopener noreferrer"
+                    className="mt-2 inline-block text-micro text-shade-60 underline underline-offset-4 hover:text-ink"
+                  >
+                    {r.body.length > EXCERPT ? 'Read the full review' : 'View original'} on {sourceName(r.source)} ↗
+                  </a>
+                )}
                 {flagged && (
                   <p className="mt-2 inline-flex rounded-pill bg-blush px-3 py-1 text-micro">
                     Flagged: part of a burst of generic 5★ reviews — excluded from our counts
@@ -173,15 +216,19 @@ export function ReviewList({ reviews, sources, aspects, suspiciousBelow }: Props
         })}
       </ol>
 
-      {!expanded && filtered.length > INITIAL && (
+      {(!expanded && filtered.length > INITIAL) || (!all && total > reviews.length) ? (
         <button
           type="button"
-          onClick={() => setExpanded(true)}
-          className="mt-6 min-h-11 rounded-pill border border-indigo px-6 text-ink hover:bg-cream"
+          onClick={() => {
+            setExpanded(true)
+            void loadAll()
+          }}
+          disabled={loading}
+          className="mt-6 min-h-11 rounded-pill border border-indigo px-6 text-ink hover:bg-cream disabled:opacity-60"
         >
-          Show all {filtered.length} reviews
+          {loading ? 'Loading…' : `Show all ${all ? filtered.length : total} reviews`}
         </button>
-      )}
+      ) : null}
     </div>
   )
 }

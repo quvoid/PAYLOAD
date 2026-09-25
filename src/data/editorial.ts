@@ -54,6 +54,39 @@ export const bestOf: BestOf[] = [
       },
     ],
   },
+  {
+    slug: 'upi-app-for-reliable-payments',
+    title: 'Best UPI app for reliable payments',
+    category: 'payment-apps',
+    qualifier: 'for reliable payments',
+    intro: [
+      'Ranked by payment-success score: the share of reviewers mentioning payments who say they go through. For a payment app nothing else matters as much — a pleasant app that loses track of your money is not a good app.',
+      'Apps marked Skip are left out entirely, however many cashback offers they run.',
+    ],
+    rule: { aspect: 'payment-success' },
+    faq: [
+      {
+        q: 'Which UPI app has the fewest failed payments?',
+        a: 'The app at the top of this list has the highest payment-success score in our data: the largest share of reviewers who mention payments and report no failures. Most failed UPI payments reviewers describe are reversed by the bank automatically, but the best apps make that easy to track.',
+      },
+    ],
+  },
+  {
+    slug: 'food-delivery-app-with-best-refunds',
+    title: 'Best food delivery app for refunds and support',
+    category: 'food-delivery-apps',
+    qualifier: 'for refunds and support',
+    intro: [
+      'Ranked by refunds & support score: the share of reviewers mentioning support who say a problem was put right. Every delivery app gets orders wrong sometimes; what separates them is what happens next.',
+    ],
+    rule: { aspect: 'refunds-support' },
+    faq: [
+      {
+        q: 'Which food delivery app gives refunds most easily?',
+        a: 'The app at the top of this list has the highest refunds & support score in our data. Reviewers of the top-ranked apps describe refunds for missing items within minutes, while lower-ranked apps are more often accused of closing complaints without a fix.',
+      },
+    ],
+  },
 ]
 
 export const comparisons: PairComparison[] = [
@@ -66,8 +99,10 @@ export const comparisons: PairComparison[] = [
       'If whey has never bothered your stomach, Brawnly Performance is the better buy. If it has, the premium is worth paying.',
     ],
     pickIf: {
-      'brawnly-performance-whey': 'Pick Brawnly Performance if you want the most protein per rupee and whey usually agrees with you.',
-      'northpeak-gold-whey': 'Pick Northpeak Gold if you have a sensitive stomach or want a shake that mixes instantly.',
+      'brawnly-performance-whey':
+        'Pick Brawnly Performance if you want the most protein per rupee and whey usually agrees with you.',
+      'northpeak-gold-whey':
+        'Pick Northpeak Gold if you have a sensitive stomach or want a shake that mixes instantly.',
     },
   },
   {
@@ -78,8 +113,10 @@ export const comparisons: PairComparison[] = [
       'Both digest easily, which is the reason most people buy a plant protein. The difference is taste: Brawnly Plant Protein is one of the few plant powders reviewers enjoy with water, while Verdant is gritty unless blended.',
     ],
     pickIf: {
-      'brawnly-plant-protein': 'Pick Brawnly Plant if you drink your shake with water or care about taste.',
-      'verdant-plant-protein': 'Pick Verdant if you blend smoothies anyway and want a bigger tub for the money.',
+      'brawnly-plant-protein':
+        'Pick Brawnly Plant if you drink your shake with water or care about taste.',
+      'verdant-plant-protein':
+        'Pick Verdant if you blend smoothies anyway and want a bigger tub for the money.',
     },
   },
   {
@@ -90,13 +127,46 @@ export const comparisons: PairComparison[] = [
       'Two strong SPF 50 sunscreens that suit different skin. SunVeil Aqua Gel disappears into every skin tone; Dermora Matte controls oil better but leaves a cast on medium and deeper skin.',
     ],
     pickIf: {
-      'sunveil-aqua-gel-spf50': 'Pick SunVeil Aqua Gel if white cast is a concern or you prefer a light, dewy finish.',
-      'dermora-matte-spf50': 'Pick Dermora Matte if you have fair, oily skin and want a matte finish.',
+      'sunveil-aqua-gel-spf50':
+        'Pick SunVeil Aqua Gel if white cast is a concern or you prefer a light, dewy finish.',
+      'dermora-matte-spf50':
+        'Pick Dermora Matte if you have fair, oily skin and want a matte finish.',
+    },
+  },
+  {
+    slug: 'paynest-upi-vs-rupeeflow',
+    category: 'payment-apps',
+    products: ['paynest-upi', 'rupeeflow'],
+    judgement: [
+      'Both apps get payments through reliably, so this comes down to everything else. PayNest is simpler and quieter; Rupeeflow has stronger bill-payment features but surrounds them with ads and loan offers.',
+    ],
+    pickIf: {
+      'paynest-upi':
+        'Pick PayNest if you want the simplest app with the fewest interruptions — or you are setting up UPI for a parent.',
+      rupeeflow:
+        'Pick Rupeeflow if bill payments and reminders matter more to you than a quiet app.',
     },
   },
 ]
 
 export const topics: Topic[] = [
+  {
+    slug: 'upi-payment-failures',
+    aspect: 'payment-success',
+    silo: 'apps',
+    title: 'Why do UPI payments fail, and which apps fail least?',
+    explainer: [
+      'A failed UPI payment is usually not the app’s fault alone: the payer’s bank, the receiver’s bank and the UPI network all have to respond in time. But apps differ in how often reviewers hit failures, and in how clearly they show what happened to the money.',
+      'We count every review that mentions whether payments go through. The ranking below shows which apps reviewers trust with their money.',
+      'If money is debited and the payment fails, the bank is required to reverse it automatically, normally by the next working day. Raise it in the app first, then with your bank if it does not arrive.',
+    ],
+    faq: [
+      {
+        q: 'Why does a UPI payment fail when money is debited?',
+        a: 'Usually because one of the banks involved timed out after the debit but before the credit was confirmed. The transaction is then reversed rather than completed. It is common during bank downtime and at busy times such as salary days and sales.',
+      },
+    ],
+  },
   {
     slug: 'protein-powder-bloating',
     aspect: 'digestion',

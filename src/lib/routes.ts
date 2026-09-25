@@ -4,8 +4,9 @@ import type { Category } from './types'
 
 export const routes = {
   home: () => '/',
-  category: (c: Pick<Category, 'slug' | 'parent'>) =>
-    c.parent ? `/category/${c.parent}/${c.slug}` : `/category/${c.slug}`,
+  // Categories live at the root: /apps, /apps/payment-apps. See RESERVED_SEGMENTS.
+  category: (c: Pick<Category, 'slug' | 'parent'>) => (c.parent ? `/${c.parent}/${c.slug}` : `/${c.slug}`),
+  categories: () => '/categories',
   product: (slug: string) => `/reviews/${slug}`,
   bestIndex: () => '/best',
   best: (slug: string) => `/best/${slug}`,
@@ -16,6 +17,33 @@ export const routes = {
   author: (slug: string) => `/authors/${slug}`,
   methodology: () => '/methodology',
   sources: () => '/sources',
+  search: () => '/search',
 }
 
 export const reviewAnchor = (id: string) => `rv-${id}`
+
+/**
+ * First URL segments already taken by other pages. A top-level category slug must never be one
+ * of these, or its page would be shadowed — checked when the catalogue loads (catalog.ts).
+ */
+export const RESERVED_SEGMENTS = new Set([
+  'reviews',
+  'best',
+  'compare',
+  'brands',
+  'topics',
+  'authors',
+  'methodology',
+  'sources',
+  'search',
+  'categories',
+  'preview',
+  'exit-preview',
+  'admin',
+  'api',
+  'my-route',
+  'sitemap',
+  'robots.txt',
+  'icon',
+  '_next',
+])

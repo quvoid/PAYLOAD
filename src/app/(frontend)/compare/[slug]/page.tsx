@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -11,7 +12,9 @@ import {
   allComparisons,
   categoryComparisons,
   getCategory,
+  getAnyProduct,
   getComparison,
+  getComparisonForPreview,
   getProduct,
   productsIn,
 } from '@/lib/catalog'
@@ -19,20 +22,20 @@ import { shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, graph, itemListLd, pageMetadata, productReviewLd } from '@/lib/seo'
 import type { Category, PairComparison } from '@/lib/types'
+import { ensureCatalog } from '@/lib/store'
 
 // Two kinds of comparison share /compare/[slug]: editor-chosen head-to-head pairs, and a
 // whole-category table generated once a category has enough products.
 
 type Params = Promise<{ slug: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return [...allComparisons().map((c) => c.slug), ...categoryComparisons().map((c) => c.slug)].map((slug) => ({ slug }))
 }
 
-const resolve = (slug: string) => {
-  const pair = getComparison(slug)
+const resolve = (slug: string, previewing = false) => {
+  const pair = previewing ? getComparisonForPreview(slug) : getComparison(slug)
   if (pair) return { kind: 'pair' as const, pair }
   const category = categoryComparisons().find((c) => c.slug === slug)
   if (category) return { kind: 'category' as const, category }
@@ -40,6 +43,7 @@ const resolve = (slug: string) => {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const found = resolve((await params).slug)
   if (!found) return {}
   if (found.kind === 'pair') {
@@ -51,15 +55,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     })
   }
   return pageMetadata({
-    title: `Every ${found.category.name.toLowerCase()} compared: scores, sentiment, share of voice`,
-    description: `All ${found.category.name.toLowerCase()} products we track, side by side on the same measures.`,
+    title: `${found.category.name} compared: scores, sentiment and share of voice`,
+    description: `Every product we track in ${found.category.name}, side by side on the same measures.`,
     path: routes.compare(found.category.slug),
   })
 }
 
 function PairPage({ pair }: { pair: PairComparison }) {
   const category = getCategory(pair.category)!
-  const products = pair.products.map((s) => getProduct(s)!)
+  const products = pair.products.map((s) => getAnyProduct(s)!)
   const title = products.map((p) => p.shortName).join(' vs ')
   const crumbs = [...categoryCrumbs(category.slug), { name: title, path: routes.compare(pair.slug) }]
   return (
@@ -112,7 +116,7 @@ function PairPage({ pair }: { pair: PairComparison }) {
 
 function CategoryComparePage({ category }: { category: Category }) {
   const products = productsIn(category.slug)
-  const title = `Every ${category.name.toLowerCase()} compared`
+  const title = `${category.name} compared`
   const crumbs = [...categoryCrumbs(category.slug), { name: 'Compared', path: routes.compare(category.slug) }]
   return (
     <>
@@ -122,8 +126,8 @@ function CategoryComparePage({ category }: { category: Category }) {
           <p className="text-eyebrow uppercase text-shade-60">Category comparison</p>
           <h1 className="mt-3 font-display text-display-sm md:text-display-lg">{title}</h1>
           <p className="mt-6 max-w-[62ch] text-body-lg">
-            All {products.length} {category.name.toLowerCase()} products we track, side by side: scores, sentiment
-            and share of voice, all computed from reviews on the same measures.
+            All {products.length} products we track in {category.name}, side by side: scores, sentiment and share
+            of voice, all computed from reviews on the same measures.
           </p>
         </header>
 
@@ -156,7 +160,9 @@ function CategoryComparePage({ category }: { category: Category }) {
 }
 
 export default async function ComparePage({ params }: { params: Params }) {
-  const found = resolve((await params).slug)
+  await ensureCatalog()
+  const { isEnabled: previewing } = await draftMode()
+  const found = resolve((await params).slug, previewing)
   if (!found) notFound()
   return (
     <PageShell track="light">

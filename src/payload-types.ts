@@ -67,6 +67,16 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    products: Product;
+    categories: Category;
+    brands: Brand;
+    'best-lists': BestList;
+    comparisons: Comparison;
+    guides: Guide;
+    'review-requests': ReviewRequest;
+    aspects: Aspect;
+    sources: Source;
+    reviews: Review;
     users: User;
     media: Media;
     'payload-kv': PayloadKv;
@@ -74,8 +84,25 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    categories: {
+      products: 'products';
+    };
+    brands: {
+      products: 'products';
+    };
+  };
   collectionsSelect: {
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
+    'best-lists': BestListsSelect<false> | BestListsSelect<true>;
+    comparisons: ComparisonsSelect<false> | ComparisonsSelect<true>;
+    guides: GuidesSelect<false> | GuidesSelect<true>;
+    'review-requests': ReviewRequestsSelect<false> | ReviewRequestsSelect<true>;
+    aspects: AspectsSelect<false> | AspectsSelect<true>;
+    sources: SourcesSelect<false> | SourcesSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -87,8 +114,16 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+    'scoring-rules': ScoringRule;
+    'catalog-state': CatalogState;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'scoring-rules': ScoringRulesSelect<false> | ScoringRulesSelect<true>;
+    'catalog-state': CatalogStateSelect<false> | CatalogStateSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -118,11 +153,342 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Every product we review. Draft products are hidden from the site: read the draft with Preview, then press Publish to approve it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  /**
+   * Used in tables and comparisons, e.g. "Airdopes 141 Gen 2".
+   */
+  shortName: string;
+  brand: number | Brand;
+  category: number | Category;
+  variant?: string | null;
+  /**
+   * Sample products are made up for development and labelled "Sample" on the site.
+   */
+  sample?: boolean | null;
+  /**
+   * The first thing readers see: the verdict in one or two sentences, up to 320 characters. No statistics.
+   */
+  answer: string;
+  /**
+   * Two short paragraphs. Leave a blank line between them.
+   */
+  verdictBody?: string | null;
+  /**
+   * Each one needs at least two reviews behind it — ones without enough evidence are hidden automatically. The page adds the percentage and a quote.
+   */
+  claims?:
+    | {
+        sentiment: 'positive' | 'negative';
+        aspect: number | Aspect;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Shown on the page and marked up for search engines. Phrase questions the way people ask them.
+   */
+  faq?:
+    | {
+        q: string;
+        /**
+         * About 40–60 words. No statistics — the page shows every figure next to the text.
+         */
+        a: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * One row per store. Use 0 for free apps.
+   */
+  offers?:
+    | {
+        source: number | Source;
+        price: number;
+        mrp?: number | null;
+        inStock?: boolean | null;
+        url?: string | null;
+        checkedAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Only if the category shows a price per unit: e.g. grams of protein in the pack. Leave 0 if unknown.
+   */
+  valueQuantity?: number | null;
+  specs?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  flipkartUrl?: string | null;
+  playStoreId?: string | null;
+  appStoreId?: string | null;
+  /**
+   * Comma-separated, e.g. "Airdopes 141, boAt Airdopes".
+   */
+  redditPhrases?: string | null;
+  /**
+   * Each store’s own rating and rating count, as the store reports them.
+   */
+  platformStats?:
+    | {
+        source: number | Source;
+        rating: number;
+        total: number;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Shown on the page as "Updated". Moves only when new reviews are collected.
+   */
+  dataUpdatedAt?: string | null;
+  /**
+   * The page lives at /reviews/<this>. Filled in from the name; don’t change it after publishing.
+   */
+  slug: string;
+  /**
+   * Set automatically to whoever publishes.
+   */
+  author?: (number | null) | User;
+  approvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Every brand gets its own page listing its products.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  name: string;
+  /**
+   * A short, factual description. Leave a blank line between paragraphs.
+   */
+  about?: string | null;
+  website?: string | null;
+  /**
+   * e.g. the brand’s Wikipedia or Wikidata page. Helps search engines identify the brand.
+   */
+  sameAs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  logo?: (number | null) | Media;
+  /**
+   * Filled in automatically from the name. Changing it after publishing breaks existing links.
+   */
+  slug: string;
+  products?: {
+    docs?: (number | Product)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Product photos, brand logos and team photos.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * What the image shows, for screen readers and search engines.
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * Sections (like "Apps") and the categories inside them (like "UPI & Payment Apps"). Every product belongs to one category.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  /**
+   * Leave empty to make this a top-level section (shown in the menu). Pick a section to make this a category inside it.
+   */
+  parent?: (number | null) | Category;
+  /**
+   * One sentence under the title, e.g. "Every whey protein we track, scored on the same measures."
+   */
+  tagline: string;
+  /**
+   * Two or three short paragraphs on what matters when buying in this category. Leave a blank line between paragraphs.
+   */
+  intro?: string | null;
+  measures?:
+    | {
+        aspect: number | Aspect;
+        /**
+         * If too many reviewers report a problem with this, the product is marked Skip however good the rest is.
+         */
+        dealBreaker?: boolean | null;
+        /**
+         * Leave at 1 unless you have a reason. Kept for future scoring.
+         */
+        weight?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Optional. Lets product cards show a comparable price, e.g. "per 100 g protein". Each product then needs its unit count.
+   */
+  valueMetric?: {
+    label?: string | null;
+    basis?: number | null;
+  };
+  /**
+   * Apps are free, so pages say "Use it" instead of "Buy" and show store ratings.
+   */
+  isApp?: boolean | null;
+  appCategory?:
+    | (
+        | 'FinanceApplication'
+        | 'ShoppingApplication'
+        | 'LifestyleApplication'
+        | 'TravelApplication'
+        | 'HealthApplication'
+        | 'EntertainmentApplication'
+        | 'UtilitiesApplication'
+      )
+    | null;
+  /**
+   * Shown on the page and marked up for search engines. Phrase questions the way people ask them.
+   */
+  faq?:
+    | {
+        q: string;
+        /**
+         * About 40–60 words. No statistics — the page shows every figure next to the text.
+         */
+        a: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Filled in automatically from the name. Changing it after publishing breaks existing links.
+   */
+  slug: string;
+  /**
+   * How often reviews for products in this category are re-collected.
+   */
+  refreshDays?: number | null;
+  /**
+   * Products in this category.
+   */
+  products?: {
+    docs?: (number | Product)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * The things products are judged on, like taste or payment success. Categories choose which measures apply to them.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aspects".
+ */
+export interface Aspect {
+  id: number;
+  label: string;
+  /**
+   * How a shopper would ask about it.
+   */
+  question: string;
+  /**
+   * Internal key the review analysis uses. Filled in from the name; don’t change it once reviews have been analysed.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Where reviews come from. Listed publicly on the "Where our reviews come from" page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sources".
+ */
+export interface Source {
+  id: number;
+  name: string;
+  kind: 'marketplace' | 'brand-store' | 'app-store' | 'community' | 'video';
+  /**
+   * How much its star ratings count in our weighted average. Brand-owned stores are down-weighted (0.6).
+   */
+  weight: number;
+  /**
+   * Off for Reddit and YouTube, where people write without a star rating.
+   */
+  hasRatings?: boolean | null;
+  collection: string;
+  /**
+   * Internal key used by the review pipeline, e.g. play-store.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Everyone who can log in. Editors approve verdicts, and their name and bio appear on every page they publish.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
+  /**
+   * Shown on every verdict you approve, e.g. "Approved by Omkar".
+   */
+  name?: string | null;
+  /**
+   * Address of your public profile page, /authors/…
+   */
+  slug?: string | null;
+  /**
+   * Editors write and publish. Admins can also manage the team and the scoring rules.
+   */
+  role?: ('admin' | 'editor') | null;
+  jobTitle?: string | null;
+  /**
+   * A few sentences for your public profile page.
+   */
+  bio?: string | null;
+  /**
+   * Optional, e.g. "Certified nutritionist".
+   */
+  credentials?: string | null;
+  photo?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -144,23 +510,216 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Pages like "Best whey protein under ₹2,500". You choose the rule; the ranking updates itself as reviews and prices change. Products marked Skip are never ranked.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "best-lists".
  */
-export interface Media {
+export interface BestList {
   id: number;
-  alt: string;
+  title: string;
+  /**
+   * Pick a section to rank products from all its categories together.
+   */
+  category: number | Category;
+  /**
+   * What makes this list different from the category page, e.g. "under ₹2,500" or "without bloating". Lists without one compete with their own category in search.
+   */
+  qualifier: string;
+  /**
+   * Why these products, and how they are ranked.
+   */
+  intro?: string | null;
+  rankBy: 'satisfaction' | 'fewest-problems';
+  aspect?: (number | null) | Aspect;
+  /**
+   * Optional.
+   */
+  maxPrice?: number | null;
+  /**
+   * Shown on the page and marked up for search engines. Phrase questions the way people ask them.
+   */
+  faq?:
+    | {
+        q: string;
+        /**
+         * About 40–60 words. No statistics — the page shows every figure next to the text.
+         */
+        a: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The page lives at /best/<this>.
+   */
+  slug: string;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Two products side by side. Pick two from the same category; the table fills itself in. Whole-category tables are made automatically.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comparisons".
+ */
+export interface Comparison {
+  id: number;
+  /**
+   * Exactly two products from the same category.
+   */
+  products: (number | Product)[];
+  /**
+   * Which suits whom, in a paragraph or two. Leave a blank line between paragraphs.
+   */
+  judgement: string;
+  pickIf?:
+    | {
+        product: number | Product;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Taken from the products.
+   */
+  category?: (number | null) | Category;
+  /**
+   * Made from the two products: /compare/<this>.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Explainers about one measure across a whole section, e.g. "Does protein powder cause bloating?". The ranking of products fills itself in.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guides".
+ */
+export interface Guide {
+  id: number;
+  /**
+   * Phrase it as the question people search for.
+   */
+  title: string;
+  aspect: number | Aspect;
+  section: number | Category;
+  /**
+   * A few paragraphs explaining the issue. Leave a blank line between paragraphs.
+   */
+  explainer: string;
+  /**
+   * Shown on the page and marked up for search engines. Phrase questions the way people ask them.
+   */
+  faq?:
+    | {
+        q: string;
+        /**
+         * About 40–60 words. No statistics — the page shows every figure next to the text.
+         */
+        a: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The page lives at /topics/<this>.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Products readers asked us to review. Most-requested first.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "review-requests".
+ */
+export interface ReviewRequest {
+  id: number;
+  /**
+   * What the reader typed.
+   */
+  query: string;
+  /**
+   * Optional link the reader gave (Amazon, Flipkart, Google Play, App Store).
+   */
+  productUrl?: string | null;
+  /**
+   * Readers who asked to be emailed once, when the review goes live.
+   */
+  subscribers?:
+    | {
+        email: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Once the product is in the catalogue, link it here and set the status to "Added to catalogue".
+   */
+  product?: (number | null) | Product;
+  /**
+   * Internal notes. Never shown on the site.
+   */
+  notes?: string | null;
+  status: 'new' | 'queued' | 'added' | 'declined';
+  requestCount: number;
+  lastRequestedAt?: string | null;
+  /**
+   * Used to merge repeat requests.
+   */
+  normalizedQuery: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Every collected review. They come in automatically and can’t be edited — but you can hide one (spam, abuse, wrong product) and it disappears from the site and the numbers.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  /**
+   * Hidden reviews are left out of every page and every number.
+   */
+  hidden?: boolean | null;
+  product: number | Product;
+  body: string;
+  source: string;
+  rating?: number | null;
+  sentiment?: ('positive' | 'neutral' | 'negative') | null;
+  author?: string | null;
+  date?: string | null;
+  verified?: boolean | null;
+  /**
+   * 0–1. Below 0.3 counts as likely manipulated.
+   */
+  credibility?: number | null;
   url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+  aspects?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  original?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  externalId?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -186,6 +745,46 @@ export interface PayloadKv {
 export interface PayloadLockedDocument {
   id: number;
   document?:
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'brands';
+        value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'best-lists';
+        value: number | BestList;
+      } | null)
+    | ({
+        relationTo: 'comparisons';
+        value: number | Comparison;
+      } | null)
+    | ({
+        relationTo: 'guides';
+        value: number | Guide;
+      } | null)
+    | ({
+        relationTo: 'review-requests';
+        value: number | ReviewRequest;
+      } | null)
+    | ({
+        relationTo: 'aspects';
+        value: number | Aspect;
+      } | null)
+    | ({
+        relationTo: 'sources';
+        value: number | Source;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: number | Review;
+      } | null)
     | ({
         relationTo: 'users';
         value: number | User;
@@ -238,9 +837,275 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  shortName?: T;
+  brand?: T;
+  category?: T;
+  variant?: T;
+  sample?: T;
+  answer?: T;
+  verdictBody?: T;
+  claims?:
+    | T
+    | {
+        sentiment?: T;
+        aspect?: T;
+        text?: T;
+        id?: T;
+      };
+  faq?:
+    | T
+    | {
+        q?: T;
+        a?: T;
+        id?: T;
+      };
+  offers?:
+    | T
+    | {
+        source?: T;
+        price?: T;
+        mrp?: T;
+        inStock?: T;
+        url?: T;
+        checkedAt?: T;
+        id?: T;
+      };
+  valueQuantity?: T;
+  specs?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        id?: T;
+      };
+  flipkartUrl?: T;
+  playStoreId?: T;
+  appStoreId?: T;
+  redditPhrases?: T;
+  platformStats?:
+    | T
+    | {
+        source?: T;
+        rating?: T;
+        total?: T;
+        id?: T;
+      };
+  dataUpdatedAt?: T;
+  slug?: T;
+  author?: T;
+  approvedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  parent?: T;
+  tagline?: T;
+  intro?: T;
+  measures?:
+    | T
+    | {
+        aspect?: T;
+        dealBreaker?: T;
+        weight?: T;
+        id?: T;
+      };
+  valueMetric?:
+    | T
+    | {
+        label?: T;
+        basis?: T;
+      };
+  isApp?: T;
+  appCategory?: T;
+  faq?:
+    | T
+    | {
+        q?: T;
+        a?: T;
+        id?: T;
+      };
+  slug?: T;
+  refreshDays?: T;
+  products?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  name?: T;
+  about?: T;
+  website?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  logo?: T;
+  slug?: T;
+  products?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "best-lists_select".
+ */
+export interface BestListsSelect<T extends boolean = true> {
+  title?: T;
+  category?: T;
+  qualifier?: T;
+  intro?: T;
+  rankBy?: T;
+  aspect?: T;
+  maxPrice?: T;
+  faq?:
+    | T
+    | {
+        q?: T;
+        a?: T;
+        id?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comparisons_select".
+ */
+export interface ComparisonsSelect<T extends boolean = true> {
+  products?: T;
+  judgement?: T;
+  pickIf?:
+    | T
+    | {
+        product?: T;
+        text?: T;
+        id?: T;
+      };
+  category?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "guides_select".
+ */
+export interface GuidesSelect<T extends boolean = true> {
+  title?: T;
+  aspect?: T;
+  section?: T;
+  explainer?: T;
+  faq?:
+    | T
+    | {
+        q?: T;
+        a?: T;
+        id?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "review-requests_select".
+ */
+export interface ReviewRequestsSelect<T extends boolean = true> {
+  query?: T;
+  productUrl?: T;
+  subscribers?:
+    | T
+    | {
+        email?: T;
+        id?: T;
+      };
+  product?: T;
+  notes?: T;
+  status?: T;
+  requestCount?: T;
+  lastRequestedAt?: T;
+  normalizedQuery?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aspects_select".
+ */
+export interface AspectsSelect<T extends boolean = true> {
+  label?: T;
+  question?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sources_select".
+ */
+export interface SourcesSelect<T extends boolean = true> {
+  name?: T;
+  kind?: T;
+  weight?: T;
+  hasRatings?: T;
+  collection?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  hidden?: T;
+  product?: T;
+  body?: T;
+  source?: T;
+  rating?: T;
+  sentiment?: T;
+  author?: T;
+  date?: T;
+  verified?: T;
+  credibility?: T;
+  url?: T;
+  aspects?: T;
+  original?: T;
+  externalId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  role?: T;
+  jobTitle?: T;
+  bio?: T;
+  credentials?: T;
+  photo?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -316,6 +1181,114 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Homepage wording and the banner at the top of every page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  showBanner?: boolean | null;
+  bannerText?: string | null;
+  heroEyebrow?: string | null;
+  heroTitle?: string | null;
+  heroText?: string | null;
+  steps?:
+    | {
+        title: string;
+        body: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * The thresholds every verdict is decided by. The "How we score" page shows these exact values. Admins only — changing one changes verdicts across the whole site.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scoring-rules".
+ */
+export interface ScoringRule {
+  id: number;
+  buyScore: number;
+  caveatsScore: number;
+  /**
+   * 0.2 = one in five reviewers report a problem.
+   */
+  dealBreakerProblemRate: number;
+  notableConProblemRate: number;
+  minReviewsHigh: number;
+  /**
+   * Below this the verdict is "Not enough data".
+   */
+  minReviewsMedium: number;
+  minMentionsPerAspect: number;
+  minEvidencePerClaim: number;
+  suspiciousBelow: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "catalog-state".
+ */
+export interface CatalogState {
+  id: number;
+  version?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  showBanner?: T;
+  bannerText?: T;
+  heroEyebrow?: T;
+  heroTitle?: T;
+  heroText?: T;
+  steps?:
+    | T
+    | {
+        title?: T;
+        body?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scoring-rules_select".
+ */
+export interface ScoringRulesSelect<T extends boolean = true> {
+  buyScore?: T;
+  caveatsScore?: T;
+  dealBreakerProblemRate?: T;
+  notableConProblemRate?: T;
+  minReviewsHigh?: T;
+  minReviewsMedium?: T;
+  minMentionsPerAspect?: T;
+  minEvidencePerClaim?: T;
+  suspiciousBelow?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "catalog-state_select".
+ */
+export interface CatalogStateSelect<T extends boolean = true> {
+  version?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

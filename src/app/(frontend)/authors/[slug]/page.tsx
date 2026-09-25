@@ -8,22 +8,24 @@ import { Container, Prose, Section } from '@/components/ui'
 import { allAuthors, getAuthor, productsByAuthor } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { absoluteUrl, breadcrumbLd, graph, pageMetadata, SITE } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return allAuthors().map((a) => ({ slug: a.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const author = getAuthor((await params).slug)
   if (!author) return {}
   return pageMetadata({ title: `${author.name}, ${author.role}`, description: author.bio[0].slice(0, 155), path: routes.author(author.slug) })
 }
 
 export default async function AuthorPage({ params }: { params: Params }) {
+  await ensureCatalog()
   const author = getAuthor((await params).slug)
   if (!author) notFound()
   const products = productsByAuthor(author.slug)
@@ -39,7 +41,7 @@ export default async function AuthorPage({ params }: { params: Params }) {
           <p className="text-eyebrow uppercase text-shade-60">{author.role}</p>
           <h1 className="mt-3 font-display text-display-sm md:text-display-lg">{author.name}</h1>
           <Prose paragraphs={author.bio} className="mt-6" />
-          <p className="mt-4 text-caption text-shade-60">{author.credentials}</p>
+          {author.credentials && <p className="mt-4 text-caption text-shade-60">{author.credentials}</p>}
         </header>
         <Section id="verdicts" title={`Which verdicts has ${author.name.split(' ')[0]} approved?`}>
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

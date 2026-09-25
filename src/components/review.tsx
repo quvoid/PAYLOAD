@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import React from 'react'
 
-import { getBrand, getCategory } from '@/lib/catalog'
-import { formatINR, formatPct, formatRating, formatScore } from '@/lib/format'
+import { getBrand, getCategory, isApp } from '@/lib/catalog'
+import { formatCompact, formatCount, formatINR, formatPct, formatRate, formatRating, formatScore } from '@/lib/format'
 import {
   compositeScore,
   marketplaceAverage,
@@ -13,9 +13,10 @@ import {
   type SentimentSplit,
 } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
+import { RULES } from '@/lib/rules'
 import type { Crumb } from '@/lib/seo'
 import type { FAQ, Product, Track, Verdict } from '@/lib/types'
-import { verdictMeta } from '@/lib/verdict'
+import { verdictLabel, verdictMeta } from '@/lib/verdict'
 
 // Verdict chips: indigo text on light fills (≥7:1), coloured text on night (≥6:1). Never colour
 // alone — every verdict carries a glyph and a label.
@@ -36,10 +37,13 @@ export function VerdictBadge({
   verdict,
   track = 'light',
   size = 'sm',
+  app = false,
 }: {
   verdict: Verdict
   track?: Track
   size?: 'sm' | 'lg'
+  /** Apps get "Use it" wording instead of "Buy". */
+  app?: boolean
 }) {
   const meta = verdictMeta[verdict]
   const tone = track === 'night' ? `border ${verdictNight[verdict]}` : verdictLight[verdict]
@@ -49,7 +53,7 @@ export function VerdictBadge({
       <span aria-hidden className="font-mono">
         {meta.glyph}
       </span>
-      {meta.label}
+      {verdictLabel(verdict, app)}
     </span>
   )
 }
@@ -100,8 +104,9 @@ export function ProductMark({
 }) {
   const brand = getBrand(product.brand)!
   const silo = getCategory(getCategory(product.category)!.parent!)!
+  const lightFill: Record<string, string> = { skincare: 'bg-blush', apps: 'bg-shade-30' }
   const fill =
-    track === 'night' ? 'bg-night-elevated text-aqua shadow-l1' : silo.slug === 'skincare' ? 'bg-blush text-indigo' : 'bg-peach text-indigo'
+    track === 'night' ? 'bg-night-elevated text-aqua shadow-l1' : `${lightFill[silo.slug] ?? 'bg-peach'} text-indigo`
   const box = { sm: 'size-14 text-heading-lg', md: 'size-20 text-display-sm', lg: 'size-28 md:size-36 text-display-md' }[size]
   return (
     <div aria-hidden className={`flex shrink-0 items-center justify-center rounded-lg font-display ${box} ${fill}`}>
@@ -196,8 +201,8 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
           <tr className="border-b border-hairline text-eyebrow uppercase text-shade-60">
             <th scope="col" className="py-3 pr-4 font-normal">Aspect</th>
             <th scope="col" className="py-3 pr-4 font-normal">Mentioned by</th>
-            <th scope="col" className="py-3 pr-4 font-normal">Positive</th>
-            <th scope="col" className="w-[35%] py-3 font-normal">Score / 10</th>
+            <th scope="col" className="w-[38%] py-3 pr-4 font-normal">Problems reported by</th>
+            <th scope="col" className="py-3 font-normal">Positive when mentioned</th>
           </tr>
         </thead>
         <tbody>
@@ -216,17 +221,21 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
               <td className="py-4 pr-4 tabular-nums">
                 {formatPct(s.mentionShare)} <span className="text-shade-50">({s.mentions})</span>
               </td>
-              <td className="py-4 pr-4 tabular-nums">{s.mentions ? formatPct(s.positiveShare) : '—'}</td>
-              <td className="py-4">
-                {s.score === null ? (
-                  <span className="text-caption text-shade-50">Too few mentions to score</span>
+              <td className="py-4 pr-4">
+                {!s.scored ? (
+                  <span className="text-caption text-shade-50">Too few mentions to judge</span>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="w-8 text-body-strong tabular-nums">{formatScore(s.score)}</span>
-                    <Meter value={s.score / 10} tone={s.negativeShare >= 0.35 ? 'pink' : 'indigo'} />
+                    <span className="w-12 text-body-strong tabular-nums">{formatRate(s.problemRate)}</span>
+                    {/* Bar runs 0–40%; notable cons (≥10%) turn pink. */}
+                    <Meter
+                      value={s.problemRate / 0.4}
+                      tone={s.problemRate >= RULES.notableConProblemRate ? 'pink' : 'indigo'}
+                    />
                   </div>
                 )}
               </td>
+              <td className="py-4 tabular-nums">{s.mentions ? formatPct(s.positiveShare) : '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -275,14 +284,23 @@ export function ProductCard({ product, track = 'light', rank }: { product: Produ
           <p className={`text-caption ${night ? 'text-shade-40' : 'text-shade-60'}`}>{product.variant}</p>
         </div>
       </div>
-      <div>
-        <VerdictBadge verdict={product.verdict} track={track} />
+      <div className="flex flex-wrap items-center gap-2">
+        <VerdictBadge verdict={product.verdict} track={track} app={isApp(product)} />
+        {(product.draft || product.sample) && (
+          <span
+            className={`rounded-pill px-2.5 py-0.5 text-micro ${night ? 'border border-hairline-night text-shade-40' : 'border border-hairline text-shade-60'}`}
+          >
+            {product.draft ? 'Draft' : 'Sample'}
+          </span>
+        )}
       </div>
       <dl className={`mt-auto grid grid-cols-3 gap-3 border-t pt-4 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
         {[
           { label: 'Score', value: product.verdict === 'thin-data' ? '—' : formatScore(compositeScore(product)) },
           { label: 'Weighted ★', value: formatRating(weightedRating(product)) },
-          { label: category.valueMetric ? `₹ ${category.valueMetric.label.replace('per ', '/ ')}` : 'Price', value: value ? formatINR(value) : '—' },
+          category.valueMetric
+            ? { label: `₹ ${category.valueMetric.label.replace('per ', '/ ')}`, value: value ? formatINR(value) : '—' }
+            : { label: 'Store ratings', value: formatCompact(marketplaceAverage(product).total) },
         ].map((s) => (
           <div key={s.label}>
             <dt className={`text-micro ${night ? 'text-shade-40' : 'text-shade-60'}`}>{s.label}</dt>
@@ -297,17 +315,17 @@ export function ProductCard({ product, track = 'light', rank }: { product: Produ
 /** Raw marketplace average next to our credibility-weighted one — we show our working. */
 export function RatingPair({ product }: { product: Product }) {
   const market = marketplaceAverage(product)
+  const rated = product.platformStats.filter((s) => sourceById(s.source).kind !== 'brand-store')
+  const appStores = rated.every((s) => sourceById(s.source).kind === 'app-store')
+  const hasBrandStore = product.reviews.some((r) => sourceById(r.source).kind === 'brand-store')
   return (
     <dl className="grid gap-6 sm:grid-cols-2">
       <div className="rounded-lg border border-hairline p-6">
-        <dt className="text-caption text-shade-60">Marketplace average</dt>
+        <dt className="text-caption text-shade-60">{appStores ? 'App store average' : 'Marketplace average'}</dt>
         <dd className="mt-2 font-display text-display-md tabular-nums">{formatRating(market.rating)}★</dd>
         <dd className="mt-1 text-caption text-shade-60">
           Across {market.total.toLocaleString('en-IN')} ratings on{' '}
-          {product.platformStats
-            .filter((s) => sourceById(s.source).kind !== 'brand-store')
-            .map((s) => sourceById(s.source).name)
-            .join(' and ')}
+          {rated.map((s) => sourceById(s.source).name).join(' and ')}
           , as the platforms report them.
         </dd>
       </div>
@@ -315,8 +333,8 @@ export function RatingPair({ product }: { product: Product }) {
         <dt className="text-caption">Credibility-weighted</dt>
         <dd className="mt-2 font-display text-display-md tabular-nums">{formatRating(weightedRating(product))}★</dd>
         <dd className="mt-1 text-caption">
-          Our average of {product.reviews.filter((r) => r.rating !== undefined).length} collected ratings, discounting
-          ones that look manipulated and brand-store reviews.
+          Our average of {formatCount(product.reviews.filter((r) => r.rating !== undefined).length)} collected ratings, discounting
+          ones that look manipulated{hasBrandStore ? ' and brand-store reviews' : ''}.
         </dd>
       </div>
     </dl>

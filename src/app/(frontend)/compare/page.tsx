@@ -7,6 +7,7 @@ import { Container, Section } from '@/components/ui'
 import { allComparisons, categoryComparisons, getCategory, getProduct, productsIn } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 export const metadata: Metadata = pageMetadata({
   title: 'Compare products side by side',
@@ -14,7 +15,8 @@ export const metadata: Metadata = pageMetadata({
   path: routes.compareIndex(),
 })
 
-export default function CompareIndexPage() {
+export default async function CompareIndexPage() {
+  await ensureCatalog()
   return (
     <PageShell track="light">
       <Container>
@@ -30,7 +32,7 @@ export default function CompareIndexPage() {
               <li key={c.slug} className="relative rounded-lg bg-peach p-8">
                 <h3 className="font-display text-heading-xl">
                   <Link href={routes.compare(c.slug)} className="after:absolute after:inset-0 after:rounded-lg">
-                    Every {c.name.toLowerCase()} compared
+                    {c.name} compared
                   </Link>
                 </h3>
                 <p className="mt-3 text-caption">{productsIn(c.slug).length} products</p>

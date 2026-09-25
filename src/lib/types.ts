@@ -3,13 +3,21 @@
 
 export type Verdict = 'buy' | 'buy-with-caveats' | 'skip' | 'thin-data'
 export type Sentiment = 'positive' | 'neutral' | 'negative'
-export type SourceId = 'amazon' | 'flipkart' | 'nykaa' | 'brand-store' | 'reddit' | 'youtube'
+export type SourceId =
+  | 'amazon'
+  | 'flipkart'
+  | 'nykaa'
+  | 'brand-store'
+  | 'play-store'
+  | 'app-store'
+  | 'reddit'
+  | 'youtube'
 export type Track = 'night' | 'light'
 
 export interface Source {
   id: SourceId
   name: string
-  kind: 'marketplace' | 'brand-store' | 'community' | 'video'
+  kind: 'marketplace' | 'brand-store' | 'app-store' | 'community' | 'video'
   /** Multiplier applied in the credibility-weighted rating. Brand-owned stores are down-weighted. */
   weight: number
   /** Whether reviews on this source carry a star rating. Reddit threads and YouTube videos don't. */
@@ -47,6 +55,8 @@ export interface Category {
   intro: string[]
   aspects: CategoryAspect[]
   valueMetric?: { label: string; basis: number }
+  /** Set on app categories: the schema.org applicationCategory (e.g. FinanceApplication). */
+  appCategory?: string
   refreshDays: number
   faq: FAQ[]
 }
@@ -96,6 +106,8 @@ export interface Review {
   verified: boolean
   /** 0–1. Low for bursts of generic 5★ reviews, unverified clusters, and similar signals. */
   credibility: number
+  /** Overall sentiment from the sentiment model. Used for sources without star ratings. */
+  sentiment?: Sentiment
   url?: string
 }
 
@@ -128,6 +140,10 @@ export interface Product {
   author: string
   publishedAt: string
   updatedAt: string
+  /** Real product collected by the pipeline, not yet approved by an editor. */
+  draft?: boolean
+  /** Fictional product from the sample catalogue. */
+  sample?: boolean
 }
 
 export interface BestOf {

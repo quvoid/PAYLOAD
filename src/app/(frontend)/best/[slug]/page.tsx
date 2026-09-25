@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -6,28 +7,32 @@ import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, Faq, ProductCard } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
-import { allBestOf, getAspect, getBestOf, getCategory, rankBestOf } from '@/lib/catalog'
-import { formatINR, formatPct, formatScore } from '@/lib/format'
+import { allBestOf, getAspect, getBestOf, getBestOfForPreview, getCategory, rankBestOf } from '@/lib/catalog'
+import { formatINR, formatRate, formatScore, inSentence } from '@/lib/format'
 import { aspectStat, compositeScore, lowestOffer } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
 
-export const dynamicParams = false
-
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog()
   return allBestOf().map((b) => ({ slug: b.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  await ensureCatalog()
   const list = getBestOf((await params).slug)
   if (!list) return {}
   return pageMetadata({ title: list.title, description: list.intro[0].slice(0, 155), path: routes.best(list.slug) })
 }
 
 export default async function BestOfPage({ params }: { params: Params }) {
-  const list = getBestOf((await params).slug)
+  await ensureCatalog()
+  const { isEnabled: previewing } = await draftMode()
+  const slug = (await params).slug
+  const list = previewing ? getBestOfForPreview(slug) : getBestOf(slug)
   if (!list) notFound()
 
   const ranked = rankBestOf(list)
@@ -44,7 +49,7 @@ export default async function BestOfPage({ params }: { params: Params }) {
           <h1 className="mt-3 font-display text-display-sm md:text-display-lg">{list.title}</h1>
           <Prose paragraphs={list.intro} className="mt-6" />
           <p className="mt-6 inline-flex rounded-pill bg-shade-30 px-4 py-2 text-caption">
-            Ranked by {aspect ? `${aspect.label.toLowerCase()} score` : 'composite score'}
+            Ranked by {aspect ? `fewest ${inSentence(aspect.label)} problems` : 'satisfaction score'}
             {list.rule.maxPrice ? ` · lowest price under ${formatINR(list.rule.maxPrice)}` : ''} · recalculated
             whenever reviews or prices change
           </p>
@@ -61,10 +66,10 @@ export default async function BestOfPage({ params }: { params: Params }) {
                   <li key={p.slug} id={`rank-${i + 1}`} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
                     <ProductCard product={p} rank={i + 1} />
                     <p className="text-caption text-shade-60 tabular-nums">
-                      {stat && stat.score !== null
-                        ? `${aspect!.label}: ${formatScore(stat.score)} / 10 — ${formatPct(stat.positiveShare)} of ${stat.mentions} mentions positive.`
-                        : `Composite score ${formatScore(compositeScore(p))} / 10.`}{' '}
-                      Lowest price {formatINR(lowestOffer(p)!.price)}.
+                      {stat && stat.scored
+                        ? `${aspect!.label}: problems reported by ${formatRate(stat.problemRate)} of reviewers.`
+                        : `Satisfaction score ${formatScore(compositeScore(p))} / 10.`}{' '}
+                      {lowestOffer(p)!.price === 0 ? 'Free to download.' : `Lowest price ${formatINR(lowestOffer(p)!.price)}.`}
                     </p>
                   </li>
                 )

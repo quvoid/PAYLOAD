@@ -113,22 +113,36 @@ const notes = (p: Product, sentiment: 'positive' | 'negative') => ({
 export const productReviewLd = (p: Product) => {
   const brand = getBrand(p.brand)!
   const author = getAuthor(p.author)
+  const category = getCategory(p.category)!
   const offer = lowestOffer(p)
   const prices = p.offers.filter((o) => o.inStock).map((o) => o.price)
+  // Apps are described as software (Google's SoftwareApplication review snippets), not products.
+  const entity = category.appCategory
+    ? {
+        '@type': 'SoftwareApplication',
+        name: p.name,
+        applicationCategory: category.appCategory,
+        operatingSystem: 'Android, iOS',
+        publisher: { '@type': 'Organization', name: brand.name },
+        offers: { '@type': 'Offer', price: 0, priceCurrency: 'INR' },
+      }
+    : {
+        '@type': 'Product',
+        name: p.name,
+        brand: { '@type': 'Brand', name: brand.name },
+        category: category.name,
+        ...(offer && {
+          offers: {
+            '@type': 'AggregateOffer',
+            priceCurrency: 'INR',
+            lowPrice: Math.min(...prices),
+            highPrice: Math.max(...prices),
+            offerCount: prices.length,
+          },
+        }),
+      }
   return {
-    '@type': 'Product',
-    name: p.name,
-    brand: { '@type': 'Brand', name: brand.name },
-    category: getCategory(p.category)!.name,
-    ...(offer && {
-      offers: {
-        '@type': 'AggregateOffer',
-        priceCurrency: 'INR',
-        lowPrice: Math.min(...prices),
-        highPrice: Math.max(...prices),
-        offerCount: prices.length,
-      },
-    }),
+    ...entity,
     review: {
       '@type': 'Review',
       author: { '@id': `${SITE.url}/#organization` },

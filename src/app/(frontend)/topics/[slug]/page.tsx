@@ -3,17 +3,19 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 
 import { JsonLd } from '@/components/JsonLd'
+import { RelatedLinks } from '@/components/RelatedLinks'
 import { TagList } from '@/components/TagList'
 import { Breadcrumbs, Faq, Meter, VerdictBadge } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
-import { allTopics, getAspect, getCategory, getTopic, getTopicForPreview, isApp, productsIn } from '@/lib/catalog'
+import { allTopics, getAspect, getCategory, getTopic, getTopicForPreview, isApp, topicRanking } from '@/lib/catalog'
 import { formatPct, formatRate, inSentence } from '@/lib/format'
-import { aspectStat, countedReviews } from '@/lib/metrics'
+import { countedReviews } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
-import { breadcrumbLd, faqLd, graph, itemListLd, pageMetadata, SITE } from '@/lib/seo'
+import { breadcrumbLd, faqLd, graph, itemListLd, ogImage, pageMetadata, SITE, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { guideTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -23,12 +25,7 @@ export async function generateStaticParams() {
   return allTopics().map((t) => ({ slug: t.slug }))
 }
 
-/** Products in the section with enough mentions of the aspect to judge. Fewest problems first. */
-const ranked = (silo: string, aspect: string) =>
-  productsIn(silo)
-    .map((p) => ({ product: p, stat: aspectStat(p, aspect) }))
-    .filter((r) => r.stat?.scored)
-    .sort((a, b) => a.stat!.problemRate - b.stat!.problemRate)
+const ranked = topicRanking
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   await ensureCatalog()
@@ -36,9 +33,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!topic) return {}
   return pageMetadata({
     title: topic.title,
-    description: topic.explainer[0].slice(0, 155),
+    description: (topic.explainer[0] ?? topic.title).slice(0, 155),
     path: routes.topic(topic.slug),
     seo: topic.seo,
+    templated: guideTemplated(topic),
+    image: ogImage('guide', topic.slug, topic.title),
     // Nothing to rank yet: nothing worth indexing.
     noindex: ranked(topic.silo, topic.aspect).length === 0,
   })
@@ -54,6 +53,7 @@ export default async function TopicPage({ params }: { params: Params }) {
   const aspect = getAspect(topic.aspect)!
   const silo = getCategory(topic.silo)!
   const rows = ranked(silo.slug, aspect.slug)
+  const lastUpdated = rows.map((r) => r.product.updatedAt).sort().at(-1)
   const reviewers = rows.reduce((n, r) => n + countedReviews(r.product).length, 0)
   const negative = rows.reduce((n, r) => n + r.stat!.negative, 0)
   const crumbs = [
@@ -119,6 +119,8 @@ export default async function TopicPage({ params }: { params: Params }) {
             </Section>
           )}
 
+          <RelatedLinks related={topic.related} />
+
           <Section id="faq" title={`Common questions about ${inSentence(aspect.label)}`}>
             <Faq items={topic.faq} />
           </Section>
@@ -126,7 +128,14 @@ export default async function TopicPage({ params }: { params: Params }) {
       </Container>
       <JsonLd
         data={graph(
-          { '@type': 'Article', headline: topic.title, publisher: { '@id': `${SITE.url}/#organization` } },
+          {
+            '@type': 'Article',
+            headline: topic.title,
+            author: { '@id': `${SITE.url}/#organization` },
+            publisher: { '@id': `${SITE.url}/#organization` },
+            about: [thingLd(aspect.label, aspect.sameAs), thingLd(silo.name, silo.sameAs)],
+            ...(lastUpdated && { dateModified: lastUpdated }),
+          },
           faqLd(topic.faq),
           ...(rows.length ? [itemListLd(rows.map((r) => ({ name: r.product.name, path: routes.product(r.product.slug) })))] : []),
           breadcrumbLd(crumbs),

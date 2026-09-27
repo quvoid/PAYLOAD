@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
 
+import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Section } from '@/components/ui'
 import { allProducts, allSources } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import { pageMetadata } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { breadcrumbLd, fixedPageMetadata, graph } from '@/lib/seo'
+import { ensureCatalog, pageTexts } from '@/lib/store'
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
-  return pageMetadata({
-    title: 'Where our reviews come from',
-    description: 'Every source ReviewLens collects reviews from, how we collect them, and how much each one counts.',
-    path: routes.sources(),
-  })
+  return fixedPageMetadata('sources', routes.sources())
 }
 
 const kindLabel = {
@@ -27,6 +24,7 @@ const kindLabel = {
 
 export default async function SourcesPage() {
   await ensureCatalog()
+  const text = pageTexts.sources
   const crumbs = [
     { name: 'Home', path: routes.home() },
     { name: 'Sources', path: routes.sources() },
@@ -36,10 +34,9 @@ export default async function SourcesPage() {
       <Container>
         <Breadcrumbs crumbs={crumbs} />
         <header className="border-b border-hairline pb-10">
-          <h1 className="font-display text-display-sm md:text-display-lg">Where our reviews come from</h1>
+          <h1 className="font-display text-display-sm md:text-display-lg">{text.heading}</h1>
           <p className="answer mt-6 max-w-[62ch] text-body-lg">
-            We collect reviews from {allSources().length} kinds of source. We show short excerpts only, and every
-            review links back to where it was posted.
+            {text.intro.replaceAll('{sources}', String(allSources().length))}
           </p>
         </header>
         <Section id="sources" title="Which sources do we use?">
@@ -71,6 +68,7 @@ export default async function SourcesPage() {
           </div>
         </Section>
       </Container>
+      <JsonLd data={graph({ '@type': 'AboutPage', name: text.heading, description: text.description }, breadcrumbLd(crumbs))} />
     </PageShell>
   )
 }

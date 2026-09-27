@@ -1,5 +1,7 @@
 import type { Field, PayloadRequest } from 'payload'
 
+import { urlField } from '@/collections/shared'
+
 // Admin side of the SEO tab: what the "Generate" buttons fill in, and the fields added after the
 // plugin's own (title, description, image, preview). The site reads them in store.ts / seo.ts.
 
@@ -48,9 +50,19 @@ const pathFor = async (slug: string | undefined, doc: Doc, req: PayloadRequest) 
 
 type GenArgs = { doc: Doc; collectionConfig?: { slug: string }; req: PayloadRequest }
 
+/** The page type's template from Site settings → Programmatic SEO, if one is set. */
+const fromTemplate = async (collection: string | undefined, doc: Doc) => {
+  if (!collection) return {}
+  const [{ ensureCatalog }, { templatedForDoc }] = await Promise.all([import('./store'), import('./seo-templates')])
+  await ensureCatalog()
+  return templatedForDoc(collection, doc)
+}
+
 export const seoGenerators = {
   generateTitle: async ({ doc, collectionConfig, req }: GenArgs) => {
     const slug = collectionConfig?.slug
+    const t = await fromTemplate(slug, doc)
+    if (t.title) return t.title
     if (slug === 'products') return `${doc.name} Review | ${SITE_NAME}`
     if (slug === 'categories') return `${doc.name} Reviews and Buying Guide | ${SITE_NAME}`
     if (slug === 'brands') return `${doc.name} Products Reviewed | ${SITE_NAME}`
@@ -59,6 +71,8 @@ export const seoGenerators = {
     return `${doc.title ?? doc.name ?? ''} | ${SITE_NAME}`
   },
   generateDescription: async ({ doc, collectionConfig }: GenArgs) => {
+    const t = await fromTemplate(collectionConfig?.slug, doc)
+    if (t.description) return clip(t.description)
     const text: Record<string, unknown> = {
       products: doc.answer,
       categories: doc.tagline,
@@ -82,13 +96,12 @@ export const seoExtraFields: Field[] = [
     type: 'checkbox',
     admin: { description: 'The page stays on the site, but Google and others are asked not to list it.' },
   },
-  {
+  urlField({
     name: 'canonical',
     label: 'Main address (advanced)',
-    type: 'text',
     admin: {
       placeholder: 'https://…',
       description: 'Only if this page copies another one: the address of the original. Leave empty otherwise.',
     },
-  },
+  }),
 ]

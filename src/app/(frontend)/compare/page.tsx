@@ -1,32 +1,30 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Section } from '@/components/ui'
 import { allComparisons, categoryComparisons, getCategory, getProduct, productsIn } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import { pageMetadata } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { breadcrumbLd, fixedPageMetadata, graph } from '@/lib/seo'
+import { ensureCatalog, pageTexts } from '@/lib/store'
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
-  return pageMetadata({
-    title: 'Compare products side by side',
-    description: 'Head-to-head comparisons and whole-category tables, every measure computed from reviews.',
-    path: routes.compareIndex(),
-  })
+  return fixedPageMetadata('compare', routes.compareIndex())
 }
 
 export default async function CompareIndexPage() {
   await ensureCatalog()
+  const text = pageTexts.compare
   return (
     <PageShell track="light">
       <Container>
         <Breadcrumbs crumbs={[{ name: 'Home', path: '/' }, { name: 'Compare', path: routes.compareIndex() }]} />
-        <h1 className="font-display text-display-sm md:text-display-lg">Compare</h1>
+        <h1 className="font-display text-display-sm md:text-display-lg">{text.heading}</h1>
         <p className="mt-4 max-w-[60ch] text-body-lg">
-          Scores, sentiment and share of voice side by side — for a whole category, or two products head to head.
+          {text.intro}
         </p>
 
         <Section id="categories" title="Which category do you want to compare?">
@@ -59,6 +57,7 @@ export default async function CompareIndexPage() {
           </ul>
         </Section>
       </Container>
+      <JsonLd data={graph({ '@type': 'CollectionPage', name: text.heading, description: text.intro }, breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'Compare', path: routes.compareIndex() }]))} />
     </PageShell>
   )
 }

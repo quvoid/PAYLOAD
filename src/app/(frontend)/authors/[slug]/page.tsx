@@ -6,8 +6,9 @@ import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
 import { allAuthors, getAuthor, productsByAuthor } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import { absoluteUrl, breadcrumbLd, graph, pageMetadata, SITE } from '@/lib/seo'
+import { absoluteUrl, breadcrumbLd, graph, pageMetadata, personId, SITE } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { authorIndexable } from '@/lib/sitemaps'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -21,7 +22,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   await ensureCatalog()
   const author = getAuthor((await params).slug)
   if (!author) return {}
-  return pageMetadata({ title: `${author.name}, ${author.role}`, description: author.bio[0].slice(0, 155), path: routes.author(author.slug) })
+  return pageMetadata({
+    title: `${author.name}, ${author.role}`,
+    description: (author.bio[0] ?? `${author.name}, ${author.role} at ReviewLens.`).slice(0, 155),
+    path: routes.author(author.slug),
+    noindex: !authorIndexable(author.slug),
+  })
 }
 
 export default async function AuthorPage({ params }: { params: Params }) {
@@ -58,7 +64,11 @@ export default async function AuthorPage({ params }: { params: Params }) {
         data={graph(
           {
             '@type': 'Person',
+            '@id': personId(author.slug),
             name: author.name,
+            ...(author.bio[0] && { description: author.bio[0] }),
+            ...(author.credentials && { hasCredential: { '@type': 'EducationalOccupationalCredential', name: author.credentials } }),
+            ...(author.sameAs?.length && { sameAs: author.sameAs }),
             jobTitle: author.role,
             url: absoluteUrl(routes.author(author.slug)),
             worksFor: { '@id': `${SITE.url}/#organization` },

@@ -5,9 +5,13 @@ import {
   isAdmin,
   loggedIn,
   previewPath,
+  goneOnDelete,
   redirectOnSlugChange,
   refreshAfterChange,
   refreshAfterDelete,
+  relatedField,
+  uniquenessField,
+  uniquenessGuard,
   slugField,
   tagsField,
 } from './shared'
@@ -31,8 +35,9 @@ export const BestLists: CollectionConfig = {
   trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
+    beforeChange: [uniquenessGuard('best-lists')],
     afterChange: [refreshAfterChange, redirectOnSlugChange('best-lists', (d) => `/best/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/best/${d.slug}`)],
   },
   fields: [
     {
@@ -111,6 +116,8 @@ export const BestLists: CollectionConfig = {
       admin: { position: 'sidebar', description: 'The page lives at /best/<this>.' },
     }),
     tagsField,
+    relatedField,
+    uniquenessField,
   ],
 }
 
@@ -146,6 +153,7 @@ export const Comparisons: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     beforeValidate: [pairDetails],
+    beforeChange: [uniquenessGuard('comparisons')],
     afterChange: [refreshAfterChange],
     afterDelete: [refreshAfterDelete],
   },
@@ -212,6 +220,7 @@ export const Comparisons: CollectionConfig = {
         description: 'Made from the two products: /compare/<this>.',
       },
     },
+    uniquenessField,
   ],
 }
 
@@ -231,8 +240,9 @@ export const Guides: CollectionConfig = {
   trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
+    beforeChange: [uniquenessGuard('guides')],
     afterChange: [refreshAfterChange, redirectOnSlugChange('guides', (d) => `/topics/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/topics/${d.slug}`)],
   },
   fields: [
     {
@@ -284,5 +294,7 @@ export const Guides: CollectionConfig = {
       admin: { position: 'sidebar', description: 'The page lives at /topics/<this>.' },
     }),
     tagsField,
+    relatedField,
+    uniquenessField,
   ],
 }

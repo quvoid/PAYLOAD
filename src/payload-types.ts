@@ -127,12 +127,14 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     navigation: Navigation;
+    'page-texts': PageText;
     'site-settings': SiteSetting;
     'scoring-rules': ScoringRule;
     'catalog-state': CatalogState;
   };
   globalsSelect: {
     navigation: NavigationSelect<false> | NavigationSelect<true>;
+    'page-texts': PageTextsSelect<false> | PageTextsSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'scoring-rules': ScoringRulesSelect<false> | ScoringRulesSelect<true>;
     'catalog-state': CatalogStateSelect<false> | CatalogStateSelect<true>;
@@ -288,6 +290,33 @@ export interface Product {
    * Group this with related pages. Each tag has its own page listing everything tagged with it.
    */
   tags?: (number | Tag)[] | null;
+  /**
+   * Up to six pages readers should see next. Drafts are skipped until they are published.
+   */
+  related?:
+    | (
+        | {
+            relationTo: 'products';
+            value: number | Product;
+          }
+        | {
+            relationTo: 'best-lists';
+            value: number | BestList;
+          }
+        | {
+            relationTo: 'comparisons';
+            value: number | Comparison;
+          }
+        | {
+            relationTo: 'guides';
+            value: number | Guide;
+          }
+        | {
+            relationTo: 'pages';
+            value: number | Page;
+          }
+      )[]
+    | null;
   /**
    * Set automatically to whoever publishes.
    */
@@ -460,6 +489,15 @@ export interface Category {
    * Two or three short paragraphs on what matters when buying in this category. Leave a blank line between paragraphs.
    */
   intro?: string | null;
+  /**
+   * Optional. The Wikipedia or Wikidata page for this kind of product, e.g. Whey protein.
+   */
+  sameAs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   measures?:
     | {
         aspect: number | Aspect;
@@ -559,6 +597,15 @@ export interface Aspect {
    */
   question: string;
   /**
+   * Optional. The Wikipedia or Wikidata page for this measure, e.g. Battery life.
+   */
+  sameAs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Internal key the review analysis uses. Filled in from the name; don’t change it once reviews have been analysed.
    */
   slug: string;
@@ -629,56 +676,6 @@ export interface Tag {
   deletedAt?: string | null;
 }
 /**
- * Everyone who can log in. Editors approve verdicts, and their name and bio appear on every page they publish.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  /**
-   * Shown on every verdict you approve, e.g. "Approved by Omkar".
-   */
-  name?: string | null;
-  /**
-   * Address of your public profile page, /authors/…
-   */
-  slug?: string | null;
-  /**
-   * Editors write and publish. Admins can also manage the team and the scoring rules.
-   */
-  role?: ('admin' | 'editor') | null;
-  jobTitle?: string | null;
-  /**
-   * A few sentences for your public profile page.
-   */
-  bio?: string | null;
-  /**
-   * Optional, e.g. "Certified nutritionist".
-   */
-  credentials?: string | null;
-  photo?: (number | null) | Media;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
  * Pages like "Best whey protein under ₹2,500". You choose the rule; the ranking updates itself as reviews and prices change. Products marked Skip are never ranked.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -742,6 +739,33 @@ export interface BestList {
    * Group this with related pages. Each tag has its own page listing everything tagged with it.
    */
   tags?: (number | Tag)[] | null;
+  /**
+   * Up to six pages readers should see next. Drafts are skipped until they are published.
+   */
+  related?:
+    | (
+        | {
+            relationTo: 'products';
+            value: number | Product;
+          }
+        | {
+            relationTo: 'best-lists';
+            value: number | BestList;
+          }
+        | {
+            relationTo: 'comparisons';
+            value: number | Comparison;
+          }
+        | {
+            relationTo: 'guides';
+            value: number | Guide;
+          }
+        | {
+            relationTo: 'pages';
+            value: number | Page;
+          }
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -854,53 +878,37 @@ export interface Guide {
    * Group this with related pages. Each tag has its own page listing everything tagged with it.
    */
   tags?: (number | Tag)[] | null;
+  /**
+   * Up to six pages readers should see next. Drafts are skipped until they are published.
+   */
+  related?:
+    | (
+        | {
+            relationTo: 'products';
+            value: number | Product;
+          }
+        | {
+            relationTo: 'best-lists';
+            value: number | BestList;
+          }
+        | {
+            relationTo: 'comparisons';
+            value: number | Comparison;
+          }
+        | {
+            relationTo: 'guides';
+            value: number | Guide;
+          }
+        | {
+            relationTo: 'pages';
+            value: number | Page;
+          }
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * Products readers asked us to review. Most-requested first.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "review-requests".
- */
-export interface ReviewRequest {
-  id: number;
-  /**
-   * What the reader typed.
-   */
-  query: string;
-  /**
-   * Optional link the reader gave (Amazon, Flipkart, Google Play, App Store).
-   */
-  productUrl?: string | null;
-  /**
-   * Readers who asked to be emailed once, when the review goes live.
-   */
-  subscribers?:
-    | {
-        email: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Once the product is in the catalogue, link it here and set the status to "Added to catalogue".
-   */
-  product?: (number | null) | Product;
-  /**
-   * Internal notes. Never shown on the site.
-   */
-  notes?: string | null;
-  status: 'new' | 'queued' | 'added' | 'declined';
-  requestCount: number;
-  lastRequestedAt?: string | null;
-  /**
-   * Used to merge repeat requests.
-   */
-  normalizedQuery: string;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * Your own pages: About, Contact, Privacy policy and so on. Each lives at /<web address>. Add them to the menu or footer under Website → Navigation.
@@ -962,6 +970,33 @@ export interface Page {
    */
   tags?: (number | Tag)[] | null;
   /**
+   * Up to six pages readers should see next. Drafts are skipped until they are published.
+   */
+  related?:
+    | (
+        | {
+            relationTo: 'products';
+            value: number | Product;
+          }
+        | {
+            relationTo: 'best-lists';
+            value: number | BestList;
+          }
+        | {
+            relationTo: 'comparisons';
+            value: number | Comparison;
+          }
+        | {
+            relationTo: 'guides';
+            value: number | Guide;
+          }
+        | {
+            relationTo: 'pages';
+            value: number | Page;
+          }
+      )[]
+    | null;
+  /**
    * Set automatically the first time you publish.
    */
   publishedAt?: string | null;
@@ -969,6 +1004,108 @@ export interface Page {
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Everyone who can log in. Editors approve verdicts, and their name and bio appear on every page they publish.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  /**
+   * Shown on every verdict you approve, e.g. "Approved by Omkar".
+   */
+  name?: string | null;
+  /**
+   * Address of your public profile page, /authors/…
+   */
+  slug?: string | null;
+  /**
+   * Editors write and publish. Admins can also manage the team and the scoring rules.
+   */
+  role?: ('admin' | 'editor') | null;
+  jobTitle?: string | null;
+  /**
+   * A few sentences for your public profile page.
+   */
+  bio?: string | null;
+  /**
+   * Optional, e.g. "Certified nutritionist".
+   */
+  credentials?: string | null;
+  /**
+   * Optional. Your LinkedIn, X or personal site. Shown to search engines as the same person.
+   */
+  sameAs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  photo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * Products readers asked us to review. Most-requested first.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "review-requests".
+ */
+export interface ReviewRequest {
+  id: number;
+  /**
+   * What the reader typed.
+   */
+  query: string;
+  /**
+   * Optional link the reader gave (Amazon, Flipkart, Google Play, App Store).
+   */
+  productUrl?: string | null;
+  /**
+   * Readers who asked to be emailed once, when the review goes live.
+   */
+  subscribers?:
+    | {
+        email: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Once the product is in the catalogue, link it here and set the status to "Added to catalogue".
+   */
+  product?: (number | null) | Product;
+  /**
+   * Internal notes. Never shown on the site.
+   */
+  notes?: string | null;
+  status: 'new' | 'queued' | 'added' | 'declined';
+  requestCount: number;
+  lastRequestedAt?: string | null;
+  /**
+   * Used to merge repeat requests.
+   */
+  normalizedQuery: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Every collected review. They come in automatically and can’t be edited — but you can hide one (spam, abuse, wrong product) and it disappears from the site and the numbers.
@@ -1064,9 +1201,9 @@ export interface Redirect {
     url?: string | null;
   };
   /**
-   * Permanent (301) unless the old address will come back.
+   * 301 unless the old address will come back. 410 tells search engines the page is gone for good, so they drop it sooner.
    */
-  type: '301' | '302';
+  type: '301' | '302' | '410';
   updatedAt: string;
   createdAt: string;
 }
@@ -1271,6 +1408,7 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   slug?: T;
   tags?: T;
+  related?: T;
   author?: T;
   approvedAt?: T;
   updatedAt?: T;
@@ -1287,6 +1425,12 @@ export interface CategoriesSelect<T extends boolean = true> {
   parent?: T;
   tagline?: T;
   intro?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   measures?:
     | T
     | {
@@ -1386,6 +1530,7 @@ export interface BestListsSelect<T extends boolean = true> {
       };
   slug?: T;
   tags?: T;
+  related?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -1448,6 +1593,7 @@ export interface GuidesSelect<T extends boolean = true> {
       };
   slug?: T;
   tags?: T;
+  related?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -1495,6 +1641,7 @@ export interface PagesSelect<T extends boolean = true> {
       };
   slug?: T;
   tags?: T;
+  related?: T;
   publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1587,6 +1734,12 @@ export interface MediaSelect<T extends boolean = true> {
 export interface AspectsSelect<T extends boolean = true> {
   label?: T;
   question?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1638,6 +1791,12 @@ export interface UsersSelect<T extends boolean = true> {
   jobTitle?: T;
   bio?: T;
   credentials?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   photo?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1777,6 +1936,93 @@ export interface Navigation {
    * Shown at the very bottom, after "© <year> ReviewLens."
    */
   footerNote?: string | null;
+  footerRight?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Headings, introductions and search-result text for the site’s fixed pages. Numbers and lists on those pages fill themselves in.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-texts".
+ */
+export interface PageText {
+  id: number;
+  home?: {
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  categories?: {
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  best?: {
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  compare?: {
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  methodology?: {
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  sources?: {
+    heading?: string | null;
+    /**
+     * {sources} is replaced by the number of review sources.
+     */
+    intro?: string | null;
+    /**
+     * The site name is added at the end. Aim for 50–60 characters in total.
+     */
+    title?: string | null;
+    description?: string | null;
+    shareImage?: (number | null) | Media;
+    noindex?: boolean | null;
+  };
+  search?: {
+    heading?: string | null;
+    intro?: string | null;
+  };
+  notFound?: {
+    heading?: string | null;
+    intro?: string | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1824,6 +2070,96 @@ export interface SiteSetting {
    * Only the content="…" value.
    */
   bingVerification?: string | null;
+  templates?: {
+    /**
+     * Placeholders: {name} {brand} {category} {verdict} {score} {reviews} {price} {year}
+     */
+    products?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {section} {count} {year}
+     */
+    categories?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {count} {year}
+     */
+    brands?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {qualifier} {category} {count} {top} {year}
+     */
+    best_lists?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {a} {b} {category} {year}
+     */
+    comparisons?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {measure} {section} {count} {year}
+     */
+    guides?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {count} {year}
+     */
+    tags?: {
+      title?: string | null;
+      description?: string | null;
+    };
+    /**
+     * Placeholders: {name} {year}
+     */
+    pages?: {
+      title?: string | null;
+      description?: string | null;
+    };
+  };
+  /**
+   * 0.40 means at least 40% of a page’s 3-word phrases must be its own. Every editor sees the check in the sidebar of products, lists, head-to-heads, guides and pages.
+   */
+  uniquenessThreshold?: number | null;
+  /**
+   * Off: editors see a warning. On: publishing is refused until the page is rewritten.
+   */
+  blockDuplicates?: boolean | null;
+  /**
+   * Paths such as /drafts/ or /*?sort=. Crawlers are asked not to read them.
+   */
+  blockedPaths?:
+    | {
+        path: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * ChatGPT search, Perplexity, Claude search and similar. They cite and link to the pages they use.
+   */
+  allowAiSearch?: boolean | null;
+  /**
+   * GPTBot, Google-Extended, ClaudeBot, Common Crawl and similar. They don’t send visitors.
+   */
+  allowAiTraining?: boolean | null;
+  /**
+   * When a published page is deleted for good, search engines are told it is gone on purpose. The rule appears under Website → Redirects.
+   */
+  goneOnDelete?: boolean | null;
+  legalName?: string | null;
+  foundingDate?: string | null;
+  contactEmail?: string | null;
   twitterHandle?: string | null;
   /**
    * Links to your Instagram, X, YouTube, LinkedIn and so on. Search engines use them to recognise the brand.
@@ -1910,6 +2246,86 @@ export interface NavigationSelect<T extends boolean = true> {
       };
   footerAbout?: T;
   footerNote?: T;
+  footerRight?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-texts_select".
+ */
+export interface PageTextsSelect<T extends boolean = true> {
+  home?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  categories?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  best?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  compare?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  methodology?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  sources?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        title?: T;
+        description?: T;
+        shareImage?: T;
+        noindex?: T;
+      };
+  search?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+      };
+  notFound?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -1937,6 +2353,72 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   logo?: T;
   googleVerification?: T;
   bingVerification?: T;
+  templates?:
+    | T
+    | {
+        products?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        categories?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        brands?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        best_lists?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        comparisons?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        guides?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        tags?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+        pages?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+            };
+      };
+  uniquenessThreshold?: T;
+  blockDuplicates?: T;
+  blockedPaths?:
+    | T
+    | {
+        path?: T;
+        id?: T;
+      };
+  allowAiSearch?: T;
+  allowAiTraining?: T;
+  goneOnDelete?: T;
+  legalName?: T;
+  foundingDate?: T;
+  contactEmail?: T;
   twitterHandle?: T;
   socialProfiles?:
     | T

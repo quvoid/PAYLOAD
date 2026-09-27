@@ -3,6 +3,7 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 
 import { JsonLd } from '@/components/JsonLd'
+import { RelatedLinks } from '@/components/RelatedLinks'
 import { Breadcrumbs, ProductCard } from '@/components/review'
 import { RichText } from '@/components/RichText'
 import { SearchForm } from '@/components/SearchForm'
@@ -24,8 +25,9 @@ import {
 } from '@/lib/catalog'
 import { formatDate, inSentence, isoDate } from '@/lib/format'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { categoryTemplated, pageTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 import type { Category, Page } from '@/lib/types'
 
@@ -49,7 +51,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       description: page.intro,
       path: routes.page(page.slug),
       seo: page.seo,
-      image: page.heroImage,
+      templated: pageTemplated(page),
+      image: page.heroImage ?? ogImage('page', page.slug, page.title),
       noindex: page.draft,
     })
   }
@@ -58,6 +61,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description: silo.tagline,
     path: routes.category(silo),
     seo: silo.seo,
+    templated: categoryTemplated(silo),
+    image: ogImage('category', silo.slug, silo.name),
     noindex: productsIn(silo.slug).length === 0,
   })
 }
@@ -105,6 +110,7 @@ function PageView({ page }: { page: Page }) {
           )}
           <RichText data={page.content} className="mt-10" />
           <TagList tags={page.tags} className="mt-12" />
+          <RelatedLinks related={page.related} />
         </article>
       </Container>
       <JsonLd
@@ -217,7 +223,7 @@ function SiloView({ silo }: { silo: Category }) {
       </Container>
       <JsonLd
         data={graph(
-          { '@type': 'CollectionPage', name: silo.name, description: silo.tagline },
+          { '@type': 'CollectionPage', name: silo.name, description: silo.tagline, about: thingLd(silo.name, silo.sameAs) },
           itemListLd(top.map((p) => ({ name: p.name, path: routes.product(p.slug) }))),
           breadcrumbLd(crumbs),
         )}

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, loggedIn, refreshAfterChange, slugField } from './shared'
+import { isAdmin, loggedIn, refreshAfterChange, sameAsField, slugField } from './shared'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -12,7 +12,17 @@ export const Users: CollectionConfig = {
     description:
       'Everyone who can log in. Editors approve verdicts, and their name and bio appear on every page they publish.',
   },
-  auth: true,
+  auth: {
+    // Five wrong passwords lock the account for ten minutes.
+    maxLoginAttempts: 5,
+    lockTime: 10 * 60 * 1000,
+    // Logged in for a week; cookies only over HTTPS once the site runs on it.
+    tokenExpiration: 7 * 24 * 60 * 60,
+    cookies: {
+      secure: (process.env.NEXT_PUBLIC_SITE_URL ?? '').startsWith('https://'),
+      sameSite: 'Lax',
+    },
+  },
   access: {
     read: loggedIn,
     create: isAdmin,
@@ -61,6 +71,7 @@ export const Users: CollectionConfig = {
     { name: 'jobTitle', label: 'Title shown on the site', type: 'text', defaultValue: 'Editor' },
     { name: 'bio', type: 'textarea', admin: { description: 'A few sentences for your public profile page.' } },
     { name: 'credentials', type: 'text', admin: { description: 'Optional, e.g. "Certified nutritionist".' } },
+    sameAsField('Optional. Your LinkedIn, X or personal site. Shown to search engines as the same person.'),
     { name: 'photo', type: 'upload', relationTo: 'media' },
   ],
 }

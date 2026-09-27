@@ -8,6 +8,7 @@ import { redirectFor } from './catalog'
  */
 export function notFoundOrRedirect(path: string): never {
   const target = redirectFor(path)
-  if (target) (target.permanent ? permanentRedirect : redirect)(target.to)
+  // Normally answered earlier by src/proxy.ts with a real 301/302/410; this is the fallback.
+  if (target?.to) (target.status === 301 ? permanentRedirect : redirect)(target.to)
   notFound()
 }

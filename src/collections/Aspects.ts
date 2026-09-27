@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, loggedIn, refreshAfterChange, refreshAfterDelete, slugField } from './shared'
+import { isAdmin, loggedIn, refreshAfterChange, refreshAfterDelete, slugField, sameAsField } from './shared'
 
 // "Aspects" in the code; "Measures" to editors: taste, battery life, payment success…
 export const Aspects: CollectionConfig = {
@@ -23,6 +23,7 @@ export const Aspects: CollectionConfig = {
       required: true,
       admin: { description: 'How a shopper would ask about it.', placeholder: 'How long does the battery last?' },
     },
+    sameAsField('Optional. The Wikipedia or Wikidata page for this measure, e.g. Battery life.'),
     slugField('label', {
       admin: {
         position: 'sidebar',

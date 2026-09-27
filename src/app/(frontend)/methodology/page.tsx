@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Section } from '@/components/ui'
@@ -8,24 +9,21 @@ import { getAspect, leafCategories } from '@/lib/catalog'
 import { formatPct } from '@/lib/format'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
-import { pageMetadata } from '@/lib/seo'
+import { breadcrumbLd, fixedPageMetadata, graph } from '@/lib/seo'
 import { verdictMeta } from '@/lib/verdict'
-import { ensureCatalog } from '@/lib/store'
+import { ensureCatalog, pageTexts } from '@/lib/store'
 
 // Every threshold on this page is read from src/lib/rules.ts and the category data — the same
 // values the scoring code uses — so the published method can't drift from the real one.
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
-  return pageMetadata({
-    title: 'How we score products',
-    description: 'How ReviewLens collects reviews, discounts manipulation, computes every number and reaches a verdict.',
-    path: routes.methodology(),
-  })
+  return fixedPageMetadata('methodology', routes.methodology())
 }
 
 export default async function MethodologyPage() {
   await ensureCatalog()
+  const text = pageTexts.methodology
   const crumbs = [
     { name: 'Home', path: routes.home() },
     { name: 'How we score', path: routes.methodology() },
@@ -35,10 +33,9 @@ export default async function MethodologyPage() {
       <Container>
         <Breadcrumbs crumbs={crumbs} />
         <header className="border-b border-hairline pb-10">
-          <h1 className="font-display text-display-sm md:text-display-lg">How we score</h1>
+          <h1 className="font-display text-display-sm md:text-display-lg">{text.heading}</h1>
           <p className="answer mt-6 max-w-[62ch] text-body-lg">
-            Code counts; people judge. Every number on ReviewLens is computed from reviews by fixed rules. A model
-            writes the wording of pros, cons and verdicts, but never a number, and a named editor approves every page.
+            {text.intro}
           </p>
         </header>
 
@@ -161,6 +158,7 @@ export default async function MethodologyPage() {
           </Section>
         </div>
       </Container>
+      <JsonLd data={graph({ '@type': 'AboutPage', name: text.heading, description: text.intro }, breadcrumbLd(crumbs))} />
     </PageShell>
   )
 }

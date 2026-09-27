@@ -3,6 +3,7 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 
 import { JsonLd } from '@/components/JsonLd'
+import { RelatedLinks } from '@/components/RelatedLinks'
 import { TagList } from '@/components/TagList'
 import { PriceTable, ProsCons, VerdictRationale } from '@/components/product'
 import {
@@ -45,9 +46,10 @@ import {
 } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
-import { breadcrumbLd, faqLd, graph, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
+import { breadcrumbLd, faqLd, graph, ogImage, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
 import { verdictLabel } from '@/lib/verdict'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { productTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ product: string }>
@@ -66,6 +68,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description: p.answer.length > 158 ? `${p.answer.slice(0, 155).trimEnd()}…` : p.answer,
     path: routes.product(p.slug),
     seo: p.seo,
+    templated: productTemplated(p),
+    image: ogImage('product', p.slug, `${p.name} review`),
     // Thin-data products and unapproved drafts stay out of the index (docs/PLAN.md §7).
     noindex: p.verdict === 'thin-data' || Boolean(p.draft),
   })
@@ -261,6 +265,8 @@ export default async function ProductPage({ params }: { params: Params }) {
                   )}
                 </Section>
               )}
+
+              <RelatedLinks related={product.related} />
 
               <Section id="faq" title={`Questions about ${app ? '' : 'the '}${product.shortName}`}>
                 <Faq items={product.faq} />

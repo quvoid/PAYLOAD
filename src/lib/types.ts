@@ -32,6 +32,8 @@ export interface Aspect {
   question: string
   /** Topic hub that explains this aspect, if one is published. */
   topic?: string
+  /** Wikipedia/Wikidata pages for the same thing (structured data). */
+  sameAs?: string[]
 }
 
 export interface CategoryAspect {
@@ -61,6 +63,8 @@ export interface Category {
   appCategory?: string
   refreshDays: number
   faq: FAQ[]
+  /** Wikipedia/Wikidata pages for the same thing (structured data). */
+  sameAs?: string[]
 }
 
 export interface Brand {
@@ -79,6 +83,8 @@ export interface Author {
   role: string
   bio: string[]
   credentials: string
+  /** Profiles elsewhere (structured data). */
+  sameAs?: string[]
 }
 
 export interface Offer {
@@ -128,6 +134,8 @@ export interface Product {
   seo?: Seo
   /** Tag slugs. */
   tags?: string[]
+  /** Hand-picked related pages (Related in the admin sidebar). */
+  related?: RelatedRef[]
   name: string
   shortName: string
   brand: string
@@ -160,6 +168,8 @@ export interface BestOf {
   seo?: Seo
   /** Tag slugs. */
   tags?: string[]
+  /** Hand-picked related pages (Related in the admin sidebar). */
+  related?: RelatedRef[]
   title: string
   category: string
   /** Every best-of carries a qualifier so it never competes with its own category hub. */
@@ -186,6 +196,8 @@ export interface Topic {
   seo?: Seo
   /** Tag slugs. */
   tags?: string[]
+  /** Hand-picked related pages (Related in the admin sidebar). */
+  related?: RelatedRef[]
   aspect: string
   silo: string
   title: string
@@ -227,6 +239,7 @@ export interface Page {
   /** Lexical rich text, rendered with @payloadcms/richtext-lexical/react. */
   content: unknown
   tags: string[]
+  related?: RelatedRef[]
   seo?: Seo
   publishedAt: string
   updatedAt: string
@@ -237,4 +250,10 @@ export interface NavLink {
   label: string
   href: string
   newTab?: boolean
+}
+
+/** A hand-picked link to another document, by collection and web address. */
+export interface RelatedRef {
+  kind: 'products' | 'best-lists' | 'comparisons' | 'guides' | 'pages'
+  slug: string
 }

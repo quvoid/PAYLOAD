@@ -74,6 +74,7 @@ neon branches create --name <name>              # a throwaway branch to test a m
 | `pnpm generate:importmap` | Regenerate the admin import map after adding admin components |
 | `pnpm payload migrate:create` / `pnpm payload migrate` | Create / run database migrations |
 | `pnpm seed` | Load the catalogue (`src/data`, `src/data/real`) into the database in `DATABASE_URL`. Safe to re-run. |
+| `pnpm seo:audit [url]` | Crawl a running site and check status codes, sitemaps, titles, structured data, headers, click depth |
 | `pnpm build:vercel` | Vercel's build: run pending migrations (over `DATABASE_URL_UNPOOLED`), then build |
 | `pnpm test` | Vitest integration tests + Playwright e2e tests |
 
@@ -93,6 +94,25 @@ Everything an editor needs is in `/admin`, grouped in the sidebar:
 | **Settings → Site settings** | Homepage and banner; search-engine defaults (description, share image, logo, Google/Bing verification, **hide the whole site** while it isn't ready); social profiles; Google Analytics ID. |
 
 Deleting sends things to the **trash** first (restore from the list's Trash view). Every save keeps a version you can compare and restore.
+
+## SEO
+
+Built against the [WithAgenticAI SEO guides](https://github.com/WithAgenticAI/seo) (technical SEO, robots & sitemaps, structured data, security & HTTPS, site architecture, programmatic SEO). Everything an editor may want to change is in the admin.
+
+| Area | How it works | Where editors control it |
+|---|---|---|
+| Status codes | `src/proxy.ts` answers redirects with real **301/302**, removed pages with **410 Gone**, and sends uppercase addresses to lowercase (301), before any page renders. | Website → Redirects (made automatically when a published address changes or a published page is deleted) |
+| Sitemaps | `/sitemap.xml` is a sitemap index; `/sitemap/<type>.xml` lists only live, indexable, canonical pages (split at 50,000). | SEO tab → "Hide this page from search engines" |
+| robots.txt | Admin, API and search always blocked; points to the sitemap index. | Site settings → Crawlers (extra paths, AI search / AI training crawlers) |
+| Titles & descriptions | Page SEO tab → search-result template → standard wording. | SEO tab; Site settings → Programmatic SEO → templates; Website → Page texts (fixed pages) |
+| Share images | 1200×630 cards generated per page at `/og/<type>/<address>`. | SEO tab image (wins), Site settings default |
+| Structured data | One connected `@graph` per page: WebPage (`@id`, isPartOf WebSite, breadcrumb, mainEntity), Organization, Product/Review, Brand, Person, FAQ, ItemList; `about`/`sameAs` pinned to Wikidata. | Site settings → Organisation, Social; "Same thing elsewhere" on categories, measures, brands, team members |
+| Security | HSTS (2 years, **no preload** until the domain is final), nosniff, SAMEORIGIN, referrer policy, `upgrade-insecure-requests`; no `X-Powered-By`. Payload: CSRF/CORS limited to the site, 5 failed logins lock an account for 10 minutes. Links typed in the admin are forced to https://. | — |
+| Architecture | Every indexable page within 3 clicks of the homepage; related links editors pick. | Related (sidebar), Navigation; dashboard → Site health |
+| Duplicates | 3-word-phrase Jaccard distance against the closest page of the same type (≥ 0.40). | Sidebar "Uniqueness"; Site settings → Programmatic SEO (threshold, block publishing) |
+| Head-to-heads | Draft comparisons for the top products of a category in one click. | Category sidebar → Draft head-to-heads |
+
+Run `pnpm seo:audit` (or `pnpm seo:audit https://your-domain`) to crawl a running site and check all of the above; it exits with an error code when something is wrong.
 
 ## Deploying to Vercel
 

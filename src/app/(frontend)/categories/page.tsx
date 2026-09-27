@@ -7,20 +7,17 @@ import { PageShell } from '@/components/SiteChrome'
 import { Container, Section } from '@/components/ui'
 import { productsIn, listedChildren, listedSilos } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { breadcrumbLd, fixedPageMetadata, graph, itemListLd } from '@/lib/seo'
+import { ensureCatalog, pageTexts } from '@/lib/store'
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
-  return pageMetadata({
-    title: 'All categories',
-    description: 'Every category ReviewLens reviews, from protein powder to UPI apps.',
-    path: routes.categories(),
-  })
+  return fixedPageMetadata('categories', routes.categories())
 }
 
 export default async function CategoriesPage() {
   await ensureCatalog()
+  const text = pageTexts.categories
   const crumbs = [
     { name: 'Home', path: routes.home() },
     { name: 'Categories', path: routes.categories() },
@@ -29,10 +26,9 @@ export default async function CategoriesPage() {
     <PageShell track="light">
       <Container>
         <Breadcrumbs crumbs={crumbs} />
-        <h1 className="font-display text-display-sm md:text-display-lg">All categories</h1>
+        <h1 className="font-display text-display-sm md:text-display-lg">{text.heading}</h1>
         <p className="mt-4 max-w-[60ch] text-body-lg">
-          Every category we review. Each one is scored on the measures that matter for it, so products are always
-          compared like with like.
+          {text.intro}
         </p>
 
         <Section id="sections" title="What are you shopping for?">

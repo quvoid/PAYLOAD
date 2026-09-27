@@ -4,7 +4,7 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, type Field } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
@@ -17,17 +17,28 @@ import { Pages } from './collections/Pages'
 import { Products } from './collections/Products'
 import { ReviewRequests } from './collections/ReviewRequests'
 import { Reviews } from './collections/Reviews'
-import { refreshAfterChange, refreshAfterDelete } from './collections/shared'
+import { refreshAfterChange, refreshAfterDelete, secureUrlHooks, validateSecureUrl } from './collections/shared'
 import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
-import { CatalogState, Navigation, ScoringRules, SiteSettings } from './globals'
+import { CatalogState, Navigation, PageTexts, ScoringRules, SiteSettings } from './globals'
 import { seoGenerators, seoExtraFields } from './lib/seo-admin'
+
+// The public address, plus Vercel's own addresses for the same deployment. Payload only accepts
+// logged-in requests (cookies) coming from these, which blocks cross-site request forgery.
+const serverURL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+const trustedOrigins = [
+  serverURL,
+  ...[process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL].filter(Boolean).map((host) => `https://${host}`),
+]
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
+  serverURL,
+  csrf: trustedOrigins,
+  cors: trustedOrigins,
   admin: {
     user: Users.slug,
     importMap: {
@@ -43,7 +54,7 @@ export default buildConfig({
       ],
     },
     components: {
-      beforeDashboard: ['/components/admin/Welcome#Welcome'],
+      beforeDashboard: ['/components/admin/Welcome#Welcome', '/components/admin/SiteHealth#SiteHealth'],
       graphics: {
         Logo: '/components/admin/Brand#AdminLogo',
         Icon: '/components/admin/Brand#AdminIcon',
@@ -67,7 +78,7 @@ export default buildConfig({
     Reviews,
     Users,
   ],
-  globals: [Navigation, SiteSettings, ScoringRules, CatalogState],
+  globals: [Navigation, PageTexts, SiteSettings, ScoringRules, CatalogState],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -101,10 +112,28 @@ export default buildConfig({
       redirectTypeFieldOverride: {
         label: 'Kind',
         defaultValue: '301',
-        admin: { description: 'Permanent (301) unless the old address will come back.' },
+        options: [
+          { label: 'Moved for good (301)', value: '301' },
+          { label: 'Moved for now (302)', value: '302' },
+          { label: 'Removed on purpose (410 Gone)', value: '410' },
+        ],
+        admin: {
+          description:
+            '301 unless the old address will come back. 410 tells search engines the page is gone for good, so they drop it sooner.',
+        },
       },
       overrides: {
         labels: { singular: 'Redirect', plural: 'Redirects' },
+        // A "Gone" (410) rule has no destination.
+        fields: ({ defaultFields }) =>
+          defaultFields.map((f) => {
+            if (!('name' in f) || f.name !== 'to' || f.type !== 'group') return f
+            return {
+              ...f,
+              admin: { ...f.admin, condition: (data: Record<string, unknown>) => data?.type !== '410' },
+              fields: f.fields.map((sub) => ('name' in sub && sub.name === 'url' ? { ...sub, hooks: secureUrlHooks, validate: validateSecureUrl } : sub)),
+            } as Field
+          }),
         admin: {
           group: 'Website',
           useAsTitle: 'from',

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import {
   loggedIn,
+  goneOnDelete,
   redirectOnSlugChange,
   refreshAfterChange,
   refreshAfterDelete,
@@ -24,7 +25,7 @@ export const Tags: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: loggedIn },
   hooks: {
     afterChange: [refreshAfterChange, redirectOnSlugChange('tags', (d) => `/tags/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/tags/${d.slug}`)],
   },
   fields: [
     {

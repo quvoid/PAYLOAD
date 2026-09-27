@@ -19,9 +19,10 @@ import {
 } from '@/lib/catalog'
 import { shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, graph, itemListLd, pageMetadata, productReviewLd } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, graph, itemListLd, ogImage, pageMetadata, productReviewLd } from '@/lib/seo'
 import type { Category, PairComparison } from '@/lib/types'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { pairTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 // Two kinds of comparison share /compare/[slug]: editor-chosen head-to-head pairs, and a
@@ -53,6 +54,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       description: found.pair.judgement[0].slice(0, 155),
       path: routes.compare(found.pair.slug),
       seo: found.pair.seo,
+      templated: pairTemplated(found.pair),
+      image: ogImage('compare', found.pair.slug, 'Head-to-head comparison'),
     })
   }
   return pageMetadata({

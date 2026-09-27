@@ -1,6 +1,8 @@
 import type { Payload } from 'payload'
 
+import { PAGE_TEXT_DEFAULTS, PAGE_TEXT_KEYS, type PageText, type PageTextKey } from './page-texts'
 import { RESERVED_SEGMENTS } from './routes'
+import { TEMPLATE_KINDS, type TemplateKind } from './seo-template-kinds'
 import { RULES } from './rules'
 import type {
   Aspect,
@@ -13,6 +15,7 @@ import type {
   NavLink,
   Page,
   PairComparison,
+  RelatedRef,
   Product,
   Review,
   Source,
@@ -39,7 +42,7 @@ export const authors: Author[] = []
 export const tags: Tag[] = []
 export const pages: Page[] = [] // published only
 /** Old address → where it now lives. Checked before a page answers "not found". */
-export const redirects = new Map<string, { to: string; permanent: boolean }>()
+export const redirects = new Map<string, { status: 301 | 302 | 410; to?: string }>()
 
 /** The latest version of every document, drafts included. Only preview mode reads these. */
 export const drafts = {
@@ -50,12 +53,18 @@ export const drafts = {
   pages: new Map<string, Page>(),
 }
 
+/** Fixed-page wording from Website → Page texts, with the defaults filling any gaps. */
+export const pageTexts = Object.fromEntries(
+  PAGE_TEXT_KEYS.map((k) => [k, { ...PAGE_TEXT_DEFAULTS[k] }]),
+) as Record<PageTextKey, PageText & { shareImage?: MediaRef; noindex?: boolean }>
+
 /** Menu and footer links chosen in Website → Navigation. Empty lists mean "use the standard ones". */
 export const navigation = {
   header: [] as NavLink[],
   footerColumns: [] as { title: string; links: NavLink[] }[],
   footerAbout: '',
   footerNote: '',
+  footerRight: '',
 }
 
 export const settings = {
@@ -74,6 +83,15 @@ export const settings = {
   twitterHandle: '',
   socialProfiles: [] as string[],
   gaMeasurementId: '',
+  legalName: '',
+  contactEmail: '',
+  foundingDate: '',
+  blockedPaths: [] as string[],
+  allowAiSearch: true,
+  allowAiTraining: true,
+  /** Changes whenever any content changes (catalog-state), for cache-busting share images. */
+  contentVersion: 0,
+  templates: {} as Partial<Record<TemplateKind, { title?: string; description?: string }>>,
 }
 
 export const getPayloadClient = async (): Promise<Payload> => {
@@ -92,6 +110,7 @@ export async function ensureCatalog(): Promise<void> {
   inflight ??= load(payload)
     .then(() => {
       loadedVersion = version
+      settings.contentVersion = version
     })
     .finally(() => {
       inflight = null
@@ -108,6 +127,7 @@ const paragraphs = (text?: string | null) =>
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean)
+const urls = (rows?: { url?: string }[] | null) => (rows ?? []).map((r) => r.url).filter((u): u is string => Boolean(u))
 const faqOf = (rows?: { q: string; a: string }[] | null): FAQ[] => (rows ?? []).map(({ q, a }) => ({ q, a }))
 const replace = <T,>(target: T[], items: T[]) => target.splice(0, target.length, ...items)
 
@@ -140,6 +160,7 @@ async function load(payload: Payload) {
     pageDrafts,
     redirectDocs,
     nav,
+    texts,
   ] = await Promise.all([
     payload.find({ collection: 'categories', ...all }),
     payload.find({ collection: 'aspects', ...all }),
@@ -184,6 +205,7 @@ async function load(payload: Payload) {
     payload.find({ collection: 'pages', pagination: false, depth: 1, draft: true }),
     payload.find({ collection: 'redirects', pagination: false, depth: 1 }),
     payload.findGlobal({ slug: 'navigation', depth: 1 }),
+    payload.findGlobal({ slug: 'page-texts', depth: 0 }),
   ])
 
   const slugBy = (docs: Doc[]) => new Map(docs.map((d) => [d.id as number, d.slug as string]))
@@ -194,6 +216,18 @@ async function load(payload: Payload) {
   const userSlug = slugBy(users.docs)
   const productSlug = slugBy(latest.docs)
   const tagSlug = slugBy(tagDocs.docs)
+  const slugsOf: Record<RelatedRef['kind'], Map<number, string>> = {
+    products: productSlug,
+    'best-lists': slugBy(listDrafts.docs),
+    comparisons: slugBy(pairDrafts.docs),
+    guides: slugBy(guideDrafts.docs),
+    pages: slugBy(pageDrafts.docs),
+  }
+  const relatedOf = (list?: { relationTo: RelatedRef['kind']; value: Rel }[] | null): RelatedRef[] =>
+    (list ?? []).flatMap((r) => {
+      const slug = slugsOf[r.relationTo]?.get(idOf(r.value)!)
+      return slug ? [{ kind: r.relationTo, slug }] : []
+    })
   const tagsOf = (list: Rel[] | null | undefined) =>
     (list ?? []).map((t) => tagSlug.get(idOf(t)!)).filter((t): t is string => Boolean(t))
 
@@ -252,6 +286,15 @@ async function load(payload: Payload) {
     twitterHandle: s.twitterHandle ?? '',
     socialProfiles: (s.socialProfiles ?? []).map((x: Doc) => x.url).filter(Boolean),
     gaMeasurementId: s.gaMeasurementId ?? '',
+    legalName: s.legalName ?? '',
+    contactEmail: s.contactEmail ?? '',
+    foundingDate: s.foundingDate ?? '',
+    blockedPaths: (s.blockedPaths ?? []).map((x: Doc) => x.path).filter(Boolean),
+    allowAiSearch: s.allowAiSearch !== false,
+    allowAiTraining: s.allowAiTraining !== false,
+    templates: Object.fromEntries(
+      Object.keys(TEMPLATE_KINDS).map((k) => [k, s.templates?.[k.replace('-', '_')] ?? {}]),
+    ),
   })
 
   const topicFor = new Map<string, string>()
@@ -270,7 +313,13 @@ async function load(payload: Payload) {
   )
   replace(
     aspects,
-    (asps.docs as Doc[]).map((d) => ({ slug: d.slug, label: d.label, question: d.question, topic: topicFor.get(d.slug) })),
+    (asps.docs as Doc[]).map((d) => ({
+      slug: d.slug,
+      label: d.label,
+      question: d.question,
+      topic: topicFor.get(d.slug),
+      sameAs: urls(d.sameAs),
+    })),
   )
   replace(
     categories,
@@ -291,6 +340,7 @@ async function load(payload: Payload) {
       refreshDays: d.refreshDays ?? 21,
       faq: faqOf(d.faq),
       seo: seoOf(d.meta),
+      sameAs: urls(d.sameAs),
     })),
   )
   for (const c of categories) {
@@ -311,7 +361,7 @@ async function load(payload: Payload) {
     authors,
     (users.docs as Doc[])
       .filter((d) => d.slug)
-      .map((d) => ({ slug: d.slug, name: d.name ?? d.email, role: d.jobTitle || 'Editor', bio: paragraphs(d.bio), credentials: d.credentials ?? '' })),
+      .map((d) => ({ slug: d.slug, name: d.name ?? d.email, role: d.jobTitle || 'Editor', bio: paragraphs(d.bio), credentials: d.credentials ?? '', sameAs: urls(d.sameAs) })),
   )
 
   // Reviews, grouped by product.
@@ -375,6 +425,7 @@ async function load(payload: Payload) {
     sample: Boolean(d.sample),
     seo: seoOf(d.meta),
     tags: tagsOf(d.tags),
+    related: relatedOf(d.related),
   })
 
   const toList = (d: Doc): BestOf => ({
@@ -390,6 +441,7 @@ async function load(payload: Payload) {
     faq: faqOf(d.faq),
     seo: seoOf(d.meta),
     tags: tagsOf(d.tags),
+    related: relatedOf(d.related),
   })
   const toPair = (d: Doc): PairComparison => {
     const [a, b] = (d.products ?? []).map((p: Rel) => productSlug.get(idOf(p)!)!)
@@ -411,6 +463,7 @@ async function load(payload: Payload) {
     faq: faqOf(d.faq),
     seo: seoOf(d.meta),
     tags: tagsOf(d.tags),
+    related: relatedOf(d.related),
   })
   const toPage = (d: Doc): Page => ({
     slug: d.slug,
@@ -419,6 +472,7 @@ async function load(payload: Payload) {
     heroImage: mediaOf(d.heroImage, 'card'),
     content: d.content ?? null,
     tags: tagsOf(d.tags),
+    related: relatedOf(d.related),
     seo: seoOf(d.meta),
     publishedAt: d.publishedAt ?? d.createdAt,
     updatedAt: d.updatedAt,
@@ -457,9 +511,15 @@ async function load(payload: Payload) {
   }
   redirects.clear()
   for (const d of redirectDocs.docs as Doc[]) {
+    if (!d.from) continue
+    // 410 Gone: the page was removed on purpose, so search engines drop it faster than a 404.
+    if (d.type === '410') {
+      redirects.set(d.from, { status: 410 })
+      continue
+    }
     const to =
       d.to?.type === 'custom' ? d.to.url : docPath(d.to?.reference?.relationTo, d.to?.reference?.value as Doc)
-    if (d.from && to && to !== d.from) redirects.set(d.from, { to, permanent: d.type !== '302' })
+    if (to && to !== d.from) redirects.set(d.from, { status: d.type === '302' ? 302 : 301, to })
   }
 
   const publishedPages = new Set(pages.map((p) => p.slug))
@@ -469,12 +529,26 @@ async function load(payload: Payload) {
     return page?.slug && publishedPages.has(page.slug) ? { label: l.label, href: `/${page.slug}` } : undefined
   }
   const links = (list?: Doc[]) => (list ?? []).map(linkOf).filter((l): l is NavLink => Boolean(l))
+  for (const key of PAGE_TEXT_KEYS) {
+    const t = ((texts as Doc)[key] ?? {}) as Doc
+    const d = PAGE_TEXT_DEFAULTS[key]
+    pageTexts[key] = {
+      ...d,
+      heading: t.heading || d.heading,
+      intro: t.intro || d.intro,
+      title: t.title || d.title,
+      description: t.description || d.description,
+      shareImage: mediaOf(t.shareImage, 'share'),
+      noindex: Boolean(t.noindex),
+    }
+  }
   const n = nav as Doc
   Object.assign(navigation, {
     header: links(n.headerLinks),
     footerColumns: (n.footerColumns ?? []).map((c: Doc) => ({ title: c.title, links: links(c.links) })),
     footerAbout: n.footerAbout ?? '',
     footerNote: n.footerNote ?? '',
+    footerRight: n.footerRight ?? '',
   })
 
   drafts.products = new Map((latest.docs as Doc[]).map((d) => [d.slug, toProduct(d)]))

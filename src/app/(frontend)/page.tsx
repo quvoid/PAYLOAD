@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+import { JsonLd } from '@/components/JsonLd'
 import { ProductCard } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { SearchForm } from '@/components/SearchForm'
@@ -18,16 +19,12 @@ import {
 import { formatCount } from '@/lib/format'
 import { countedReviews, suspiciousCount } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { pageMetadata, SITE } from '@/lib/seo'
+import { fixedPageMetadata, graph, SITE } from '@/lib/seo'
 import { ensureCatalog, settings } from '@/lib/store'
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
-  return pageMetadata({
-    title: 'Every review, weighed — honest buying verdicts',
-    description: SITE.description,
-    path: routes.home(),
-  })
+  return fixedPageMetadata('home', routes.home())
 }
 
 // Hero copy and the "how it works" steps are edited in the admin: Settings → Site settings.
@@ -173,6 +170,7 @@ export default async function HomePage() {
           </Container>
         </section>
       )}
+      <JsonLd data={graph({ '@type': 'WebPage', url: `${SITE.url}/`, name: settings.heroTitle, about: { '@id': `${SITE.url}/#organization` } })} />
     </PageShell>
   )
 }

@@ -266,7 +266,7 @@ function SiteFooter({ track }: { track: Track }) {
             © {new Date().getFullYear()} ReviewLens.{' '}
             {nav.footerNote || "We don't earn affiliate commission. If that changes, every affected page will say so."}
           </p>
-          <p>Review excerpts are short and link to the original.</p>
+          <p>{nav.footerRight || 'Review excerpts are short and link to the original.'}</p>
         </div>
       </Container>
     </footer>

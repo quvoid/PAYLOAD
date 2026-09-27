@@ -16,9 +16,9 @@ import {
   topics,
 } from './store'
 
-import { byFewestProblems, compositeScore, lowestOffer } from './metrics'
+import { aspectStat, byFewestProblems, compositeScore, lowestOffer } from './metrics'
 import { RULES } from './rules'
-import type { BestOf, Category, Product } from './types'
+import type { BestOf, Category, NavLink, Product, RelatedRef } from './types'
 
 // The read API the pages use, over the catalogue loaded from Payload (store.ts). Every page calls
 // `await ensureCatalog()` before using it.
@@ -160,6 +160,13 @@ export const categoryComparisons = () =>
 
 export const topicsIn = (silo: string) => topics.filter((t) => t.silo === silo)
 
+/** A guide's ranking: products in its section with enough mentions of the measure to judge. */
+export const topicRanking = (silo: string, aspect: string) =>
+  productsIn(silo)
+    .map((p) => ({ product: p, stat: aspectStat(p, aspect) }))
+    .filter((r) => r.stat?.scored)
+    .sort((a, b) => a.stat!.problemRate - b.stat!.problemRate)
+
 /** Lowercase, strip punctuation, collapse spaces. Keeps any script, so Hindi queries survive. */
 export const normalizeQuery = (s: string) =>
   s.toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
@@ -190,3 +197,40 @@ export const searchCatalogue = (query: string) => {
     exact: exact.length > 0 || scored.length === 0,
   }
 }
+
+const relatedKinds: Record<RelatedRef['kind'], string> = {
+  products: 'Review',
+  'best-lists': 'Ranked list',
+  comparisons: 'Head-to-head',
+  guides: 'Guide',
+  pages: 'Page',
+}
+
+/** Hand-picked related pages, resolved to links. Anything not published is left out. */
+export const resolveRelated = (refs?: RelatedRef[]): (NavLink & { kind: string })[] =>
+  (refs ?? []).flatMap(({ kind, slug }) => {
+    const found: Record<RelatedRef['kind'], () => NavLink | undefined> = {
+      products: () => {
+        const p = getProduct(slug)
+        return p && { label: p.name, href: `/reviews/${slug}` }
+      },
+      'best-lists': () => {
+        const b = getBestOf(slug)
+        return b && { label: b.title, href: `/best/${slug}` }
+      },
+      comparisons: () => {
+        const c = getComparison(slug)
+        return c && { label: c.products.map((s) => getProduct(s)?.shortName ?? s).join(' vs '), href: `/compare/${slug}` }
+      },
+      guides: () => {
+        const t = getTopic(slug)
+        return t && { label: t.title, href: `/topics/${slug}` }
+      },
+      pages: () => {
+        const p = getPage(slug)
+        return p && { label: p.title, href: `/${slug}` }
+      },
+    }
+    const link = found[kind]()
+    return link ? [{ ...link, kind: relatedKinds[kind] }] : []
+  })

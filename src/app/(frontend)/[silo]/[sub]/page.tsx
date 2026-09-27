@@ -19,8 +19,9 @@ import {
 import { formatCount, formatDate, inSentence, isoDate } from '@/lib/format'
 import { countedReviews, shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { categoryTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ silo: string; sub: string }>
@@ -45,6 +46,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description: category.tagline,
     path: routes.category(category),
     seo: category.seo,
+    templated: categoryTemplated(category),
+    image: ogImage('category', category.slug, category.name),
     // Nothing published yet: nothing worth indexing.
     noindex: productsIn(category.slug).length === 0,
   })
@@ -181,7 +184,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
       </Container>
       <JsonLd
         data={graph(
-          { '@type': 'CollectionPage', name: category.name, description: category.tagline },
+          { '@type': 'CollectionPage', name: category.name, description: category.tagline, about: thingLd(category.name, category.sameAs) },
           itemListLd(products.map((p) => ({ name: p.name, path: routes.product(p.slug) }))),
           breadcrumbLd(crumbs),
           ...(category.faq.length ? [faqLd(category.faq)] : []),

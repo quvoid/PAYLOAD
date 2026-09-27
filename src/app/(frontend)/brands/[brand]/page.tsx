@@ -8,8 +8,10 @@ import { allBrands, getBrand, productsByBrand } from '@/lib/catalog'
 import { formatCount, formatRating } from '@/lib/format'
 import { countedReviews, weightedRating } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { absoluteUrl, brandId, breadcrumbLd, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
+import { brandIndexable } from '@/lib/sitemaps'
+import { brandTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ brand: string }>
@@ -28,6 +30,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description: `Every ${brand.name} product we track, with verdicts and scores computed from real reviews.`,
     path: routes.brand(brand.slug),
     seo: brand.seo,
+    templated: brandTemplated(brand),
+    image: ogImage('brand', brand.slug, brand.name),
+    // A brand with nothing published yet is a thin page.
+    noindex: !brandIndexable(brand.slug),
   })
 }
 
@@ -73,7 +79,14 @@ export default async function BrandPage({ params }: { params: Params }) {
       </Container>
       <JsonLd
         data={graph(
-          { '@type': 'Brand', name: brand.name, ...(brand.sameAs.length > 0 && { sameAs: brand.sameAs }) },
+          {
+            '@type': 'Brand',
+            '@id': brandId(brand.slug),
+            name: brand.name,
+            url: absoluteUrl(routes.brand(brand.slug)),
+            ...(brand.about[0] && { description: brand.about[0] }),
+            ...(brand.sameAs.length > 0 && { sameAs: brand.sameAs }),
+          },
           itemListLd(products.map((p) => ({ name: p.name, path: routes.product(p.slug) })), false),
           breadcrumbLd(crumbs),
         )}

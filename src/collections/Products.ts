@@ -5,11 +5,16 @@ import {
   isAdmin,
   loggedIn,
   previewPath,
+  goneOnDelete,
   redirectOnSlugChange,
   refreshAfterChange,
   refreshAfterDelete,
   slugField,
+  relatedField,
+  uniquenessField,
+  uniquenessGuard,
   tagsField,
+  urlField,
 } from './shared'
 
 // Publishing is approval: the person who presses Publish becomes the named editor on the page.
@@ -46,10 +51,10 @@ export const Products: CollectionConfig = {
   trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
-    beforeChange: [recordApproval],
+    beforeChange: [recordApproval, uniquenessGuard('products')],
     beforeDelete: [deleteReviews],
     afterChange: [refreshAfterChange, redirectOnSlugChange('products', (d) => `/reviews/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/reviews/${d.slug}`)],
   },
   fields: [
     {
@@ -169,7 +174,7 @@ export const Products: CollectionConfig = {
                 {
                   type: 'row',
                   fields: [
-                    { name: 'url', label: 'Link', type: 'text' },
+                    urlField({ name: 'url', label: 'Link' }),
                     { name: 'checkedAt', label: 'Checked on', type: 'date' },
                   ],
                 },
@@ -208,7 +213,7 @@ export const Products: CollectionConfig = {
             {
               type: 'row',
               fields: [
-                { name: 'flipkartUrl', label: 'Flipkart link', type: 'text' },
+                urlField({ name: 'flipkartUrl', label: 'Flipkart link' }),
                 { name: 'playStoreId', label: 'Google Play ID', type: 'text', admin: { placeholder: 'com.phonepe.app' } },
                 { name: 'appStoreId', label: 'App Store ID', type: 'text', admin: { placeholder: '1170055821' } },
               ],
@@ -257,6 +262,8 @@ export const Products: CollectionConfig = {
       },
     }),
     tagsField,
+    relatedField,
+    uniquenessField,
     {
       name: 'author',
       label: 'Approved by',

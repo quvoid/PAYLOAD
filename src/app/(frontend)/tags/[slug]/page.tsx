@@ -8,7 +8,8 @@ import { Container, Section } from '@/components/ui'
 import { allTags, getTag, TAG_INDEX_MIN, taggedCount, taggedWith } from '@/lib/catalog'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { breadcrumbLd, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
+import { tagTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -27,6 +28,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     description: tag.description || `Everything on ReviewLens tagged “${tag.name}”.`,
     path: routes.tag(tag.slug),
     seo: tag.seo,
+    templated: tagTemplated(tag),
+    image: ogImage('tag', tag.slug, tag.name),
     noindex: taggedCount(tag.slug) < TAG_INDEX_MIN,
   })
 }

@@ -3,10 +3,12 @@ import type { CollectionConfig } from 'payload'
 import {
   isAdmin,
   loggedIn,
+  goneOnDelete,
   redirectOnSlugChange,
   refreshAfterChange,
   refreshAfterDelete,
   slugField,
+  urlField,
 } from './shared'
 
 export const Brands: CollectionConfig = {
@@ -23,7 +25,7 @@ export const Brands: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     afterChange: [refreshAfterChange, redirectOnSlugChange('brands', (d) => `/brands/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/brands/${d.slug}`)],
   },
   fields: [
     {
@@ -40,7 +42,7 @@ export const Brands: CollectionConfig = {
                 description: 'A short, factual description. Leave a blank line between paragraphs.',
               },
             },
-            { name: 'website', type: 'text', admin: { placeholder: 'https://…' } },
+            urlField({ name: 'website', admin: { placeholder: 'https://…' } }),
             {
               name: 'sameAs',
               label: 'Other official profiles',
@@ -49,7 +51,7 @@ export const Brands: CollectionConfig = {
                 description:
                   'e.g. the brand’s Wikipedia or Wikidata page. Helps search engines identify the brand.',
               },
-              fields: [{ name: 'url', type: 'text', required: true }],
+              fields: [urlField({ name: 'url', required: true })],
             },
             { name: 'logo', type: 'upload', relationTo: 'media' },
           ],

@@ -105,7 +105,7 @@ export const enum_reviews_sentiment = pgEnum('enum_reviews_sentiment', [
 ])
 export const enum_users_role = pgEnum('enum_users_role', ['admin', 'editor'])
 export const enum_redirects_to_type = pgEnum('enum_redirects_to_type', ['reference', 'custom'])
-export const enum_redirects_type = pgEnum('enum_redirects_type', ['301', '302'])
+export const enum_redirects_type = pgEnum('enum_redirects_type', ['301', '302', '410'])
 export const enum_payload_folders_folder_type = pgEnum('enum_payload_folders_folder_type', [
   'media',
 ])
@@ -301,12 +301,22 @@ export const products_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('products_rels_order_idx').on(columns.order),
     index('products_rels_parent_idx').on(columns.parent),
     index('products_rels_path_idx').on(columns.path),
     index('products_rels_tags_id_idx').on(columns.tagsID),
+    index('products_rels_products_id_idx').on(columns.productsID),
+    index('products_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('products_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('products_rels_guides_id_idx').on(columns.guidesID),
+    index('products_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [products.id],
@@ -316,6 +326,31 @@ export const products_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: 'products_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: 'products_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: 'products_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: 'products_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: 'products_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'products_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -536,12 +571,22 @@ export const _products_v_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('_products_v_rels_order_idx').on(columns.order),
     index('_products_v_rels_parent_idx').on(columns.parent),
     index('_products_v_rels_path_idx').on(columns.path),
     index('_products_v_rels_tags_id_idx').on(columns.tagsID),
+    index('_products_v_rels_products_id_idx').on(columns.productsID),
+    index('_products_v_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('_products_v_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('_products_v_rels_guides_id_idx').on(columns.guidesID),
+    index('_products_v_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [_products_v.id],
@@ -551,6 +596,50 @@ export const _products_v_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: '_products_v_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: '_products_v_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: '_products_v_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: '_products_v_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: '_products_v_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: '_products_v_rels_pages_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const categories_same_as = pgTable(
+  'categories_same_as',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    url: varchar('url').notNull(),
+  },
+  (columns) => [
+    index('categories_same_as_order_idx').on(columns._order),
+    index('categories_same_as_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [categories.id],
+      name: 'categories_same_as_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -639,6 +728,26 @@ export const categories = pgTable(
     index('categories_updated_at_idx').on(columns.updatedAt),
     index('categories_created_at_idx').on(columns.createdAt),
     index('categories_deleted_at_idx').on(columns.deletedAt),
+  ],
+)
+
+export const _categories_v_version_same_as = pgTable(
+  '_categories_v_version_same_as',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: serial('id').primaryKey(),
+    url: varchar('url').notNull(),
+    _uuid: varchar('_uuid'),
+  },
+  (columns) => [
+    index('_categories_v_version_same_as_order_idx').on(columns._order),
+    index('_categories_v_version_same_as_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [_categories_v.id],
+      name: '_categories_v_version_same_as_parent_id_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -954,12 +1063,22 @@ export const best_lists_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('best_lists_rels_order_idx').on(columns.order),
     index('best_lists_rels_parent_idx').on(columns.parent),
     index('best_lists_rels_path_idx').on(columns.path),
     index('best_lists_rels_tags_id_idx').on(columns.tagsID),
+    index('best_lists_rels_products_id_idx').on(columns.productsID),
+    index('best_lists_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('best_lists_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('best_lists_rels_guides_id_idx').on(columns.guidesID),
+    index('best_lists_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [best_lists.id],
@@ -969,6 +1088,31 @@ export const best_lists_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: 'best_lists_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: 'best_lists_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: 'best_lists_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: 'best_lists_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: 'best_lists_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'best_lists_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1070,12 +1214,22 @@ export const _best_lists_v_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('_best_lists_v_rels_order_idx').on(columns.order),
     index('_best_lists_v_rels_parent_idx').on(columns.parent),
     index('_best_lists_v_rels_path_idx').on(columns.path),
     index('_best_lists_v_rels_tags_id_idx').on(columns.tagsID),
+    index('_best_lists_v_rels_products_id_idx').on(columns.productsID),
+    index('_best_lists_v_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('_best_lists_v_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('_best_lists_v_rels_guides_id_idx').on(columns.guidesID),
+    index('_best_lists_v_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [_best_lists_v.id],
@@ -1085,6 +1239,31 @@ export const _best_lists_v_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: '_best_lists_v_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: '_best_lists_v_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: '_best_lists_v_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: '_best_lists_v_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: '_best_lists_v_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: '_best_lists_v_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1355,12 +1534,22 @@ export const guides_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('guides_rels_order_idx').on(columns.order),
     index('guides_rels_parent_idx').on(columns.parent),
     index('guides_rels_path_idx').on(columns.path),
     index('guides_rels_tags_id_idx').on(columns.tagsID),
+    index('guides_rels_products_id_idx').on(columns.productsID),
+    index('guides_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('guides_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('guides_rels_guides_id_idx').on(columns.guidesID),
+    index('guides_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [guides.id],
@@ -1370,6 +1559,31 @@ export const guides_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: 'guides_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: 'guides_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: 'guides_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: 'guides_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: 'guides_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'guides_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1468,12 +1682,22 @@ export const _guides_v_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('_guides_v_rels_order_idx').on(columns.order),
     index('_guides_v_rels_parent_idx').on(columns.parent),
     index('_guides_v_rels_path_idx').on(columns.path),
     index('_guides_v_rels_tags_id_idx').on(columns.tagsID),
+    index('_guides_v_rels_products_id_idx').on(columns.productsID),
+    index('_guides_v_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('_guides_v_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('_guides_v_rels_guides_id_idx').on(columns.guidesID),
+    index('_guides_v_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [_guides_v.id],
@@ -1483,6 +1707,31 @@ export const _guides_v_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: '_guides_v_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: '_guides_v_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: '_guides_v_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: '_guides_v_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: '_guides_v_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: '_guides_v_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1586,12 +1835,22 @@ export const pages_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('pages_rels_order_idx').on(columns.order),
     index('pages_rels_parent_idx').on(columns.parent),
     index('pages_rels_path_idx').on(columns.path),
     index('pages_rels_tags_id_idx').on(columns.tagsID),
+    index('pages_rels_products_id_idx').on(columns.productsID),
+    index('pages_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('pages_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('pages_rels_guides_id_idx').on(columns.guidesID),
+    index('pages_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [pages.id],
@@ -1601,6 +1860,31 @@ export const pages_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: 'pages_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: 'pages_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: 'pages_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: 'pages_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: 'pages_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'pages_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1680,12 +1964,22 @@ export const _pages_v_rels = pgTable(
     parent: integer('parent_id').notNull(),
     path: varchar('path').notNull(),
     tagsID: integer('tags_id'),
+    productsID: integer('products_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    pagesID: integer('pages_id'),
   },
   (columns) => [
     index('_pages_v_rels_order_idx').on(columns.order),
     index('_pages_v_rels_parent_idx').on(columns.parent),
     index('_pages_v_rels_path_idx').on(columns.path),
     index('_pages_v_rels_tags_id_idx').on(columns.tagsID),
+    index('_pages_v_rels_products_id_idx').on(columns.productsID),
+    index('_pages_v_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('_pages_v_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('_pages_v_rels_guides_id_idx').on(columns.guidesID),
+    index('_pages_v_rels_pages_id_idx').on(columns.pagesID),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [_pages_v.id],
@@ -1695,6 +1989,31 @@ export const _pages_v_rels = pgTable(
       columns: [columns['tagsID']],
       foreignColumns: [tags.id],
       name: '_pages_v_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: '_pages_v_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: '_pages_v_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: '_pages_v_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: '_pages_v_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: '_pages_v_rels_pages_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1842,6 +2161,25 @@ export const media = pgTable(
   ],
 )
 
+export const aspects_same_as = pgTable(
+  'aspects_same_as',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    url: varchar('url').notNull(),
+  },
+  (columns) => [
+    index('aspects_same_as_order_idx').on(columns._order),
+    index('aspects_same_as_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [aspects.id],
+      name: 'aspects_same_as_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
 export const aspects = pgTable(
   'aspects',
   {
@@ -1922,6 +2260,25 @@ export const reviews = pgTable(
     uniqueIndex('reviews_external_id_idx').on(columns.externalId),
     index('reviews_updated_at_idx').on(columns.updatedAt),
     index('reviews_created_at_idx').on(columns.createdAt),
+  ],
+)
+
+export const users_same_as = pgTable(
+  'users_same_as',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    url: varchar('url').notNull(),
+  },
+  (columns) => [
+    index('users_same_as_order_idx').on(columns._order),
+    index('users_same_as_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [users.id],
+      name: 'users_same_as_parent_id_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -2440,9 +2797,103 @@ export const navigation = pgTable('navigation', {
   footerNote: varchar('footer_note').default(
     "We don't earn affiliate commission. If that changes, every affected page will say so.",
   ),
+  footerRight: varchar('footer_right').default(
+    'Review excerpts are short and link to the original.',
+  ),
   updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
   createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }),
 })
+
+export const page_texts = pgTable(
+  'page_texts',
+  {
+    id: serial('id').primaryKey(),
+    home_title: varchar('home_title').default('Every review, weighed — honest buying verdicts'),
+    home_description: varchar('home_description').default(
+      'Every review of a product from across the internet, weighed honestly, with a straight answer on whether to buy it.',
+    ),
+    home_shareImage: integer('home_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    home_noindex: boolean('home_noindex'),
+    categories_heading: varchar('categories_heading').default('All categories'),
+    categories_intro: varchar('categories_intro').default(
+      'Every category we review. Each one is scored on the measures that matter for it, so products are always compared like with like.',
+    ),
+    categories_title: varchar('categories_title').default('All categories'),
+    categories_description: varchar('categories_description').default(
+      'Every category ReviewLens reviews, from protein powder to UPI apps.',
+    ),
+    categories_shareImage: integer('categories_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    categories_noindex: boolean('categories_noindex'),
+    best_heading: varchar('best_heading').default('Ranked lists'),
+    best_intro: varchar('best_intro').default(
+      'Each list ranks products by a score we compute from reviews, and re-ranks itself whenever reviews or prices change.',
+    ),
+    best_title: varchar('best_title').default('Ranked lists — best products by what matters'),
+    best_description: varchar('best_description').default(
+      'Every ranked list on ReviewLens, each ordered by scores computed from real reviews.',
+    ),
+    best_shareImage: integer('best_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    best_noindex: boolean('best_noindex'),
+    compare_heading: varchar('compare_heading').default('Compare'),
+    compare_intro: varchar('compare_intro').default(
+      'Scores, sentiment and share of voice side by side — for a whole category, or two products head to head.',
+    ),
+    compare_title: varchar('compare_title').default('Compare products side by side'),
+    compare_description: varchar('compare_description').default(
+      'Head-to-head comparisons and whole-category tables, every measure computed from reviews.',
+    ),
+    compare_shareImage: integer('compare_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    compare_noindex: boolean('compare_noindex'),
+    methodology_heading: varchar('methodology_heading').default('How we score'),
+    methodology_intro: varchar('methodology_intro').default(
+      'Code counts; people judge. Every number on ReviewLens is computed from reviews by fixed rules. A model writes the wording of pros, cons and verdicts, but never a number, and a named editor approves every page.',
+    ),
+    methodology_title: varchar('methodology_title').default('How we score products'),
+    methodology_description: varchar('methodology_description').default(
+      'How ReviewLens collects reviews, discounts manipulation, computes every number and reaches a verdict.',
+    ),
+    methodology_shareImage: integer('methodology_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    methodology_noindex: boolean('methodology_noindex'),
+    sources_heading: varchar('sources_heading').default('Where our reviews come from'),
+    sources_intro: varchar('sources_intro').default(
+      'We collect reviews from {sources} kinds of source. We show short excerpts only, and every review links back to where it was posted.',
+    ),
+    sources_title: varchar('sources_title').default('Where our reviews come from'),
+    sources_description: varchar('sources_description').default(
+      'Every source ReviewLens collects reviews from, how we collect them, and how much each one counts.',
+    ),
+    sources_shareImage: integer('sources_share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    sources_noindex: boolean('sources_noindex'),
+    search_heading: varchar('search_heading').default('Search the catalogue'),
+    search_intro: varchar('search_intro').default(''),
+    notFound_heading: varchar('not_found_heading').default('We haven’t reviewed that.'),
+    notFound_intro: varchar('not_found_intro').default(
+      'The page you’re looking for doesn’t exist, or the product isn’t in our catalogue yet.',
+    ),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }),
+  },
+  (columns) => [
+    index('page_texts_home_home_share_image_idx').on(columns.home_shareImage),
+    index('page_texts_categories_categories_share_image_idx').on(columns.categories_shareImage),
+    index('page_texts_best_best_share_image_idx').on(columns.best_shareImage),
+    index('page_texts_compare_compare_share_image_idx').on(columns.compare_shareImage),
+    index('page_texts_methodology_methodology_share_image_idx').on(columns.methodology_shareImage),
+    index('page_texts_sources_sources_share_image_idx').on(columns.sources_shareImage),
+  ],
+)
 
 export const site_settings_steps = pgTable(
   'site_settings_steps',
@@ -2460,6 +2911,25 @@ export const site_settings_steps = pgTable(
       columns: [columns['_parentID']],
       foreignColumns: [site_settings.id],
       name: 'site_settings_steps_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const site_settings_blocked_paths = pgTable(
+  'site_settings_blocked_paths',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    path: varchar('path').notNull(),
+  },
+  (columns) => [
+    index('site_settings_blocked_paths_order_idx').on(columns._order),
+    index('site_settings_blocked_paths_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [site_settings.id],
+      name: 'site_settings_blocked_paths_parent_id_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -2506,6 +2976,30 @@ export const site_settings = pgTable(
     }),
     googleVerification: varchar('google_verification'),
     bingVerification: varchar('bing_verification'),
+    templates_products_title: varchar('templates_products_title'),
+    templates_products_description: varchar('templates_products_description'),
+    templates_categories_title: varchar('templates_categories_title'),
+    templates_categories_description: varchar('templates_categories_description'),
+    templates_brands_title: varchar('templates_brands_title'),
+    templates_brands_description: varchar('templates_brands_description'),
+    templates_best_lists_title: varchar('templates_best_lists_title'),
+    templates_best_lists_description: varchar('templates_best_lists_description'),
+    templates_comparisons_title: varchar('templates_comparisons_title'),
+    templates_comparisons_description: varchar('templates_comparisons_description'),
+    templates_guides_title: varchar('templates_guides_title'),
+    templates_guides_description: varchar('templates_guides_description'),
+    templates_tags_title: varchar('templates_tags_title'),
+    templates_tags_description: varchar('templates_tags_description'),
+    templates_pages_title: varchar('templates_pages_title'),
+    templates_pages_description: varchar('templates_pages_description'),
+    uniquenessThreshold: numeric('uniqueness_threshold', { mode: 'number' }).default(0.4),
+    blockDuplicates: boolean('block_duplicates'),
+    allowAiSearch: boolean('allow_ai_search').default(true),
+    allowAiTraining: boolean('allow_ai_training').default(true),
+    goneOnDelete: boolean('gone_on_delete').default(true),
+    legalName: varchar('legal_name'),
+    foundingDate: timestamp('founding_date', { mode: 'string', withTimezone: true, precision: 3 }),
+    contactEmail: varchar('contact_email'),
     twitterHandle: varchar('twitter_handle'),
     gaMeasurementId: varchar('ga_measurement_id'),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
@@ -2603,6 +3097,31 @@ export const relations_products_rels = relations(products_rels, ({ one }) => ({
     fields: [products_rels.tagsID],
     references: [tags.id],
     relationName: 'tags',
+  }),
+  productsID: one(products, {
+    fields: [products_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [products_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [products_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [products_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [products_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
   }),
 }))
 export const relations_products = relations(products, ({ one, many }) => ({
@@ -2718,6 +3237,31 @@ export const relations__products_v_rels = relations(_products_v_rels, ({ one }) 
     references: [tags.id],
     relationName: 'tags',
   }),
+  productsID: one(products, {
+    fields: [_products_v_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [_products_v_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [_products_v_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [_products_v_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [_products_v_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
+  }),
 }))
 export const relations__products_v = relations(_products_v, ({ one, many }) => ({
   parent: one(products, {
@@ -2764,6 +3308,13 @@ export const relations__products_v = relations(_products_v, ({ one, many }) => (
     relationName: '_rels',
   }),
 }))
+export const relations_categories_same_as = relations(categories_same_as, ({ one }) => ({
+  _parentID: one(categories, {
+    fields: [categories_same_as._parentID],
+    references: [categories.id],
+    relationName: 'sameAs',
+  }),
+}))
 export const relations_categories_measures = relations(categories_measures, ({ one }) => ({
   _parentID: one(categories, {
     fields: [categories_measures._parentID],
@@ -2789,6 +3340,9 @@ export const relations_categories = relations(categories, ({ one, many }) => ({
     references: [categories.id],
     relationName: 'parent',
   }),
+  sameAs: many(categories_same_as, {
+    relationName: 'sameAs',
+  }),
   measures: many(categories_measures, {
     relationName: 'measures',
   }),
@@ -2801,6 +3355,16 @@ export const relations_categories = relations(categories, ({ one, many }) => ({
     relationName: 'meta_image',
   }),
 }))
+export const relations__categories_v_version_same_as = relations(
+  _categories_v_version_same_as,
+  ({ one }) => ({
+    _parentID: one(_categories_v, {
+      fields: [_categories_v_version_same_as._parentID],
+      references: [_categories_v.id],
+      relationName: 'version_sameAs',
+    }),
+  }),
+)
 export const relations__categories_v_version_measures = relations(
   _categories_v_version_measures,
   ({ one }) => ({
@@ -2836,6 +3400,9 @@ export const relations__categories_v = relations(_categories_v, ({ one, many }) 
     fields: [_categories_v.version_parent],
     references: [categories.id],
     relationName: 'version_parent',
+  }),
+  version_sameAs: many(_categories_v_version_same_as, {
+    relationName: 'version_sameAs',
   }),
   version_measures: many(_categories_v_version_measures, {
     relationName: 'version_measures',
@@ -2919,6 +3486,31 @@ export const relations_best_lists_rels = relations(best_lists_rels, ({ one }) =>
     references: [tags.id],
     relationName: 'tags',
   }),
+  productsID: one(products, {
+    fields: [best_lists_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [best_lists_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [best_lists_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [best_lists_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [best_lists_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
+  }),
 }))
 export const relations_best_lists = relations(best_lists, ({ one, many }) => ({
   category: one(categories, {
@@ -2963,6 +3555,31 @@ export const relations__best_lists_v_rels = relations(_best_lists_v_rels, ({ one
     fields: [_best_lists_v_rels.tagsID],
     references: [tags.id],
     relationName: 'tags',
+  }),
+  productsID: one(products, {
+    fields: [_best_lists_v_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [_best_lists_v_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [_best_lists_v_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [_best_lists_v_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [_best_lists_v_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
   }),
 }))
 export const relations__best_lists_v = relations(_best_lists_v, ({ one, many }) => ({
@@ -3103,6 +3720,31 @@ export const relations_guides_rels = relations(guides_rels, ({ one }) => ({
     references: [tags.id],
     relationName: 'tags',
   }),
+  productsID: one(products, {
+    fields: [guides_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [guides_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [guides_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [guides_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [guides_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
+  }),
 }))
 export const relations_guides = relations(guides, ({ one, many }) => ({
   aspect: one(aspects, {
@@ -3144,6 +3786,31 @@ export const relations__guides_v_rels = relations(_guides_v_rels, ({ one }) => (
     fields: [_guides_v_rels.tagsID],
     references: [tags.id],
     relationName: 'tags',
+  }),
+  productsID: one(products, {
+    fields: [_guides_v_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [_guides_v_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [_guides_v_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [_guides_v_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [_guides_v_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
   }),
 }))
 export const relations__guides_v = relations(_guides_v, ({ one, many }) => ({
@@ -3205,6 +3872,31 @@ export const relations_pages_rels = relations(pages_rels, ({ one }) => ({
     references: [tags.id],
     relationName: 'tags',
   }),
+  productsID: one(products, {
+    fields: [pages_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [pages_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [pages_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [pages_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [pages_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
+  }),
 }))
 export const relations_pages = relations(pages, ({ one, many }) => ({
   heroImage: one(media, {
@@ -3231,6 +3923,31 @@ export const relations__pages_v_rels = relations(_pages_v_rels, ({ one }) => ({
     fields: [_pages_v_rels.tagsID],
     references: [tags.id],
     relationName: 'tags',
+  }),
+  productsID: one(products, {
+    fields: [_pages_v_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [_pages_v_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [_pages_v_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [_pages_v_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  pagesID: one(pages, {
+    fields: [_pages_v_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
   }),
 }))
 export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
@@ -3279,13 +3996,31 @@ export const relations_media = relations(media, ({ one }) => ({
     relationName: 'folder',
   }),
 }))
-export const relations_aspects = relations(aspects, () => ({}))
+export const relations_aspects_same_as = relations(aspects_same_as, ({ one }) => ({
+  _parentID: one(aspects, {
+    fields: [aspects_same_as._parentID],
+    references: [aspects.id],
+    relationName: 'sameAs',
+  }),
+}))
+export const relations_aspects = relations(aspects, ({ many }) => ({
+  sameAs: many(aspects_same_as, {
+    relationName: 'sameAs',
+  }),
+}))
 export const relations_sources = relations(sources, () => ({}))
 export const relations_reviews = relations(reviews, ({ one }) => ({
   product: one(products, {
     fields: [reviews.product],
     references: [products.id],
     relationName: 'product',
+  }),
+}))
+export const relations_users_same_as = relations(users_same_as, ({ one }) => ({
+  _parentID: one(users, {
+    fields: [users_same_as._parentID],
+    references: [users.id],
+    relationName: 'sameAs',
   }),
 }))
 export const relations_users_sessions = relations(users_sessions, ({ one }) => ({
@@ -3296,6 +4031,9 @@ export const relations_users_sessions = relations(users_sessions, ({ one }) => (
   }),
 }))
 export const relations_users = relations(users, ({ one, many }) => ({
+  sameAs: many(users_same_as, {
+    relationName: 'sameAs',
+  }),
   photo: one(media, {
     fields: [users.photo],
     references: [media.id],
@@ -3545,6 +4283,38 @@ export const relations_navigation = relations(navigation, ({ many }) => ({
     relationName: 'footerColumns',
   }),
 }))
+export const relations_page_texts = relations(page_texts, ({ one }) => ({
+  home_shareImage: one(media, {
+    fields: [page_texts.home_shareImage],
+    references: [media.id],
+    relationName: 'home_shareImage',
+  }),
+  categories_shareImage: one(media, {
+    fields: [page_texts.categories_shareImage],
+    references: [media.id],
+    relationName: 'categories_shareImage',
+  }),
+  best_shareImage: one(media, {
+    fields: [page_texts.best_shareImage],
+    references: [media.id],
+    relationName: 'best_shareImage',
+  }),
+  compare_shareImage: one(media, {
+    fields: [page_texts.compare_shareImage],
+    references: [media.id],
+    relationName: 'compare_shareImage',
+  }),
+  methodology_shareImage: one(media, {
+    fields: [page_texts.methodology_shareImage],
+    references: [media.id],
+    relationName: 'methodology_shareImage',
+  }),
+  sources_shareImage: one(media, {
+    fields: [page_texts.sources_shareImage],
+    references: [media.id],
+    relationName: 'sources_shareImage',
+  }),
+}))
 export const relations_site_settings_steps = relations(site_settings_steps, ({ one }) => ({
   _parentID: one(site_settings, {
     fields: [site_settings_steps._parentID],
@@ -3552,6 +4322,16 @@ export const relations_site_settings_steps = relations(site_settings_steps, ({ o
     relationName: 'steps',
   }),
 }))
+export const relations_site_settings_blocked_paths = relations(
+  site_settings_blocked_paths,
+  ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_blocked_paths._parentID],
+      references: [site_settings.id],
+      relationName: 'blockedPaths',
+    }),
+  }),
+)
 export const relations_site_settings_social_profiles = relations(
   site_settings_social_profiles,
   ({ one }) => ({
@@ -3575,6 +4355,9 @@ export const relations_site_settings = relations(site_settings, ({ one, many }) 
     fields: [site_settings.logo],
     references: [media.id],
     relationName: 'logo',
+  }),
+  blockedPaths: many(site_settings_blocked_paths, {
+    relationName: 'blockedPaths',
   }),
   socialProfiles: many(site_settings_social_profiles, {
     relationName: 'socialProfiles',
@@ -3623,9 +4406,11 @@ type DatabaseSchema = {
   _products_v_version_platform_stats: typeof _products_v_version_platform_stats
   _products_v: typeof _products_v
   _products_v_rels: typeof _products_v_rels
+  categories_same_as: typeof categories_same_as
   categories_measures: typeof categories_measures
   categories_faq: typeof categories_faq
   categories: typeof categories
+  _categories_v_version_same_as: typeof _categories_v_version_same_as
   _categories_v_version_measures: typeof _categories_v_version_measures
   _categories_v_version_faq: typeof _categories_v_version_faq
   _categories_v: typeof _categories_v
@@ -3660,9 +4445,11 @@ type DatabaseSchema = {
   tags: typeof tags
   _tags_v: typeof _tags_v
   media: typeof media
+  aspects_same_as: typeof aspects_same_as
   aspects: typeof aspects
   sources: typeof sources
   reviews: typeof reviews
+  users_same_as: typeof users_same_as
   users_sessions: typeof users_sessions
   users: typeof users
   redirects: typeof redirects
@@ -3679,7 +4466,9 @@ type DatabaseSchema = {
   navigation_footer_columns_links: typeof navigation_footer_columns_links
   navigation_footer_columns: typeof navigation_footer_columns
   navigation: typeof navigation
+  page_texts: typeof page_texts
   site_settings_steps: typeof site_settings_steps
+  site_settings_blocked_paths: typeof site_settings_blocked_paths
   site_settings_social_profiles: typeof site_settings_social_profiles
   site_settings: typeof site_settings
   scoring_rules: typeof scoring_rules
@@ -3698,9 +4487,11 @@ type DatabaseSchema = {
   relations__products_v_version_platform_stats: typeof relations__products_v_version_platform_stats
   relations__products_v_rels: typeof relations__products_v_rels
   relations__products_v: typeof relations__products_v
+  relations_categories_same_as: typeof relations_categories_same_as
   relations_categories_measures: typeof relations_categories_measures
   relations_categories_faq: typeof relations_categories_faq
   relations_categories: typeof relations_categories
+  relations__categories_v_version_same_as: typeof relations__categories_v_version_same_as
   relations__categories_v_version_measures: typeof relations__categories_v_version_measures
   relations__categories_v_version_faq: typeof relations__categories_v_version_faq
   relations__categories_v: typeof relations__categories_v
@@ -3735,9 +4526,11 @@ type DatabaseSchema = {
   relations_tags: typeof relations_tags
   relations__tags_v: typeof relations__tags_v
   relations_media: typeof relations_media
+  relations_aspects_same_as: typeof relations_aspects_same_as
   relations_aspects: typeof relations_aspects
   relations_sources: typeof relations_sources
   relations_reviews: typeof relations_reviews
+  relations_users_same_as: typeof relations_users_same_as
   relations_users_sessions: typeof relations_users_sessions
   relations_users: typeof relations_users
   relations_redirects_rels: typeof relations_redirects_rels
@@ -3754,7 +4547,9 @@ type DatabaseSchema = {
   relations_navigation_footer_columns_links: typeof relations_navigation_footer_columns_links
   relations_navigation_footer_columns: typeof relations_navigation_footer_columns
   relations_navigation: typeof relations_navigation
+  relations_page_texts: typeof relations_page_texts
   relations_site_settings_steps: typeof relations_site_settings_steps
+  relations_site_settings_blocked_paths: typeof relations_site_settings_blocked_paths
   relations_site_settings_social_profiles: typeof relations_site_settings_social_profiles
   relations_site_settings: typeof relations_site_settings
   relations_scoring_rules: typeof relations_scoring_rules

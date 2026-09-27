@@ -4,14 +4,18 @@ import type {
   ArrayField,
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
+  CollectionBeforeChangeHook,
   Field,
   GlobalAfterChangeHook,
   GroupField,
   PayloadRequest,
   RelationshipField,
   TextField,
+  UIField,
 } from 'payload'
+import { ValidationError } from 'payload'
 
+import { nearestTo, publishedDocs, UNIQUENESS_THRESHOLD, type UniqueCollection } from '@/lib/uniqueness'
 import type { Redirect } from '@/payload-types'
 
 /** Collections a redirect can point at (see redirectsPlugin in payload.config.ts). */
@@ -130,6 +134,23 @@ export const tagsField: RelationshipField = {
   },
 }
 
+/**
+ * Hand-picked "Related" links shown near the end of the page. Pages that already list related
+ * items automatically (same-category products, lists, head-to-heads) keep those; these come first.
+ */
+export const relatedField: RelationshipField = {
+  name: 'related',
+  label: 'Related',
+  type: 'relationship',
+  relationTo: ['products', 'best-lists', 'comparisons', 'guides', 'pages'],
+  hasMany: true,
+  maxRows: 6,
+  admin: {
+    position: 'sidebar',
+    description: 'Up to six pages readers should see next. Drafts are skipped until they are published.',
+  },
+}
+
 /** A link an editor can point at one of our pages or at any web address. */
 export const linkFields = (): Field[] => [
   {
@@ -158,17 +179,16 @@ export const linkFields = (): Field[] => [
   {
     type: 'row',
     fields: [
-      {
+      urlField({
         name: 'url',
         label: 'Web address',
-        type: 'text',
         required: true,
         admin: {
           condition: (_, sibling) => sibling?.type === 'custom',
           placeholder: '/best  or  https://…',
           description: 'A path on this site (/best) or a full address.',
         },
-      },
+      }),
       {
         name: 'newTab',
         label: 'Open in a new tab',
@@ -182,20 +202,24 @@ export const linkFields = (): Field[] => [
 export const linkGroup = (name: string, label: string): GroupField => ({ name, label, type: 'group', fields: linkFields() })
 
 /**
- * When a published page's web address changes, send the old address to the new one, so links
- * and search results keep working. Editors see (and can edit) these under Website → Redirects.
+ * Keeps addresses consistent when a document is saved:
+ * - When a published page's web address changes, the old address is sent to the new one, so links
+ *   and search results keep working. Editors see (and can edit) these under Website → Redirects.
+ * - A published page's own address never carries a redirect or a "Gone" rule, which would hide it.
  */
 export const redirectOnSlugChange =
   (collection: RedirectTarget, pathOf: (doc: Record<string, unknown>) => Promise<string> | string): CollectionAfterChangeHook =>
   async ({ doc, previousDoc, req, operation }) => {
+    const live = !('_status' in doc) || doc._status === 'published'
+    if (!live || !doc.slug) return
+    const ctx = { skipRefresh: true }
+    const to = await pathOf(doc)
+    await req.payload.delete({ collection: 'redirects', where: { from: { equals: to } }, req, context: ctx })
+
     if (operation !== 'update' || !previousDoc?.slug || previousDoc.slug === doc.slug) return
     if ('_status' in previousDoc && previousDoc._status !== 'published') return
     const from = await pathOf(previousDoc)
-    const to = await pathOf(doc)
     if (from === to) return
-    const ctx = { skipRefresh: true }
-    // Anything that pointed at the new address would now loop; the page itself lives there again.
-    await req.payload.delete({ collection: 'redirects', where: { from: { equals: to } }, req, context: ctx })
     const existing = await req.payload.find({ collection: 'redirects', where: { from: { equals: from } }, limit: 1, req })
     const data = {
       from,
@@ -204,4 +228,92 @@ export const redirectOnSlugChange =
     }
     if (existing.docs[0]) await req.payload.update({ collection: 'redirects', id: existing.docs[0].id, data, req, context: ctx })
     else await req.payload.create({ collection: 'redirects', data, req, context: ctx })
+  }
+
+/**
+ * Deleting a published page for good answers its address with "410 Gone", which tells search
+ * engines to drop it sooner than a plain "not found". Switch off in Site settings → Crawlers.
+ */
+export const goneOnDelete =
+  (pathOf: (doc: Record<string, unknown>) => Promise<string> | string): CollectionAfterDeleteHook =>
+  async ({ doc, req }) => {
+    if (!doc?.slug || ('_status' in doc && doc._status !== 'published')) return
+    const site = await req.payload.findGlobal({ slug: 'site-settings', depth: 0, req })
+    if (site.goneOnDelete === false) return
+    const from = await pathOf(doc)
+    const existing = await req.payload.find({ collection: 'redirects', where: { from: { equals: from } }, limit: 1, req })
+    if (existing.docs.length) return
+    await req.payload.create({ collection: 'redirects', data: { from, type: '410' }, req, context: { skipRefresh: true } })
+  }
+
+/**
+ * Web addresses typed into the admin: http:// becomes https:// (a page served over HTTPS that
+ * loads or links http:// content shows "Not secure" warnings), and anything else must be a
+ * full https:// address or a path on this site.
+ */
+export const secureUrlHooks = {
+  beforeValidate: [
+    ({ value }: { value?: unknown }) =>
+      typeof value === 'string' ? value.trim().replace(/^http:\/\//i, 'https://') : value,
+  ],
+}
+export const validateSecureUrl = (value: unknown) =>
+  !value || /^(https:\/\/|\/|mailto:|tel:)/i.test(String(value))
+    ? true
+    : 'Use a full address starting with https://, or a path on this site starting with /.'
+
+/** A text field for a web address, upgraded to https:// on save. */
+export const urlField = (field: Omit<TextField, 'type'>): TextField =>
+  ({
+    ...field,
+    type: 'text',
+    hooks: { ...field.hooks, ...secureUrlHooks },
+    validate: validateSecureUrl,
+  }) as TextField
+
+/**
+ * Links that identify the same thing elsewhere (Wikipedia, Wikidata, official profiles). Search
+ * engines and AI answer engines use them to know exactly what a page is about.
+ */
+export const sameAsField = (description: string): ArrayField => ({
+  name: 'sameAs',
+  label: 'Same thing elsewhere',
+  type: 'array',
+  labels: { singular: 'Link', plural: 'Links' },
+  admin: { description },
+  fields: [urlField({ name: 'url', required: true, admin: { placeholder: 'https://www.wikidata.org/wiki/Q…' } })],
+})
+
+/** Sidebar panel: how different this page is from its closest match (see src/lib/uniqueness.ts). */
+export const uniquenessField: UIField = {
+  name: 'uniqueness',
+  type: 'ui',
+  admin: { position: 'sidebar', components: { Field: '/components/admin/UniquenessPanel#UniquenessPanel' } },
+}
+
+/**
+ * Refuses to publish a near-duplicate when Site settings → Programmatic SEO → "Stop near-duplicate
+ * pages" is on. Drafts are never blocked.
+ */
+export const uniquenessGuard =
+  (collection: UniqueCollection): CollectionBeforeChangeHook =>
+  async ({ data, originalDoc, req }) => {
+    if (data?._status !== 'published') return data
+    const site = await req.payload.findGlobal({ slug: 'site-settings', depth: 0, req })
+    if (!site.blockDuplicates) return data
+    const threshold = site.uniquenessThreshold ?? UNIQUENESS_THRESHOLD
+    const doc = { ...originalDoc, ...data }
+    const result = nearestTo(collection, doc, await publishedDocs(req.payload, collection))
+    if (!result.tooShort && result.distance < threshold && result.nearest) {
+      throw new ValidationError({
+        collection,
+        errors: [
+          {
+            path: '_status',
+            message: `Too similar to “${result.nearest.title}”: only ${Math.round(result.distance * 100)}% of the wording is this page’s own (at least ${Math.round(threshold * 100)}% needed). Rewrite the shared parts, or save as a draft.`,
+          },
+        ],
+      })
+    }
+    return data
   }

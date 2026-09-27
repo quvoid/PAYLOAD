@@ -12,11 +12,16 @@ import {
   isAdmin,
   loggedIn,
   previewPath,
+  goneOnDelete,
   redirectOnSlugChange,
   refreshAfterChange,
   refreshAfterDelete,
   slugField,
+  relatedField,
+  uniquenessField,
+  uniquenessGuard,
   tagsField,
+  urlField,
 } from './shared'
 
 /** Pages live at the site root (/about), next to sections (/apps), so they can't share an address. */
@@ -71,13 +76,12 @@ const button: Block = {
   labels: { singular: 'Button', plural: 'Buttons' },
   fields: [
     { name: 'label', type: 'text', required: true },
-    {
+    urlField({
       name: 'url',
       label: 'Web address',
-      type: 'text',
       required: true,
       admin: { placeholder: '/best  or  https://…' },
-    },
+    }),
   ],
 }
 
@@ -100,8 +104,9 @@ export const Pages: CollectionConfig = {
   trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
+    beforeChange: [uniquenessGuard('pages')],
     afterChange: [refreshAfterChange, redirectOnSlugChange('pages', (d) => `/${d.slug}`)],
-    afterDelete: [refreshAfterDelete],
+    afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/${d.slug}`)],
   },
   fields: [
     {
@@ -152,6 +157,8 @@ export const Pages: CollectionConfig = {
       },
     }),
     tagsField,
+    relatedField,
+    uniquenessField,
     {
       name: 'publishedAt',
       label: 'Published on',

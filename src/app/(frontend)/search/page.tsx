@@ -10,7 +10,7 @@ import { searchCatalogue } from '@/lib/catalog'
 import { QUERY_MAX } from '@/lib/requests'
 import { routes } from '@/lib/routes'
 import { SITE } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { ensureCatalog, pageTexts } from '@/lib/store'
 
 // Internal search results are never indexed (docs/PLAN.md §7); robots.ts also disallows /search.
 export const metadata: Metadata = {
@@ -31,8 +31,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
     <PageShell track="light">
       <Container className="pt-10">
         <h1 className="font-display text-display-sm md:text-display-md">
-          {query ? <>Results for &ldquo;{query}&rdquo;</> : 'Search the catalogue'}
+          {query ? <>Results for &ldquo;{query}&rdquo;</> : pageTexts.search.heading}
         </h1>
+        {!query && pageTexts.search.intro && <p className="mt-4 max-w-[60ch] text-body-lg">{pageTexts.search.intro}</p>}
         <SearchForm size="lg" defaultValue={query} className="mt-6 max-w-2xl" />
 
         {query && (

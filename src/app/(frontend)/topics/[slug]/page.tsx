@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
+import { TagList } from '@/components/TagList'
 import { Breadcrumbs, Faq, Meter, VerdictBadge } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
@@ -13,6 +13,7 @@ import { aspectStat, countedReviews } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
 import { breadcrumbLd, faqLd, graph, itemListLd, pageMetadata, SITE } from '@/lib/seo'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -37,6 +38,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: topic.title,
     description: topic.explainer[0].slice(0, 155),
     path: routes.topic(topic.slug),
+    seo: topic.seo,
     // Nothing to rank yet: nothing worth indexing.
     noindex: ranked(topic.silo, topic.aspect).length === 0,
   })
@@ -47,7 +49,7 @@ export default async function TopicPage({ params }: { params: Params }) {
   const { isEnabled: previewing } = await draftMode()
   const slug = (await params).slug
   const topic = previewing ? getTopicForPreview(slug) : getTopic(slug)
-  if (!topic) notFound()
+  if (!topic) notFoundOrRedirect(`/topics/${slug}`)
 
   const aspect = getAspect(topic.aspect)!
   const silo = getCategory(topic.silo)!
@@ -80,6 +82,7 @@ export default async function TopicPage({ params }: { params: Params }) {
                 We don&apos;t have enough reviews yet to compare products in {silo.name} on {inSentence(aspect.label)}.
               </p>
             )}
+            <TagList tags={topic.tags} className="mt-6" />
           </header>
 
           <Section id="explainer" title={`What causes ${inSentence(aspect.label)} problems?`}>

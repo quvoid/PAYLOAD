@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import { CategoryTable, PairTable } from '@/components/compare'
 import { JsonLd } from '@/components/JsonLd'
@@ -22,6 +21,7 @@ import { shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, graph, itemListLd, pageMetadata, productReviewLd } from '@/lib/seo'
 import type { Category, PairComparison } from '@/lib/types'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 // Two kinds of comparison share /compare/[slug]: editor-chosen head-to-head pairs, and a
@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       title: `${a.shortName} vs ${b.shortName}: which should you buy?`,
       description: found.pair.judgement[0].slice(0, 155),
       path: routes.compare(found.pair.slug),
+      seo: found.pair.seo,
     })
   }
   return pageMetadata({
@@ -162,8 +163,9 @@ function CategoryComparePage({ category }: { category: Category }) {
 export default async function ComparePage({ params }: { params: Params }) {
   await ensureCatalog()
   const { isEnabled: previewing } = await draftMode()
-  const found = resolve((await params).slug, previewing)
-  if (!found) notFound()
+  const slug = (await params).slug
+  const found = resolve(slug, previewing)
+  if (!found) notFoundOrRedirect(`/compare/${slug}`)
   return (
     <PageShell track="light">
       {found.kind === 'pair' ? <PairPage pair={found.pair} /> : <CategoryComparePage category={found.category} />}

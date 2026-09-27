@@ -6,9 +6,13 @@ import {
   categories,
   comparisons,
   drafts,
+  navigation,
+  pages,
   products,
+  redirects,
   settings,
   sources,
+  tags,
   topics,
 } from './store'
 
@@ -35,12 +39,15 @@ export const getAspect = bySlug(aspects)
 export const getBestOf = bySlug(bestOf)
 export const getComparison = bySlug(comparisons)
 export const getTopic = bySlug(topics)
+export const getTag = bySlug(tags)
+export const getPage = bySlug(pages)
 
 // Preview mode (a logged-in editor viewing drafts): the latest version, published or not.
 export const getProductForPreview = (slug: string) => drafts.products.get(slug) ?? getProduct(slug)
 export const getBestOfForPreview = (slug: string) => drafts.bestOf.get(slug) ?? getBestOf(slug)
 export const getComparisonForPreview = (slug: string) => drafts.comparisons.get(slug) ?? getComparison(slug)
 export const getTopicForPreview = (slug: string) => drafts.topics.get(slug) ?? getTopic(slug)
+export const getPageForPreview = (slug: string) => drafts.pages.get(slug) ?? getPage(slug)
 /** Resolves a product slug in a draft comparison, where one product may not be published yet. */
 export const getAnyProduct = (slug: string) => getProduct(slug) ?? drafts.products.get(slug)
 export const getSource = (id: string) => sources.find((s) => s.id === id)
@@ -52,6 +59,27 @@ export const allSources = () => sources
 export const allBestOf = () => bestOf
 export const allComparisons = () => comparisons
 export const allTopics = () => topics
+export const allPages = () => pages
+export const allTags = () => tags
+
+/** Menu and footer links chosen in the admin (Website → Navigation). */
+export const siteNavigation = () => navigation
+/** Search engine, social and analytics settings (Settings → Site settings). */
+export const siteSettings = () => settings
+
+/** Where an old address now lives, if an editor (or a web-address change) set up a redirect. */
+export const redirectFor = (path: string) => redirects.get(path.replace(/(.)\/+$/, '$1'))
+
+/** Everything carrying a tag, for its /tags page. */
+export const taggedWith = (tag: string) => ({
+  products: products.filter((p) => p.tags?.includes(tag)).sort((a, b) => compositeScore(b) - compositeScore(a)),
+  lists: bestOf.filter((b) => b.tags?.includes(tag)),
+  guides: topics.filter((t) => t.tags?.includes(tag)),
+  pages: pages.filter((p) => p.tags.includes(tag)),
+})
+/** Tag pages with fewer items are thin: they stay out of search results and the sitemap. */
+export const TAG_INDEX_MIN = 3
+export const taggedCount = (tag: string) => Object.values(taggedWith(tag)).reduce((n, list) => n + list.length, 0)
 
 export const silos = () => categories.filter((c) => !c.parent)
 export const leafCategories = () => categories.filter((c) => c.parent)

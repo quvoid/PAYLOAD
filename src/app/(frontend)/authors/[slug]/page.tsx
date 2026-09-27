@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, ProductCard } from '@/components/review'
@@ -8,6 +7,7 @@ import { Container, Prose, Section } from '@/components/ui'
 import { allAuthors, getAuthor, productsByAuthor } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { absoluteUrl, breadcrumbLd, graph, pageMetadata, SITE } from '@/lib/seo'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -26,8 +26,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function AuthorPage({ params }: { params: Params }) {
   await ensureCatalog()
-  const author = getAuthor((await params).slug)
-  if (!author) notFound()
+  const slug = (await params).slug
+  const author = getAuthor(slug)
+  if (!author) notFoundOrRedirect(`/authors/${slug}`)
   const products = productsByAuthor(author.slug)
   const crumbs = [
     { name: 'Home', path: routes.home() },

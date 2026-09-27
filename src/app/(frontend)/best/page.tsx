@@ -9,11 +9,14 @@ import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
 import { ensureCatalog } from '@/lib/store'
 
-export const metadata: Metadata = pageMetadata({
-  title: 'Ranked lists — best products by what matters',
-  description: 'Every ranked list on ReviewLens, each ordered by scores computed from real reviews.',
-  path: routes.bestIndex(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'Ranked lists — best products by what matters',
+    description: 'Every ranked list on ReviewLens, each ordered by scores computed from real reviews.',
+    path: routes.bestIndex(),
+  })
+}
 
 export default async function BestIndexPage() {
   await ensureCatalog()

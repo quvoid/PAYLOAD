@@ -77,6 +77,23 @@ neon branches create --name <name>              # a throwaway branch to test a m
 | `pnpm build:vercel` | Vercel's build: run pending migrations (over `DATABASE_URL_UNPOOLED`), then build |
 | `pnpm test` | Vitest integration tests + Playwright e2e tests |
 
+## The admin (CMS)
+
+Everything an editor needs is in `/admin`, grouped in the sidebar:
+
+| Where | What editors can do |
+|---|---|
+| **Catalogue**, **Editorial** | Products, categories, brands, ranked lists, head-to-heads, guides. Drafts with autosave, **Live preview** (the eye icon: the real page beside the editor, phone/tablet/desktop), version history with restore. |
+| **Website → Pages** | Free-form pages (About, Contact, Privacy…) at `/<web address>`, in a word-processor editor: headings, lists, links to any of our pages, images, quotes, tables, highlighted notes and buttons (type `/`). |
+| **Website → Navigation** | The top-menu links, footer columns, the text under the footer logo and the small print. |
+| **Website → Tags** | Labels on products, lists, guides and pages. Each tag has a page at `/tags/<name>` (kept out of search results until it has 3 items). |
+| **Website → Images** | Uploads with description, caption, credit, focal point and folders. Thumbnail, card and 1200×630 share sizes are made automatically. |
+| **Website → Redirects** | Old address → new one (301 or 302). Made automatically when a published page's web address changes. |
+| **SEO tab** (every page type) | Search title and description with length checks and a Google preview, share image, "hide from search engines", main (canonical) address. "Auto-generate" fills sensible defaults. |
+| **Settings → Site settings** | Homepage and banner; search-engine defaults (description, share image, logo, Google/Bing verification, **hide the whole site** while it isn't ready); social profiles; Google Analytics ID. |
+
+Deleting sends things to the **trash** first (restore from the list's Trash view). Every save keeps a version you can compare and restore.
+
 ## Deploying to Vercel
 
 `vercel.json` sets the build command, puts the server in Singapore (`sin1`, next to the Neon database) and builds **production only**: pushes to other branches are skipped, because a preview would need a database of its own.

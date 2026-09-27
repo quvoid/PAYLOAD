@@ -10,11 +10,14 @@ import { routes } from '@/lib/routes'
 import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
 import { ensureCatalog } from '@/lib/store'
 
-export const metadata: Metadata = pageMetadata({
-  title: 'All categories',
-  description: 'Every category ReviewLens reviews, from protein powder to UPI apps.',
-  path: routes.categories(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'All categories',
+    description: 'Every category ReviewLens reviews, from protein powder to UPI apps.',
+    path: routes.categories(),
+  })
+}
 
 export default async function CategoriesPage() {
   await ensureCatalog()

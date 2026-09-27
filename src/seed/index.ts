@@ -7,6 +7,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import config from '@payload-config'
+import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import fs from 'fs'
 import path from 'path'
 import { getPayload, type Payload } from 'payload'
@@ -216,6 +217,48 @@ async function seed() {
     })
   }
   log(`${bestOf.length} ranked lists, ${comparisons.length} head-to-heads, ${topics.length} guides`)
+
+  // --- a starter page, so editors have an example to copy ----------------------------------------
+  const editorConfig = await editorConfigFactory.default({ config: payload.config })
+  const about = await upsert(payload, 'pages', 'about', {
+    _status: 'published',
+    title: 'About ReviewLens',
+    intro: 'One honest answer on whether to buy something, counted from every review we can find.',
+    content: convertMarkdownToLexical({
+      editorConfig,
+      markdown: [
+        '## What we do',
+        'We collect every review of one exact product from Amazon, Flipkart, the app stores, Reddit and YouTube, set aside the ones that look manipulated, and count what people actually say.',
+        '## How a verdict is made',
+        '- Every number on the site is counted by code from the reviews themselves.',
+        '- The verdict (Buy, Buy with caveats, Skip or Not enough data) follows published rules.',
+        '- A named editor reads every verdict and approves it before it goes live.',
+        'Read [how we score](/methodology) for the rules and thresholds.',
+        '## Independence',
+        "We don't earn affiliate commission. If that ever changes, every affected page will say so.",
+      ].join('\n\n'),
+    }),
+  })
+  const nav = await payload.findGlobal({ slug: 'navigation', depth: 0 })
+  if (!nav.footerColumns?.length) {
+    await payload.updateGlobal({
+      slug: 'navigation',
+      context,
+      data: {
+        footerColumns: [
+          {
+            title: 'About',
+            links: [
+              { label: 'About ReviewLens', type: 'page', page: about.id },
+              { label: 'How we score', type: 'custom', url: '/methodology' },
+              { label: 'Where our reviews come from', type: 'custom', url: '/sources' },
+            ],
+          },
+        ],
+      },
+    })
+  }
+  log('about page and footer links')
 
   // --- settings ----------------------------------------------------------------------------------
   await payload.updateGlobal({

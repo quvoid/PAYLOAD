@@ -1,6 +1,16 @@
 import type { CollectionBeforeChangeHook, CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
 
-import { faqField, isAdmin, loggedIn, previewPath, refreshAfterChange, refreshAfterDelete, slugField } from './shared'
+import {
+  faqField,
+  isAdmin,
+  loggedIn,
+  previewPath,
+  redirectOnSlugChange,
+  refreshAfterChange,
+  refreshAfterDelete,
+  slugField,
+  tagsField,
+} from './shared'
 
 // Publishing is approval: the person who presses Publish becomes the named editor on the page.
 const recordApproval: CollectionBeforeChangeHook = ({ data, req }) => {
@@ -30,13 +40,15 @@ export const Products: CollectionConfig = {
     description:
       'Every product we review. Draft products are hidden from the site: read the draft with Preview, then press Publish to approve it.',
     preview: (doc) => previewPath(`/reviews/${doc.slug}`),
+    livePreview: { url: ({ data }) => previewPath(`/reviews/${data?.slug ?? ''}`) },
   },
-  versions: { drafts: true },
+  versions: { drafts: { autosave: { interval: 2000 } }, maxPerDoc: 50 },
+  trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     beforeChange: [recordApproval],
     beforeDelete: [deleteReviews],
-    afterChange: [refreshAfterChange],
+    afterChange: [refreshAfterChange, redirectOnSlugChange('products', (d) => `/reviews/${d.slug}`)],
     afterDelete: [refreshAfterDelete],
   },
   fields: [
@@ -244,6 +256,7 @@ export const Products: CollectionConfig = {
         description: 'The page lives at /reviews/<this>. Filled in from the name; don’t change it after publishing.',
       },
     }),
+    tagsField,
     {
       name: 'author',
       label: 'Approved by',

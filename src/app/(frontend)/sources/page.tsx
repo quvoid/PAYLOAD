@@ -8,11 +8,14 @@ import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
 import { ensureCatalog } from '@/lib/store'
 
-export const metadata: Metadata = pageMetadata({
-  title: 'Where our reviews come from',
-  description: 'Every source ReviewLens collects reviews from, how we collect them, and how much each one counts.',
-  path: routes.sources(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'Where our reviews come from',
+    description: 'Every source ReviewLens collects reviews from, how we collect them, and how much each one counts.',
+    path: routes.sources(),
+  })
+}
 
 const kindLabel = {
   marketplace: 'Marketplace',

@@ -9,11 +9,14 @@ import { routes } from '@/lib/routes'
 import { pageMetadata } from '@/lib/seo'
 import { ensureCatalog } from '@/lib/store'
 
-export const metadata: Metadata = pageMetadata({
-  title: 'Compare products side by side',
-  description: 'Head-to-head comparisons and whole-category tables, every measure computed from reviews.',
-  path: routes.compareIndex(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'Compare products side by side',
+    description: 'Head-to-head comparisons and whole-category tables, every measure computed from reviews.',
+    path: routes.compareIndex(),
+  })
+}
 
 export default async function CompareIndexPage() {
   await ensureCatalog()

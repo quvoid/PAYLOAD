@@ -1,0 +1,5 @@
+// The rich text editor uses the admin's sans-serif (Payload defaults it to serif), so what
+// editors type looks like the site it will appear on.
+.rich-text-lexical .editor-container {
+  font-family: var(--font-body);
+}

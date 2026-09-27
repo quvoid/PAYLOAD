@@ -45,6 +45,18 @@ export const enum_categories_app_category = pgEnum('enum_categories_app_category
   'EntertainmentApplication',
   'UtilitiesApplication',
 ])
+export const enum__categories_v_version_app_category = pgEnum(
+  'enum__categories_v_version_app_category',
+  [
+    'FinanceApplication',
+    'ShoppingApplication',
+    'LifestyleApplication',
+    'TravelApplication',
+    'HealthApplication',
+    'EntertainmentApplication',
+    'UtilitiesApplication',
+  ],
+)
 export const enum_best_lists_rank_by = pgEnum('enum_best_lists_rank_by', [
   'satisfaction',
   'fewest-problems',
@@ -74,6 +86,11 @@ export const enum_review_requests_status = pgEnum('enum_review_requests_status',
   'added',
   'declined',
 ])
+export const enum_pages_status = pgEnum('enum_pages_status', ['draft', 'published'])
+export const enum__pages_v_version_status = pgEnum('enum__pages_v_version_status', [
+  'draft',
+  'published',
+])
 export const enum_sources_kind = pgEnum('enum_sources_kind', [
   'marketplace',
   'brand-store',
@@ -87,6 +104,19 @@ export const enum_reviews_sentiment = pgEnum('enum_reviews_sentiment', [
   'negative',
 ])
 export const enum_users_role = pgEnum('enum_users_role', ['admin', 'editor'])
+export const enum_redirects_to_type = pgEnum('enum_redirects_to_type', ['reference', 'custom'])
+export const enum_redirects_type = pgEnum('enum_redirects_type', ['301', '302'])
+export const enum_payload_folders_folder_type = pgEnum('enum_payload_folders_folder_type', [
+  'media',
+])
+export const enum_navigation_header_links_type = pgEnum('enum_navigation_header_links_type', [
+  'page',
+  'custom',
+])
+export const enum_navigation_footer_columns_links_type = pgEnum(
+  'enum_navigation_footer_columns_links_type',
+  ['page', 'custom'],
+)
 
 export const products_claims = pgTable(
   'products_claims',
@@ -229,6 +259,13 @@ export const products = pgTable(
       withTimezone: true,
       precision: 3,
     }),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     slug: varchar('slug'),
     author: integer('author_id').references(() => users.id, {
       onDelete: 'set null',
@@ -240,16 +277,46 @@ export const products = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
     _status: enum_products_status('_status').default('draft'),
   },
   (columns) => [
     index('products_brand_idx').on(columns.brand),
     index('products_category_idx').on(columns.category),
+    index('products_meta_meta_image_idx').on(columns.meta_image),
     uniqueIndex('products_slug_idx').on(columns.slug),
     index('products_author_idx').on(columns.author),
     index('products_updated_at_idx').on(columns.updatedAt),
     index('products_created_at_idx').on(columns.createdAt),
+    index('products_deleted_at_idx').on(columns.deletedAt),
     index('products__status_idx').on(columns._status),
+  ],
+)
+
+export const products_rels = pgTable(
+  'products_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('products_rels_order_idx').on(columns.order),
+    index('products_rels_parent_idx').on(columns.parent),
+    index('products_rels_path_idx').on(columns.path),
+    index('products_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [products.id],
+      name: 'products_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'products_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -402,6 +469,13 @@ export const _products_v = pgTable(
       withTimezone: true,
       precision: 3,
     }),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
     version_slug: varchar('version_slug'),
     version_author: integer('version_author_id').references(() => users.id, {
       onDelete: 'set null',
@@ -421,6 +495,11 @@ export const _products_v = pgTable(
       withTimezone: true,
       precision: 3,
     }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
     version__status: enum__products_v_version_status('version__status').default('draft'),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
@@ -429,19 +508,50 @@ export const _products_v = pgTable(
       .defaultNow()
       .notNull(),
     latest: boolean('latest'),
+    autosave: boolean('autosave'),
   },
   (columns) => [
     index('_products_v_parent_idx').on(columns.parent),
     index('_products_v_version_version_brand_idx').on(columns.version_brand),
     index('_products_v_version_version_category_idx').on(columns.version_category),
+    index('_products_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
     index('_products_v_version_version_slug_idx').on(columns.version_slug),
     index('_products_v_version_version_author_idx').on(columns.version_author),
     index('_products_v_version_version_updated_at_idx').on(columns.version_updatedAt),
     index('_products_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_products_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
     index('_products_v_version_version__status_idx').on(columns.version__status),
     index('_products_v_created_at_idx').on(columns.createdAt),
     index('_products_v_updated_at_idx').on(columns.updatedAt),
     index('_products_v_latest_idx').on(columns.latest),
+    index('_products_v_autosave_idx').on(columns.autosave),
+  ],
+)
+
+export const _products_v_rels = pgTable(
+  '_products_v_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('_products_v_rels_order_idx').on(columns.order),
+    index('_products_v_rels_parent_idx').on(columns.parent),
+    index('_products_v_rels_path_idx').on(columns.path),
+    index('_products_v_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [_products_v.id],
+      name: '_products_v_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: '_products_v_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -505,6 +615,13 @@ export const categories = pgTable(
     valueMetric_basis: numeric('value_metric_basis', { mode: 'number' }),
     isApp: boolean('is_app'),
     appCategory: enum_categories_app_category('app_category'),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     slug: varchar('slug').notNull(),
     refreshDays: numeric('refresh_days', { mode: 'number' }).default(21),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
@@ -513,12 +630,124 @@ export const categories = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
   },
   (columns) => [
     index('categories_parent_idx').on(columns.parent),
+    index('categories_meta_meta_image_idx').on(columns.meta_image),
     uniqueIndex('categories_slug_idx').on(columns.slug),
     index('categories_updated_at_idx').on(columns.updatedAt),
     index('categories_created_at_idx').on(columns.createdAt),
+    index('categories_deleted_at_idx').on(columns.deletedAt),
+  ],
+)
+
+export const _categories_v_version_measures = pgTable(
+  '_categories_v_version_measures',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: serial('id').primaryKey(),
+    aspect: integer('aspect_id')
+      .notNull()
+      .references(() => aspects.id, {
+        onDelete: 'set null',
+      }),
+    dealBreaker: boolean('deal_breaker'),
+    weight: numeric('weight', { mode: 'number' }).default(1),
+    _uuid: varchar('_uuid'),
+  },
+  (columns) => [
+    index('_categories_v_version_measures_order_idx').on(columns._order),
+    index('_categories_v_version_measures_parent_id_idx').on(columns._parentID),
+    index('_categories_v_version_measures_aspect_idx').on(columns.aspect),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [_categories_v.id],
+      name: '_categories_v_version_measures_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const _categories_v_version_faq = pgTable(
+  '_categories_v_version_faq',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: serial('id').primaryKey(),
+    q: varchar('q').notNull(),
+    a: varchar('a').notNull(),
+    _uuid: varchar('_uuid'),
+  },
+  (columns) => [
+    index('_categories_v_version_faq_order_idx').on(columns._order),
+    index('_categories_v_version_faq_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [_categories_v.id],
+      name: '_categories_v_version_faq_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const _categories_v = pgTable(
+  '_categories_v',
+  {
+    id: serial('id').primaryKey(),
+    parent: integer('parent_id').references(() => categories.id, {
+      onDelete: 'set null',
+    }),
+    version_name: varchar('version_name').notNull(),
+    version_parent: integer('version_parent_id').references(() => categories.id, {
+      onDelete: 'set null',
+    }),
+    version_tagline: varchar('version_tagline').notNull(),
+    version_intro: varchar('version_intro'),
+    version_valueMetric_label: varchar('version_value_metric_label'),
+    version_valueMetric_basis: numeric('version_value_metric_basis', { mode: 'number' }),
+    version_isApp: boolean('version_is_app'),
+    version_appCategory: enum__categories_v_version_app_category('version_app_category'),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
+    version_slug: varchar('version_slug').notNull(),
+    version_refreshDays: numeric('version_refresh_days', { mode: 'number' }).default(21),
+    version_updatedAt: timestamp('version_updated_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index('_categories_v_parent_idx').on(columns.parent),
+    index('_categories_v_version_version_parent_idx').on(columns.version_parent),
+    index('_categories_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
+    index('_categories_v_version_version_slug_idx').on(columns.version_slug),
+    index('_categories_v_version_version_updated_at_idx').on(columns.version_updatedAt),
+    index('_categories_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_categories_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
+    index('_categories_v_created_at_idx').on(columns.createdAt),
+    index('_categories_v_updated_at_idx').on(columns.updatedAt),
   ],
 )
 
@@ -551,6 +780,13 @@ export const brands = pgTable(
     logo: integer('logo_id').references(() => media.id, {
       onDelete: 'set null',
     }),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     slug: varchar('slug').notNull(),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
@@ -558,12 +794,91 @@ export const brands = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
   },
   (columns) => [
     index('brands_logo_idx').on(columns.logo),
+    index('brands_meta_meta_image_idx').on(columns.meta_image),
     uniqueIndex('brands_slug_idx').on(columns.slug),
     index('brands_updated_at_idx').on(columns.updatedAt),
     index('brands_created_at_idx').on(columns.createdAt),
+    index('brands_deleted_at_idx').on(columns.deletedAt),
+  ],
+)
+
+export const _brands_v_version_same_as = pgTable(
+  '_brands_v_version_same_as',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: serial('id').primaryKey(),
+    url: varchar('url').notNull(),
+    _uuid: varchar('_uuid'),
+  },
+  (columns) => [
+    index('_brands_v_version_same_as_order_idx').on(columns._order),
+    index('_brands_v_version_same_as_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [_brands_v.id],
+      name: '_brands_v_version_same_as_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const _brands_v = pgTable(
+  '_brands_v',
+  {
+    id: serial('id').primaryKey(),
+    parent: integer('parent_id').references(() => brands.id, {
+      onDelete: 'set null',
+    }),
+    version_name: varchar('version_name').notNull(),
+    version_about: varchar('version_about'),
+    version_website: varchar('version_website'),
+    version_logo: integer('version_logo_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
+    version_slug: varchar('version_slug').notNull(),
+    version_updatedAt: timestamp('version_updated_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index('_brands_v_parent_idx').on(columns.parent),
+    index('_brands_v_version_version_logo_idx').on(columns.version_logo),
+    index('_brands_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
+    index('_brands_v_version_version_slug_idx').on(columns.version_slug),
+    index('_brands_v_version_version_updated_at_idx').on(columns.version_updatedAt),
+    index('_brands_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_brands_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
+    index('_brands_v_created_at_idx').on(columns.createdAt),
+    index('_brands_v_updated_at_idx').on(columns.updatedAt),
   ],
 )
 
@@ -602,6 +917,13 @@ export const best_lists = pgTable(
       onDelete: 'set null',
     }),
     maxPrice: numeric('max_price', { mode: 'number' }),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     slug: varchar('slug'),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
@@ -609,15 +931,45 @@ export const best_lists = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
     _status: enum_best_lists_status('_status').default('draft'),
   },
   (columns) => [
     index('best_lists_category_idx').on(columns.category),
     index('best_lists_aspect_idx').on(columns.aspect),
+    index('best_lists_meta_meta_image_idx').on(columns.meta_image),
     uniqueIndex('best_lists_slug_idx').on(columns.slug),
     index('best_lists_updated_at_idx').on(columns.updatedAt),
     index('best_lists_created_at_idx').on(columns.createdAt),
+    index('best_lists_deleted_at_idx').on(columns.deletedAt),
     index('best_lists__status_idx').on(columns._status),
+  ],
+)
+
+export const best_lists_rels = pgTable(
+  'best_lists_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('best_lists_rels_order_idx').on(columns.order),
+    index('best_lists_rels_parent_idx').on(columns.parent),
+    index('best_lists_rels_path_idx').on(columns.path),
+    index('best_lists_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [best_lists.id],
+      name: 'best_lists_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'best_lists_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -660,6 +1012,13 @@ export const _best_lists_v = pgTable(
       onDelete: 'set null',
     }),
     version_maxPrice: numeric('version_max_price', { mode: 'number' }),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
     version_slug: varchar('version_slug'),
     version_updatedAt: timestamp('version_updated_at', {
       mode: 'string',
@@ -667,6 +1026,11 @@ export const _best_lists_v = pgTable(
       precision: 3,
     }),
     version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
       mode: 'string',
       withTimezone: true,
       precision: 3,
@@ -679,18 +1043,49 @@ export const _best_lists_v = pgTable(
       .defaultNow()
       .notNull(),
     latest: boolean('latest'),
+    autosave: boolean('autosave'),
   },
   (columns) => [
     index('_best_lists_v_parent_idx').on(columns.parent),
     index('_best_lists_v_version_version_category_idx').on(columns.version_category),
     index('_best_lists_v_version_version_aspect_idx').on(columns.version_aspect),
+    index('_best_lists_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
     index('_best_lists_v_version_version_slug_idx').on(columns.version_slug),
     index('_best_lists_v_version_version_updated_at_idx').on(columns.version_updatedAt),
     index('_best_lists_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_best_lists_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
     index('_best_lists_v_version_version__status_idx').on(columns.version__status),
     index('_best_lists_v_created_at_idx').on(columns.createdAt),
     index('_best_lists_v_updated_at_idx').on(columns.updatedAt),
     index('_best_lists_v_latest_idx').on(columns.latest),
+    index('_best_lists_v_autosave_idx').on(columns.autosave),
+  ],
+)
+
+export const _best_lists_v_rels = pgTable(
+  '_best_lists_v_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('_best_lists_v_rels_order_idx').on(columns.order),
+    index('_best_lists_v_rels_parent_idx').on(columns.parent),
+    index('_best_lists_v_rels_path_idx').on(columns.path),
+    index('_best_lists_v_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [_best_lists_v.id],
+      name: '_best_lists_v_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: '_best_lists_v_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -722,6 +1117,13 @@ export const comparisons = pgTable(
   {
     id: serial('id').primaryKey(),
     judgement: varchar('judgement'),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     category: integer('category_id').references(() => categories.id, {
       onDelete: 'set null',
     }),
@@ -732,13 +1134,16 @@ export const comparisons = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
     _status: enum_comparisons_status('_status').default('draft'),
   },
   (columns) => [
+    index('comparisons_meta_meta_image_idx').on(columns.meta_image),
     index('comparisons_category_idx').on(columns.category),
     uniqueIndex('comparisons_slug_idx').on(columns.slug),
     index('comparisons_updated_at_idx').on(columns.updatedAt),
     index('comparisons_created_at_idx').on(columns.createdAt),
+    index('comparisons_deleted_at_idx').on(columns.deletedAt),
     index('comparisons__status_idx').on(columns._status),
   ],
 )
@@ -802,6 +1207,13 @@ export const _comparisons_v = pgTable(
       onDelete: 'set null',
     }),
     version_judgement: varchar('version_judgement'),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
     version_category: integer('version_category_id').references(() => categories.id, {
       onDelete: 'set null',
     }),
@@ -816,6 +1228,11 @@ export const _comparisons_v = pgTable(
       withTimezone: true,
       precision: 3,
     }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
     version__status: enum__comparisons_v_version_status('version__status').default('draft'),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
@@ -824,17 +1241,21 @@ export const _comparisons_v = pgTable(
       .defaultNow()
       .notNull(),
     latest: boolean('latest'),
+    autosave: boolean('autosave'),
   },
   (columns) => [
     index('_comparisons_v_parent_idx').on(columns.parent),
+    index('_comparisons_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
     index('_comparisons_v_version_version_category_idx').on(columns.version_category),
     index('_comparisons_v_version_version_slug_idx').on(columns.version_slug),
     index('_comparisons_v_version_version_updated_at_idx').on(columns.version_updatedAt),
     index('_comparisons_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_comparisons_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
     index('_comparisons_v_version_version__status_idx').on(columns.version__status),
     index('_comparisons_v_created_at_idx').on(columns.createdAt),
     index('_comparisons_v_updated_at_idx').on(columns.updatedAt),
     index('_comparisons_v_latest_idx').on(columns.latest),
+    index('_comparisons_v_autosave_idx').on(columns.autosave),
   ],
 )
 
@@ -897,6 +1318,13 @@ export const guides = pgTable(
       onDelete: 'set null',
     }),
     explainer: varchar('explainer'),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
     slug: varchar('slug'),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
@@ -904,15 +1332,45 @@ export const guides = pgTable(
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
     _status: enum_guides_status('_status').default('draft'),
   },
   (columns) => [
     index('guides_aspect_idx').on(columns.aspect),
     index('guides_section_idx').on(columns.section),
+    index('guides_meta_meta_image_idx').on(columns.meta_image),
     uniqueIndex('guides_slug_idx').on(columns.slug),
     index('guides_updated_at_idx').on(columns.updatedAt),
     index('guides_created_at_idx').on(columns.createdAt),
+    index('guides_deleted_at_idx').on(columns.deletedAt),
     index('guides__status_idx').on(columns._status),
+  ],
+)
+
+export const guides_rels = pgTable(
+  'guides_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('guides_rels_order_idx').on(columns.order),
+    index('guides_rels_parent_idx').on(columns.parent),
+    index('guides_rels_path_idx').on(columns.path),
+    index('guides_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [guides.id],
+      name: 'guides_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'guides_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -952,6 +1410,13 @@ export const _guides_v = pgTable(
       onDelete: 'set null',
     }),
     version_explainer: varchar('version_explainer'),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
     version_slug: varchar('version_slug'),
     version_updatedAt: timestamp('version_updated_at', {
       mode: 'string',
@@ -959,6 +1424,11 @@ export const _guides_v = pgTable(
       precision: 3,
     }),
     version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
       mode: 'string',
       withTimezone: true,
       precision: 3,
@@ -971,18 +1441,49 @@ export const _guides_v = pgTable(
       .defaultNow()
       .notNull(),
     latest: boolean('latest'),
+    autosave: boolean('autosave'),
   },
   (columns) => [
     index('_guides_v_parent_idx').on(columns.parent),
     index('_guides_v_version_version_aspect_idx').on(columns.version_aspect),
     index('_guides_v_version_version_section_idx').on(columns.version_section),
+    index('_guides_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
     index('_guides_v_version_version_slug_idx').on(columns.version_slug),
     index('_guides_v_version_version_updated_at_idx').on(columns.version_updatedAt),
     index('_guides_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_guides_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
     index('_guides_v_version_version__status_idx').on(columns.version__status),
     index('_guides_v_created_at_idx').on(columns.createdAt),
     index('_guides_v_updated_at_idx').on(columns.updatedAt),
     index('_guides_v_latest_idx').on(columns.latest),
+    index('_guides_v_autosave_idx').on(columns.autosave),
+  ],
+)
+
+export const _guides_v_rels = pgTable(
+  '_guides_v_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('_guides_v_rels_order_idx').on(columns.order),
+    index('_guides_v_rels_parent_idx').on(columns.parent),
+    index('_guides_v_rels_path_idx').on(columns.path),
+    index('_guides_v_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [_guides_v.id],
+      name: '_guides_v_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: '_guides_v_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -1035,6 +1536,309 @@ export const review_requests = pgTable(
     index('review_requests_normalized_query_idx').on(columns.normalizedQuery),
     index('review_requests_updated_at_idx').on(columns.updatedAt),
     index('review_requests_created_at_idx').on(columns.createdAt),
+  ],
+)
+
+export const pages = pgTable(
+  'pages',
+  {
+    id: serial('id').primaryKey(),
+    title: varchar('title'),
+    intro: varchar('intro'),
+    heroImage: integer('hero_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    content: jsonb('content'),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
+    slug: varchar('slug'),
+    publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true, precision: 3 }),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
+    _status: enum_pages_status('_status').default('draft'),
+  },
+  (columns) => [
+    index('pages_hero_image_idx').on(columns.heroImage),
+    index('pages_meta_meta_image_idx').on(columns.meta_image),
+    uniqueIndex('pages_slug_idx').on(columns.slug),
+    index('pages_updated_at_idx').on(columns.updatedAt),
+    index('pages_created_at_idx').on(columns.createdAt),
+    index('pages_deleted_at_idx').on(columns.deletedAt),
+    index('pages__status_idx').on(columns._status),
+  ],
+)
+
+export const pages_rels = pgTable(
+  'pages_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('pages_rels_order_idx').on(columns.order),
+    index('pages_rels_parent_idx').on(columns.parent),
+    index('pages_rels_path_idx').on(columns.path),
+    index('pages_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [pages.id],
+      name: 'pages_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'pages_rels_tags_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const _pages_v = pgTable(
+  '_pages_v',
+  {
+    id: serial('id').primaryKey(),
+    parent: integer('parent_id').references(() => pages.id, {
+      onDelete: 'set null',
+    }),
+    version_title: varchar('version_title'),
+    version_intro: varchar('version_intro'),
+    version_heroImage: integer('version_hero_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_content: jsonb('version_content'),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
+    version_slug: varchar('version_slug'),
+    version_publishedAt: timestamp('version_published_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_updatedAt: timestamp('version_updated_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status: enum__pages_v_version_status('version__status').default('draft'),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    latest: boolean('latest'),
+    autosave: boolean('autosave'),
+  },
+  (columns) => [
+    index('_pages_v_parent_idx').on(columns.parent),
+    index('_pages_v_version_version_hero_image_idx').on(columns.version_heroImage),
+    index('_pages_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
+    index('_pages_v_version_version_slug_idx').on(columns.version_slug),
+    index('_pages_v_version_version_updated_at_idx').on(columns.version_updatedAt),
+    index('_pages_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_pages_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
+    index('_pages_v_version_version__status_idx').on(columns.version__status),
+    index('_pages_v_created_at_idx').on(columns.createdAt),
+    index('_pages_v_updated_at_idx').on(columns.updatedAt),
+    index('_pages_v_latest_idx').on(columns.latest),
+    index('_pages_v_autosave_idx').on(columns.autosave),
+  ],
+)
+
+export const _pages_v_rels = pgTable(
+  '_pages_v_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('_pages_v_rels_order_idx').on(columns.order),
+    index('_pages_v_rels_parent_idx').on(columns.parent),
+    index('_pages_v_rels_path_idx').on(columns.path),
+    index('_pages_v_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [_pages_v.id],
+      name: '_pages_v_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: '_pages_v_rels_tags_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const tags = pgTable(
+  'tags',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name').notNull(),
+    description: varchar('description'),
+    meta_title: varchar('meta_title'),
+    meta_description: varchar('meta_description'),
+    meta_image: integer('meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    meta_noindex: boolean('meta_noindex'),
+    meta_canonical: varchar('meta_canonical'),
+    slug: varchar('slug').notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
+  },
+  (columns) => [
+    index('tags_meta_meta_image_idx').on(columns.meta_image),
+    uniqueIndex('tags_slug_idx').on(columns.slug),
+    index('tags_updated_at_idx').on(columns.updatedAt),
+    index('tags_created_at_idx').on(columns.createdAt),
+    index('tags_deleted_at_idx').on(columns.deletedAt),
+  ],
+)
+
+export const _tags_v = pgTable(
+  '_tags_v',
+  {
+    id: serial('id').primaryKey(),
+    parent: integer('parent_id').references(() => tags.id, {
+      onDelete: 'set null',
+    }),
+    version_name: varchar('version_name').notNull(),
+    version_description: varchar('version_description'),
+    version_meta_title: varchar('version_meta_title'),
+    version_meta_description: varchar('version_meta_description'),
+    version_meta_image: integer('version_meta_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    version_meta_noindex: boolean('version_meta_noindex'),
+    version_meta_canonical: varchar('version_meta_canonical'),
+    version_slug: varchar('version_slug').notNull(),
+    version_updatedAt: timestamp('version_updated_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp('version_created_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_deletedAt: timestamp('version_deleted_at', {
+      mode: 'string',
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index('_tags_v_parent_idx').on(columns.parent),
+    index('_tags_v_version_meta_version_meta_image_idx').on(columns.version_meta_image),
+    index('_tags_v_version_version_slug_idx').on(columns.version_slug),
+    index('_tags_v_version_version_updated_at_idx').on(columns.version_updatedAt),
+    index('_tags_v_version_version_created_at_idx').on(columns.version_createdAt),
+    index('_tags_v_version_version_deleted_at_idx').on(columns.version_deletedAt),
+    index('_tags_v_created_at_idx').on(columns.createdAt),
+    index('_tags_v_updated_at_idx').on(columns.updatedAt),
+  ],
+)
+
+export const media = pgTable(
+  'media',
+  {
+    id: serial('id').primaryKey(),
+    alt: varchar('alt').notNull(),
+    caption: varchar('caption'),
+    credit: varchar('credit'),
+    prefix: varchar('prefix').default(''),
+    _objectKey: varchar('_objectkey'),
+    folder: integer('folder_id').references(() => payload_folders.id, {
+      onDelete: 'set null',
+    }),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp('deleted_at', { mode: 'string', withTimezone: true, precision: 3 }),
+    url: varchar('url'),
+    thumbnailURL: varchar('thumbnail_u_r_l'),
+    filename: varchar('filename'),
+    mimeType: varchar('mime_type'),
+    filesize: numeric('filesize', { mode: 'number' }),
+    width: numeric('width', { mode: 'number' }),
+    height: numeric('height', { mode: 'number' }),
+    focalX: numeric('focal_x', { mode: 'number' }),
+    focalY: numeric('focal_y', { mode: 'number' }),
+    sizes_thumbnail_url: varchar('sizes_thumbnail_url'),
+    sizes_thumbnail_width: numeric('sizes_thumbnail_width', { mode: 'number' }),
+    sizes_thumbnail_height: numeric('sizes_thumbnail_height', { mode: 'number' }),
+    sizes_thumbnail_mimeType: varchar('sizes_thumbnail_mime_type'),
+    sizes_thumbnail_filesize: numeric('sizes_thumbnail_filesize', { mode: 'number' }),
+    sizes_thumbnail_filename: varchar('sizes_thumbnail_filename'),
+    sizes_card_url: varchar('sizes_card_url'),
+    sizes_card_width: numeric('sizes_card_width', { mode: 'number' }),
+    sizes_card_height: numeric('sizes_card_height', { mode: 'number' }),
+    sizes_card_mimeType: varchar('sizes_card_mime_type'),
+    sizes_card_filesize: numeric('sizes_card_filesize', { mode: 'number' }),
+    sizes_card_filename: varchar('sizes_card_filename'),
+    sizes_share_url: varchar('sizes_share_url'),
+    sizes_share_width: numeric('sizes_share_width', { mode: 'number' }),
+    sizes_share_height: numeric('sizes_share_height', { mode: 'number' }),
+    sizes_share_mimeType: varchar('sizes_share_mime_type'),
+    sizes_share_filesize: numeric('sizes_share_filesize', { mode: 'number' }),
+    sizes_share_filename: varchar('sizes_share_filename'),
+  },
+  (columns) => [
+    index('media_folder_idx').on(columns.folder),
+    index('media_updated_at_idx').on(columns.updatedAt),
+    index('media_created_at_idx').on(columns.createdAt),
+    index('media_deleted_at_idx').on(columns.deletedAt),
+    uniqueIndex('media_filename_idx').on(columns.filename),
+    index('media_sizes_thumbnail_sizes_thumbnail_filename_idx').on(
+      columns.sizes_thumbnail_filename,
+    ),
+    index('media_sizes_card_sizes_card_filename_idx').on(columns.sizes_card_filename),
+    index('media_sizes_share_sizes_share_filename_idx').on(columns.sizes_share_filename),
   ],
 )
 
@@ -1190,33 +1994,101 @@ export const users = pgTable(
   ],
 )
 
-export const media = pgTable(
-  'media',
+export const redirects = pgTable(
+  'redirects',
   {
     id: serial('id').primaryKey(),
-    alt: varchar('alt').notNull(),
-    prefix: varchar('prefix').default(''),
-    _objectKey: varchar('_objectkey'),
+    from: varchar('from').notNull(),
+    to_type: enum_redirects_to_type('to_type').default('reference'),
+    to_url: varchar('to_url'),
+    type: enum_redirects_type('type').notNull().default('301'),
     updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
       .defaultNow()
       .notNull(),
-    url: varchar('url'),
-    thumbnailURL: varchar('thumbnail_u_r_l'),
-    filename: varchar('filename'),
-    mimeType: varchar('mime_type'),
-    filesize: numeric('filesize', { mode: 'number' }),
-    width: numeric('width', { mode: 'number' }),
-    height: numeric('height', { mode: 'number' }),
-    focalX: numeric('focal_x', { mode: 'number' }),
-    focalY: numeric('focal_y', { mode: 'number' }),
   },
   (columns) => [
-    index('media_updated_at_idx').on(columns.updatedAt),
-    index('media_created_at_idx').on(columns.createdAt),
-    uniqueIndex('media_filename_idx').on(columns.filename),
+    uniqueIndex('redirects_from_idx').on(columns.from),
+    index('redirects_updated_at_idx').on(columns.updatedAt),
+    index('redirects_created_at_idx').on(columns.createdAt),
+  ],
+)
+
+export const redirects_rels = pgTable(
+  'redirects_rels',
+  {
+    id: serial('id').primaryKey(),
+    order: integer('order'),
+    parent: integer('parent_id').notNull(),
+    path: varchar('path').notNull(),
+    pagesID: integer('pages_id'),
+    productsID: integer('products_id'),
+    categoriesID: integer('categories_id'),
+    brandsID: integer('brands_id'),
+    'best-listsID': integer('best_lists_id'),
+    comparisonsID: integer('comparisons_id'),
+    guidesID: integer('guides_id'),
+    tagsID: integer('tags_id'),
+  },
+  (columns) => [
+    index('redirects_rels_order_idx').on(columns.order),
+    index('redirects_rels_parent_idx').on(columns.parent),
+    index('redirects_rels_path_idx').on(columns.path),
+    index('redirects_rels_pages_id_idx').on(columns.pagesID),
+    index('redirects_rels_products_id_idx').on(columns.productsID),
+    index('redirects_rels_categories_id_idx').on(columns.categoriesID),
+    index('redirects_rels_brands_id_idx').on(columns.brandsID),
+    index('redirects_rels_best_lists_id_idx').on(columns['best-listsID']),
+    index('redirects_rels_comparisons_id_idx').on(columns.comparisonsID),
+    index('redirects_rels_guides_id_idx').on(columns.guidesID),
+    index('redirects_rels_tags_id_idx').on(columns.tagsID),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [redirects.id],
+      name: 'redirects_rels_parent_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'redirects_rels_pages_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['productsID']],
+      foreignColumns: [products.id],
+      name: 'redirects_rels_products_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['categoriesID']],
+      foreignColumns: [categories.id],
+      name: 'redirects_rels_categories_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['brandsID']],
+      foreignColumns: [brands.id],
+      name: 'redirects_rels_brands_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['best-listsID']],
+      foreignColumns: [best_lists.id],
+      name: 'redirects_rels_best_lists_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['comparisonsID']],
+      foreignColumns: [comparisons.id],
+      name: 'redirects_rels_comparisons_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['guidesID']],
+      foreignColumns: [guides.id],
+      name: 'redirects_rels_guides_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'redirects_rels_tags_fk',
+    }).onDelete('cascade'),
   ],
 )
 
@@ -1228,6 +2100,48 @@ export const payload_kv = pgTable(
     data: jsonb('data').notNull(),
   },
   (columns) => [uniqueIndex('payload_kv_key_idx').on(columns.key)],
+)
+
+export const payload_folders_folder_type = pgTable(
+  'payload_folders_folder_type',
+  {
+    order: integer('order').notNull(),
+    parent: integer('parent_id').notNull(),
+    value: enum_payload_folders_folder_type('value'),
+    id: serial('id').primaryKey(),
+  },
+  (columns) => [
+    index('payload_folders_folder_type_order_idx').on(columns.order),
+    index('payload_folders_folder_type_parent_idx').on(columns.parent),
+    foreignKey({
+      columns: [columns['parent']],
+      foreignColumns: [payload_folders.id],
+      name: 'payload_folders_folder_type_parent_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const payload_folders = pgTable(
+  'payload_folders',
+  {
+    id: serial('id').primaryKey(),
+    name: varchar('name').notNull(),
+    folder: integer('folder_id').references((): AnyPgColumn => payload_folders.id, {
+      onDelete: 'set null',
+    }),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index('payload_folders_name_idx').on(columns.name),
+    index('payload_folders_folder_idx').on(columns.folder),
+    index('payload_folders_updated_at_idx').on(columns.updatedAt),
+    index('payload_folders_created_at_idx').on(columns.createdAt),
+  ],
 )
 
 export const payload_locked_documents = pgTable(
@@ -1263,11 +2177,15 @@ export const payload_locked_documents_rels = pgTable(
     comparisonsID: integer('comparisons_id'),
     guidesID: integer('guides_id'),
     'review-requestsID': integer('review_requests_id'),
+    pagesID: integer('pages_id'),
+    tagsID: integer('tags_id'),
+    mediaID: integer('media_id'),
     aspectsID: integer('aspects_id'),
     sourcesID: integer('sources_id'),
     reviewsID: integer('reviews_id'),
     usersID: integer('users_id'),
-    mediaID: integer('media_id'),
+    redirectsID: integer('redirects_id'),
+    'payload-foldersID': integer('payload_folders_id'),
   },
   (columns) => [
     index('payload_locked_documents_rels_order_idx').on(columns.order),
@@ -1280,11 +2198,15 @@ export const payload_locked_documents_rels = pgTable(
     index('payload_locked_documents_rels_comparisons_id_idx').on(columns.comparisonsID),
     index('payload_locked_documents_rels_guides_id_idx').on(columns.guidesID),
     index('payload_locked_documents_rels_review_requests_id_idx').on(columns['review-requestsID']),
+    index('payload_locked_documents_rels_pages_id_idx').on(columns.pagesID),
+    index('payload_locked_documents_rels_tags_id_idx').on(columns.tagsID),
+    index('payload_locked_documents_rels_media_id_idx').on(columns.mediaID),
     index('payload_locked_documents_rels_aspects_id_idx').on(columns.aspectsID),
     index('payload_locked_documents_rels_sources_id_idx').on(columns.sourcesID),
     index('payload_locked_documents_rels_reviews_id_idx').on(columns.reviewsID),
     index('payload_locked_documents_rels_users_id_idx').on(columns.usersID),
-    index('payload_locked_documents_rels_media_id_idx').on(columns.mediaID),
+    index('payload_locked_documents_rels_redirects_id_idx').on(columns.redirectsID),
+    index('payload_locked_documents_rels_payload_folders_id_idx').on(columns['payload-foldersID']),
     foreignKey({
       columns: [columns['parent']],
       foreignColumns: [payload_locked_documents.id],
@@ -1326,6 +2248,21 @@ export const payload_locked_documents_rels = pgTable(
       name: 'payload_locked_documents_rels_review_requests_fk',
     }).onDelete('cascade'),
     foreignKey({
+      columns: [columns['pagesID']],
+      foreignColumns: [pages.id],
+      name: 'payload_locked_documents_rels_pages_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['tagsID']],
+      foreignColumns: [tags.id],
+      name: 'payload_locked_documents_rels_tags_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['mediaID']],
+      foreignColumns: [media.id],
+      name: 'payload_locked_documents_rels_media_fk',
+    }).onDelete('cascade'),
+    foreignKey({
       columns: [columns['aspectsID']],
       foreignColumns: [aspects.id],
       name: 'payload_locked_documents_rels_aspects_fk',
@@ -1346,9 +2283,14 @@ export const payload_locked_documents_rels = pgTable(
       name: 'payload_locked_documents_rels_users_fk',
     }).onDelete('cascade'),
     foreignKey({
-      columns: [columns['mediaID']],
-      foreignColumns: [media.id],
-      name: 'payload_locked_documents_rels_media_fk',
+      columns: [columns['redirectsID']],
+      foreignColumns: [redirects.id],
+      name: 'payload_locked_documents_rels_redirects_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [columns['payload-foldersID']],
+      foreignColumns: [payload_folders.id],
+      name: 'payload_locked_documents_rels_payload_folders_fk',
     }).onDelete('cascade'),
   ],
 )
@@ -1419,6 +2361,89 @@ export const payload_migrations = pgTable(
   ],
 )
 
+export const navigation_header_links = pgTable(
+  'navigation_header_links',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    label: varchar('label').notNull(),
+    type: enum_navigation_header_links_type('type').default('page'),
+    page: integer('page_id').references(() => pages.id, {
+      onDelete: 'set null',
+    }),
+    url: varchar('url'),
+    newTab: boolean('new_tab'),
+  },
+  (columns) => [
+    index('navigation_header_links_order_idx').on(columns._order),
+    index('navigation_header_links_parent_id_idx').on(columns._parentID),
+    index('navigation_header_links_page_idx').on(columns.page),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [navigation.id],
+      name: 'navigation_header_links_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const navigation_footer_columns_links = pgTable(
+  'navigation_footer_columns_links',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: varchar('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    label: varchar('label').notNull(),
+    type: enum_navigation_footer_columns_links_type('type').default('page'),
+    page: integer('page_id').references(() => pages.id, {
+      onDelete: 'set null',
+    }),
+    url: varchar('url'),
+    newTab: boolean('new_tab'),
+  },
+  (columns) => [
+    index('navigation_footer_columns_links_order_idx').on(columns._order),
+    index('navigation_footer_columns_links_parent_id_idx').on(columns._parentID),
+    index('navigation_footer_columns_links_page_idx').on(columns.page),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [navigation_footer_columns.id],
+      name: 'navigation_footer_columns_links_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const navigation_footer_columns = pgTable(
+  'navigation_footer_columns',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    title: varchar('title').notNull(),
+  },
+  (columns) => [
+    index('navigation_footer_columns_order_idx').on(columns._order),
+    index('navigation_footer_columns_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [navigation.id],
+      name: 'navigation_footer_columns_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const navigation = pgTable('navigation', {
+  id: serial('id').primaryKey(),
+  footerAbout: varchar('footer_about').default(
+    'Every review, weighed. Numbers are counted by code; every verdict is approved by a named editor.',
+  ),
+  footerNote: varchar('footer_note').default(
+    "We don't earn affiliate commission. If that changes, every affected page will say so.",
+  ),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }),
+})
+
 export const site_settings_steps = pgTable(
   'site_settings_steps',
   {
@@ -1439,20 +2464,58 @@ export const site_settings_steps = pgTable(
   ],
 )
 
-export const site_settings = pgTable('site_settings', {
-  id: serial('id').primaryKey(),
-  showBanner: boolean('show_banner').default(true),
-  bannerText: varchar('banner_text').default(
-    'Development build — products marked Sample are fictional. Real products stay hidden until an editor publishes them.',
-  ),
-  heroEyebrow: varchar('hero_eyebrow').default('Reviews from everywhere · one honest answer'),
-  heroTitle: varchar('hero_title').default('Should you buy it? Every review, weighed.'),
-  heroText: varchar('hero_text').default(
-    'We read every review of a product across Amazon, Flipkart, Reddit and the app stores, set aside the ones that look fake, count what people actually say — and give you a straight answer.',
-  ),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }),
-})
+export const site_settings_social_profiles = pgTable(
+  'site_settings_social_profiles',
+  {
+    _order: integer('_order').notNull(),
+    _parentID: integer('_parent_id').notNull(),
+    id: varchar('id').primaryKey(),
+    url: varchar('url').notNull(),
+  },
+  (columns) => [
+    index('site_settings_social_profiles_order_idx').on(columns._order),
+    index('site_settings_social_profiles_parent_id_idx').on(columns._parentID),
+    foreignKey({
+      columns: [columns['_parentID']],
+      foreignColumns: [site_settings.id],
+      name: 'site_settings_social_profiles_parent_id_fk',
+    }).onDelete('cascade'),
+  ],
+)
+
+export const site_settings = pgTable(
+  'site_settings',
+  {
+    id: serial('id').primaryKey(),
+    showBanner: boolean('show_banner').default(true),
+    bannerText: varchar('banner_text').default(
+      'Development build — products marked Sample are fictional. Real products stay hidden until an editor publishes them.',
+    ),
+    heroEyebrow: varchar('hero_eyebrow').default('Reviews from everywhere · one honest answer'),
+    heroTitle: varchar('hero_title').default('Should you buy it? Every review, weighed.'),
+    heroText: varchar('hero_text').default(
+      'We read every review of a product across Amazon, Flipkart, Reddit and the app stores, set aside the ones that look fake, count what people actually say — and give you a straight answer.',
+    ),
+    hideFromSearch: boolean('hide_from_search'),
+    metaDescription: varchar('meta_description'),
+    shareImage: integer('share_image_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    logo: integer('logo_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    googleVerification: varchar('google_verification'),
+    bingVerification: varchar('bing_verification'),
+    twitterHandle: varchar('twitter_handle'),
+    gaMeasurementId: varchar('ga_measurement_id'),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true, precision: 3 }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true, precision: 3 }),
+  },
+  (columns) => [
+    index('site_settings_share_image_idx').on(columns.shareImage),
+    index('site_settings_logo_idx').on(columns.logo),
+  ],
+)
 
 export const scoring_rules = pgTable('scoring_rules', {
   id: serial('id').primaryKey(),
@@ -1530,6 +2593,18 @@ export const relations_products_platform_stats = relations(products_platform_sta
     relationName: 'source',
   }),
 }))
+export const relations_products_rels = relations(products_rels, ({ one }) => ({
+  parent: one(products, {
+    fields: [products_rels.parent],
+    references: [products.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [products_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
 export const relations_products = relations(products, ({ one, many }) => ({
   brand: one(brands, {
     fields: [products.brand],
@@ -1556,10 +2631,18 @@ export const relations_products = relations(products, ({ one, many }) => ({
   platformStats: many(products_platform_stats, {
     relationName: 'platformStats',
   }),
+  meta_image: one(media, {
+    fields: [products.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
   author: one(users, {
     fields: [products.author],
     references: [users.id],
     relationName: 'author',
+  }),
+  _rels: many(products_rels, {
+    relationName: '_rels',
   }),
 }))
 export const relations__products_v_version_claims = relations(
@@ -1624,6 +2707,18 @@ export const relations__products_v_version_platform_stats = relations(
     }),
   }),
 )
+export const relations__products_v_rels = relations(_products_v_rels, ({ one }) => ({
+  parent: one(_products_v, {
+    fields: [_products_v_rels.parent],
+    references: [_products_v.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [_products_v_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
 export const relations__products_v = relations(_products_v, ({ one, many }) => ({
   parent: one(products, {
     fields: [_products_v.parent],
@@ -1655,10 +2750,18 @@ export const relations__products_v = relations(_products_v, ({ one, many }) => (
   version_platformStats: many(_products_v_version_platform_stats, {
     relationName: 'version_platformStats',
   }),
+  version_meta_image: one(media, {
+    fields: [_products_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
   version_author: one(users, {
     fields: [_products_v.version_author],
     references: [users.id],
     relationName: 'version_author',
+  }),
+  _rels: many(_products_v_rels, {
+    relationName: '_rels',
   }),
 }))
 export const relations_categories_measures = relations(categories_measures, ({ one }) => ({
@@ -1692,6 +2795,59 @@ export const relations_categories = relations(categories, ({ one, many }) => ({
   faq: many(categories_faq, {
     relationName: 'faq',
   }),
+  meta_image: one(media, {
+    fields: [categories.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+}))
+export const relations__categories_v_version_measures = relations(
+  _categories_v_version_measures,
+  ({ one }) => ({
+    _parentID: one(_categories_v, {
+      fields: [_categories_v_version_measures._parentID],
+      references: [_categories_v.id],
+      relationName: 'version_measures',
+    }),
+    aspect: one(aspects, {
+      fields: [_categories_v_version_measures.aspect],
+      references: [aspects.id],
+      relationName: 'aspect',
+    }),
+  }),
+)
+export const relations__categories_v_version_faq = relations(
+  _categories_v_version_faq,
+  ({ one }) => ({
+    _parentID: one(_categories_v, {
+      fields: [_categories_v_version_faq._parentID],
+      references: [_categories_v.id],
+      relationName: 'version_faq',
+    }),
+  }),
+)
+export const relations__categories_v = relations(_categories_v, ({ one, many }) => ({
+  parent: one(categories, {
+    fields: [_categories_v.parent],
+    references: [categories.id],
+    relationName: 'parent',
+  }),
+  version_parent: one(categories, {
+    fields: [_categories_v.version_parent],
+    references: [categories.id],
+    relationName: 'version_parent',
+  }),
+  version_measures: many(_categories_v_version_measures, {
+    relationName: 'version_measures',
+  }),
+  version_faq: many(_categories_v_version_faq, {
+    relationName: 'version_faq',
+  }),
+  version_meta_image: one(media, {
+    fields: [_categories_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
 }))
 export const relations_brands_same_as = relations(brands_same_as, ({ one }) => ({
   _parentID: one(brands, {
@@ -1709,12 +2865,59 @@ export const relations_brands = relations(brands, ({ one, many }) => ({
     references: [media.id],
     relationName: 'logo',
   }),
+  meta_image: one(media, {
+    fields: [brands.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+}))
+export const relations__brands_v_version_same_as = relations(
+  _brands_v_version_same_as,
+  ({ one }) => ({
+    _parentID: one(_brands_v, {
+      fields: [_brands_v_version_same_as._parentID],
+      references: [_brands_v.id],
+      relationName: 'version_sameAs',
+    }),
+  }),
+)
+export const relations__brands_v = relations(_brands_v, ({ one, many }) => ({
+  parent: one(brands, {
+    fields: [_brands_v.parent],
+    references: [brands.id],
+    relationName: 'parent',
+  }),
+  version_sameAs: many(_brands_v_version_same_as, {
+    relationName: 'version_sameAs',
+  }),
+  version_logo: one(media, {
+    fields: [_brands_v.version_logo],
+    references: [media.id],
+    relationName: 'version_logo',
+  }),
+  version_meta_image: one(media, {
+    fields: [_brands_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
 }))
 export const relations_best_lists_faq = relations(best_lists_faq, ({ one }) => ({
   _parentID: one(best_lists, {
     fields: [best_lists_faq._parentID],
     references: [best_lists.id],
     relationName: 'faq',
+  }),
+}))
+export const relations_best_lists_rels = relations(best_lists_rels, ({ one }) => ({
+  parent: one(best_lists, {
+    fields: [best_lists_rels.parent],
+    references: [best_lists.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [best_lists_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
   }),
 }))
 export const relations_best_lists = relations(best_lists, ({ one, many }) => ({
@@ -1731,6 +2934,14 @@ export const relations_best_lists = relations(best_lists, ({ one, many }) => ({
   faq: many(best_lists_faq, {
     relationName: 'faq',
   }),
+  meta_image: one(media, {
+    fields: [best_lists.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+  _rels: many(best_lists_rels, {
+    relationName: '_rels',
+  }),
 }))
 export const relations__best_lists_v_version_faq = relations(
   _best_lists_v_version_faq,
@@ -1742,6 +2953,18 @@ export const relations__best_lists_v_version_faq = relations(
     }),
   }),
 )
+export const relations__best_lists_v_rels = relations(_best_lists_v_rels, ({ one }) => ({
+  parent: one(_best_lists_v, {
+    fields: [_best_lists_v_rels.parent],
+    references: [_best_lists_v.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [_best_lists_v_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
 export const relations__best_lists_v = relations(_best_lists_v, ({ one, many }) => ({
   parent: one(best_lists, {
     fields: [_best_lists_v.parent],
@@ -1760,6 +2983,14 @@ export const relations__best_lists_v = relations(_best_lists_v, ({ one, many }) 
   }),
   version_faq: many(_best_lists_v_version_faq, {
     relationName: 'version_faq',
+  }),
+  version_meta_image: one(media, {
+    fields: [_best_lists_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
+  _rels: many(_best_lists_v_rels, {
+    relationName: '_rels',
   }),
 }))
 export const relations_comparisons_pick_if = relations(comparisons_pick_if, ({ one }) => ({
@@ -1789,6 +3020,11 @@ export const relations_comparisons_rels = relations(comparisons_rels, ({ one }) 
 export const relations_comparisons = relations(comparisons, ({ one, many }) => ({
   pickIf: many(comparisons_pick_if, {
     relationName: 'pickIf',
+  }),
+  meta_image: one(media, {
+    fields: [comparisons.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
   }),
   category: one(categories, {
     fields: [comparisons.category],
@@ -1835,6 +3071,11 @@ export const relations__comparisons_v = relations(_comparisons_v, ({ one, many }
   version_pickIf: many(_comparisons_v_version_pick_if, {
     relationName: 'version_pickIf',
   }),
+  version_meta_image: one(media, {
+    fields: [_comparisons_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
   version_category: one(categories, {
     fields: [_comparisons_v.version_category],
     references: [categories.id],
@@ -1851,6 +3092,18 @@ export const relations_guides_faq = relations(guides_faq, ({ one }) => ({
     relationName: 'faq',
   }),
 }))
+export const relations_guides_rels = relations(guides_rels, ({ one }) => ({
+  parent: one(guides, {
+    fields: [guides_rels.parent],
+    references: [guides.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [guides_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
 export const relations_guides = relations(guides, ({ one, many }) => ({
   aspect: one(aspects, {
     fields: [guides.aspect],
@@ -1865,12 +3118,32 @@ export const relations_guides = relations(guides, ({ one, many }) => ({
   faq: many(guides_faq, {
     relationName: 'faq',
   }),
+  meta_image: one(media, {
+    fields: [guides.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+  _rels: many(guides_rels, {
+    relationName: '_rels',
+  }),
 }))
 export const relations__guides_v_version_faq = relations(_guides_v_version_faq, ({ one }) => ({
   _parentID: one(_guides_v, {
     fields: [_guides_v_version_faq._parentID],
     references: [_guides_v.id],
     relationName: 'version_faq',
+  }),
+}))
+export const relations__guides_v_rels = relations(_guides_v_rels, ({ one }) => ({
+  parent: one(_guides_v, {
+    fields: [_guides_v_rels.parent],
+    references: [_guides_v.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [_guides_v_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
   }),
 }))
 export const relations__guides_v = relations(_guides_v, ({ one, many }) => ({
@@ -1892,6 +3165,14 @@ export const relations__guides_v = relations(_guides_v, ({ one, many }) => ({
   version_faq: many(_guides_v_version_faq, {
     relationName: 'version_faq',
   }),
+  version_meta_image: one(media, {
+    fields: [_guides_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
+  _rels: many(_guides_v_rels, {
+    relationName: '_rels',
+  }),
 }))
 export const relations_review_requests_subscribers = relations(
   review_requests_subscribers,
@@ -1911,6 +3192,91 @@ export const relations_review_requests = relations(review_requests, ({ one, many
     fields: [review_requests.product],
     references: [products.id],
     relationName: 'product',
+  }),
+}))
+export const relations_pages_rels = relations(pages_rels, ({ one }) => ({
+  parent: one(pages, {
+    fields: [pages_rels.parent],
+    references: [pages.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [pages_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
+export const relations_pages = relations(pages, ({ one, many }) => ({
+  heroImage: one(media, {
+    fields: [pages.heroImage],
+    references: [media.id],
+    relationName: 'heroImage',
+  }),
+  meta_image: one(media, {
+    fields: [pages.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+  _rels: many(pages_rels, {
+    relationName: '_rels',
+  }),
+}))
+export const relations__pages_v_rels = relations(_pages_v_rels, ({ one }) => ({
+  parent: one(_pages_v, {
+    fields: [_pages_v_rels.parent],
+    references: [_pages_v.id],
+    relationName: '_rels',
+  }),
+  tagsID: one(tags, {
+    fields: [_pages_v_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
+export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
+  parent: one(pages, {
+    fields: [_pages_v.parent],
+    references: [pages.id],
+    relationName: 'parent',
+  }),
+  version_heroImage: one(media, {
+    fields: [_pages_v.version_heroImage],
+    references: [media.id],
+    relationName: 'version_heroImage',
+  }),
+  version_meta_image: one(media, {
+    fields: [_pages_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
+  _rels: many(_pages_v_rels, {
+    relationName: '_rels',
+  }),
+}))
+export const relations_tags = relations(tags, ({ one }) => ({
+  meta_image: one(media, {
+    fields: [tags.meta_image],
+    references: [media.id],
+    relationName: 'meta_image',
+  }),
+}))
+export const relations__tags_v = relations(_tags_v, ({ one }) => ({
+  parent: one(tags, {
+    fields: [_tags_v.parent],
+    references: [tags.id],
+    relationName: 'parent',
+  }),
+  version_meta_image: one(media, {
+    fields: [_tags_v.version_meta_image],
+    references: [media.id],
+    relationName: 'version_meta_image',
+  }),
+}))
+export const relations_media = relations(media, ({ one }) => ({
+  folder: one(payload_folders, {
+    fields: [media.folder],
+    references: [payload_folders.id],
+    relationName: 'folder',
   }),
 }))
 export const relations_aspects = relations(aspects, () => ({}))
@@ -1939,8 +3305,79 @@ export const relations_users = relations(users, ({ one, many }) => ({
     relationName: 'sessions',
   }),
 }))
-export const relations_media = relations(media, () => ({}))
+export const relations_redirects_rels = relations(redirects_rels, ({ one }) => ({
+  parent: one(redirects, {
+    fields: [redirects_rels.parent],
+    references: [redirects.id],
+    relationName: '_rels',
+  }),
+  pagesID: one(pages, {
+    fields: [redirects_rels.pagesID],
+    references: [pages.id],
+    relationName: 'pages',
+  }),
+  productsID: one(products, {
+    fields: [redirects_rels.productsID],
+    references: [products.id],
+    relationName: 'products',
+  }),
+  categoriesID: one(categories, {
+    fields: [redirects_rels.categoriesID],
+    references: [categories.id],
+    relationName: 'categories',
+  }),
+  brandsID: one(brands, {
+    fields: [redirects_rels.brandsID],
+    references: [brands.id],
+    relationName: 'brands',
+  }),
+  'best-listsID': one(best_lists, {
+    fields: [redirects_rels['best-listsID']],
+    references: [best_lists.id],
+    relationName: 'best-lists',
+  }),
+  comparisonsID: one(comparisons, {
+    fields: [redirects_rels.comparisonsID],
+    references: [comparisons.id],
+    relationName: 'comparisons',
+  }),
+  guidesID: one(guides, {
+    fields: [redirects_rels.guidesID],
+    references: [guides.id],
+    relationName: 'guides',
+  }),
+  tagsID: one(tags, {
+    fields: [redirects_rels.tagsID],
+    references: [tags.id],
+    relationName: 'tags',
+  }),
+}))
+export const relations_redirects = relations(redirects, ({ many }) => ({
+  _rels: many(redirects_rels, {
+    relationName: '_rels',
+  }),
+}))
 export const relations_payload_kv = relations(payload_kv, () => ({}))
+export const relations_payload_folders_folder_type = relations(
+  payload_folders_folder_type,
+  ({ one }) => ({
+    parent: one(payload_folders, {
+      fields: [payload_folders_folder_type.parent],
+      references: [payload_folders.id],
+      relationName: 'folderType',
+    }),
+  }),
+)
+export const relations_payload_folders = relations(payload_folders, ({ one, many }) => ({
+  folder: one(payload_folders, {
+    fields: [payload_folders.folder],
+    references: [payload_folders.id],
+    relationName: 'folder',
+  }),
+  folderType: many(payload_folders_folder_type, {
+    relationName: 'folderType',
+  }),
+}))
 export const relations_payload_locked_documents_rels = relations(
   payload_locked_documents_rels,
   ({ one }) => ({
@@ -1984,6 +3421,21 @@ export const relations_payload_locked_documents_rels = relations(
       references: [review_requests.id],
       relationName: 'review-requests',
     }),
+    pagesID: one(pages, {
+      fields: [payload_locked_documents_rels.pagesID],
+      references: [pages.id],
+      relationName: 'pages',
+    }),
+    tagsID: one(tags, {
+      fields: [payload_locked_documents_rels.tagsID],
+      references: [tags.id],
+      relationName: 'tags',
+    }),
+    mediaID: one(media, {
+      fields: [payload_locked_documents_rels.mediaID],
+      references: [media.id],
+      relationName: 'media',
+    }),
     aspectsID: one(aspects, {
       fields: [payload_locked_documents_rels.aspectsID],
       references: [aspects.id],
@@ -2004,10 +3456,15 @@ export const relations_payload_locked_documents_rels = relations(
       references: [users.id],
       relationName: 'users',
     }),
-    mediaID: one(media, {
-      fields: [payload_locked_documents_rels.mediaID],
-      references: [media.id],
-      relationName: 'media',
+    redirectsID: one(redirects, {
+      fields: [payload_locked_documents_rels.redirectsID],
+      references: [redirects.id],
+      relationName: 'redirects',
+    }),
+    'payload-foldersID': one(payload_folders, {
+      fields: [payload_locked_documents_rels['payload-foldersID']],
+      references: [payload_folders.id],
+      relationName: 'payload-folders',
     }),
   }),
 )
@@ -2040,6 +3497,54 @@ export const relations_payload_preferences = relations(payload_preferences, ({ m
   }),
 }))
 export const relations_payload_migrations = relations(payload_migrations, () => ({}))
+export const relations_navigation_header_links = relations(navigation_header_links, ({ one }) => ({
+  _parentID: one(navigation, {
+    fields: [navigation_header_links._parentID],
+    references: [navigation.id],
+    relationName: 'headerLinks',
+  }),
+  page: one(pages, {
+    fields: [navigation_header_links.page],
+    references: [pages.id],
+    relationName: 'page',
+  }),
+}))
+export const relations_navigation_footer_columns_links = relations(
+  navigation_footer_columns_links,
+  ({ one }) => ({
+    _parentID: one(navigation_footer_columns, {
+      fields: [navigation_footer_columns_links._parentID],
+      references: [navigation_footer_columns.id],
+      relationName: 'links',
+    }),
+    page: one(pages, {
+      fields: [navigation_footer_columns_links.page],
+      references: [pages.id],
+      relationName: 'page',
+    }),
+  }),
+)
+export const relations_navigation_footer_columns = relations(
+  navigation_footer_columns,
+  ({ one, many }) => ({
+    _parentID: one(navigation, {
+      fields: [navigation_footer_columns._parentID],
+      references: [navigation.id],
+      relationName: 'footerColumns',
+    }),
+    links: many(navigation_footer_columns_links, {
+      relationName: 'links',
+    }),
+  }),
+)
+export const relations_navigation = relations(navigation, ({ many }) => ({
+  headerLinks: many(navigation_header_links, {
+    relationName: 'headerLinks',
+  }),
+  footerColumns: many(navigation_footer_columns, {
+    relationName: 'footerColumns',
+  }),
+}))
 export const relations_site_settings_steps = relations(site_settings_steps, ({ one }) => ({
   _parentID: one(site_settings, {
     fields: [site_settings_steps._parentID],
@@ -2047,9 +3552,32 @@ export const relations_site_settings_steps = relations(site_settings_steps, ({ o
     relationName: 'steps',
   }),
 }))
-export const relations_site_settings = relations(site_settings, ({ many }) => ({
+export const relations_site_settings_social_profiles = relations(
+  site_settings_social_profiles,
+  ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_social_profiles._parentID],
+      references: [site_settings.id],
+      relationName: 'socialProfiles',
+    }),
+  }),
+)
+export const relations_site_settings = relations(site_settings, ({ one, many }) => ({
   steps: many(site_settings_steps, {
     relationName: 'steps',
+  }),
+  shareImage: one(media, {
+    fields: [site_settings.shareImage],
+    references: [media.id],
+    relationName: 'shareImage',
+  }),
+  logo: one(media, {
+    fields: [site_settings.logo],
+    references: [media.id],
+    relationName: 'logo',
+  }),
+  socialProfiles: many(site_settings_social_profiles, {
+    relationName: 'socialProfiles',
   }),
 }))
 export const relations_scoring_rules = relations(scoring_rules, () => ({}))
@@ -2061,6 +3589,7 @@ type DatabaseSchema = {
   enum__products_v_version_claims_sentiment: typeof enum__products_v_version_claims_sentiment
   enum__products_v_version_status: typeof enum__products_v_version_status
   enum_categories_app_category: typeof enum_categories_app_category
+  enum__categories_v_version_app_category: typeof enum__categories_v_version_app_category
   enum_best_lists_rank_by: typeof enum_best_lists_rank_by
   enum_best_lists_status: typeof enum_best_lists_status
   enum__best_lists_v_version_rank_by: typeof enum__best_lists_v_version_rank_by
@@ -2070,30 +3599,46 @@ type DatabaseSchema = {
   enum_guides_status: typeof enum_guides_status
   enum__guides_v_version_status: typeof enum__guides_v_version_status
   enum_review_requests_status: typeof enum_review_requests_status
+  enum_pages_status: typeof enum_pages_status
+  enum__pages_v_version_status: typeof enum__pages_v_version_status
   enum_sources_kind: typeof enum_sources_kind
   enum_reviews_sentiment: typeof enum_reviews_sentiment
   enum_users_role: typeof enum_users_role
+  enum_redirects_to_type: typeof enum_redirects_to_type
+  enum_redirects_type: typeof enum_redirects_type
+  enum_payload_folders_folder_type: typeof enum_payload_folders_folder_type
+  enum_navigation_header_links_type: typeof enum_navigation_header_links_type
+  enum_navigation_footer_columns_links_type: typeof enum_navigation_footer_columns_links_type
   products_claims: typeof products_claims
   products_faq: typeof products_faq
   products_offers: typeof products_offers
   products_specs: typeof products_specs
   products_platform_stats: typeof products_platform_stats
   products: typeof products
+  products_rels: typeof products_rels
   _products_v_version_claims: typeof _products_v_version_claims
   _products_v_version_faq: typeof _products_v_version_faq
   _products_v_version_offers: typeof _products_v_version_offers
   _products_v_version_specs: typeof _products_v_version_specs
   _products_v_version_platform_stats: typeof _products_v_version_platform_stats
   _products_v: typeof _products_v
+  _products_v_rels: typeof _products_v_rels
   categories_measures: typeof categories_measures
   categories_faq: typeof categories_faq
   categories: typeof categories
+  _categories_v_version_measures: typeof _categories_v_version_measures
+  _categories_v_version_faq: typeof _categories_v_version_faq
+  _categories_v: typeof _categories_v
   brands_same_as: typeof brands_same_as
   brands: typeof brands
+  _brands_v_version_same_as: typeof _brands_v_version_same_as
+  _brands_v: typeof _brands_v
   best_lists_faq: typeof best_lists_faq
   best_lists: typeof best_lists
+  best_lists_rels: typeof best_lists_rels
   _best_lists_v_version_faq: typeof _best_lists_v_version_faq
   _best_lists_v: typeof _best_lists_v
+  _best_lists_v_rels: typeof _best_lists_v_rels
   comparisons_pick_if: typeof comparisons_pick_if
   comparisons: typeof comparisons
   comparisons_rels: typeof comparisons_rels
@@ -2102,23 +3647,40 @@ type DatabaseSchema = {
   _comparisons_v_rels: typeof _comparisons_v_rels
   guides_faq: typeof guides_faq
   guides: typeof guides
+  guides_rels: typeof guides_rels
   _guides_v_version_faq: typeof _guides_v_version_faq
   _guides_v: typeof _guides_v
+  _guides_v_rels: typeof _guides_v_rels
   review_requests_subscribers: typeof review_requests_subscribers
   review_requests: typeof review_requests
+  pages: typeof pages
+  pages_rels: typeof pages_rels
+  _pages_v: typeof _pages_v
+  _pages_v_rels: typeof _pages_v_rels
+  tags: typeof tags
+  _tags_v: typeof _tags_v
+  media: typeof media
   aspects: typeof aspects
   sources: typeof sources
   reviews: typeof reviews
   users_sessions: typeof users_sessions
   users: typeof users
-  media: typeof media
+  redirects: typeof redirects
+  redirects_rels: typeof redirects_rels
   payload_kv: typeof payload_kv
+  payload_folders_folder_type: typeof payload_folders_folder_type
+  payload_folders: typeof payload_folders
   payload_locked_documents: typeof payload_locked_documents
   payload_locked_documents_rels: typeof payload_locked_documents_rels
   payload_preferences: typeof payload_preferences
   payload_preferences_rels: typeof payload_preferences_rels
   payload_migrations: typeof payload_migrations
+  navigation_header_links: typeof navigation_header_links
+  navigation_footer_columns_links: typeof navigation_footer_columns_links
+  navigation_footer_columns: typeof navigation_footer_columns
+  navigation: typeof navigation
   site_settings_steps: typeof site_settings_steps
+  site_settings_social_profiles: typeof site_settings_social_profiles
   site_settings: typeof site_settings
   scoring_rules: typeof scoring_rules
   catalog_state: typeof catalog_state
@@ -2127,21 +3689,30 @@ type DatabaseSchema = {
   relations_products_offers: typeof relations_products_offers
   relations_products_specs: typeof relations_products_specs
   relations_products_platform_stats: typeof relations_products_platform_stats
+  relations_products_rels: typeof relations_products_rels
   relations_products: typeof relations_products
   relations__products_v_version_claims: typeof relations__products_v_version_claims
   relations__products_v_version_faq: typeof relations__products_v_version_faq
   relations__products_v_version_offers: typeof relations__products_v_version_offers
   relations__products_v_version_specs: typeof relations__products_v_version_specs
   relations__products_v_version_platform_stats: typeof relations__products_v_version_platform_stats
+  relations__products_v_rels: typeof relations__products_v_rels
   relations__products_v: typeof relations__products_v
   relations_categories_measures: typeof relations_categories_measures
   relations_categories_faq: typeof relations_categories_faq
   relations_categories: typeof relations_categories
+  relations__categories_v_version_measures: typeof relations__categories_v_version_measures
+  relations__categories_v_version_faq: typeof relations__categories_v_version_faq
+  relations__categories_v: typeof relations__categories_v
   relations_brands_same_as: typeof relations_brands_same_as
   relations_brands: typeof relations_brands
+  relations__brands_v_version_same_as: typeof relations__brands_v_version_same_as
+  relations__brands_v: typeof relations__brands_v
   relations_best_lists_faq: typeof relations_best_lists_faq
+  relations_best_lists_rels: typeof relations_best_lists_rels
   relations_best_lists: typeof relations_best_lists
   relations__best_lists_v_version_faq: typeof relations__best_lists_v_version_faq
+  relations__best_lists_v_rels: typeof relations__best_lists_v_rels
   relations__best_lists_v: typeof relations__best_lists_v
   relations_comparisons_pick_if: typeof relations_comparisons_pick_if
   relations_comparisons_rels: typeof relations_comparisons_rels
@@ -2150,24 +3721,41 @@ type DatabaseSchema = {
   relations__comparisons_v_rels: typeof relations__comparisons_v_rels
   relations__comparisons_v: typeof relations__comparisons_v
   relations_guides_faq: typeof relations_guides_faq
+  relations_guides_rels: typeof relations_guides_rels
   relations_guides: typeof relations_guides
   relations__guides_v_version_faq: typeof relations__guides_v_version_faq
+  relations__guides_v_rels: typeof relations__guides_v_rels
   relations__guides_v: typeof relations__guides_v
   relations_review_requests_subscribers: typeof relations_review_requests_subscribers
   relations_review_requests: typeof relations_review_requests
+  relations_pages_rels: typeof relations_pages_rels
+  relations_pages: typeof relations_pages
+  relations__pages_v_rels: typeof relations__pages_v_rels
+  relations__pages_v: typeof relations__pages_v
+  relations_tags: typeof relations_tags
+  relations__tags_v: typeof relations__tags_v
+  relations_media: typeof relations_media
   relations_aspects: typeof relations_aspects
   relations_sources: typeof relations_sources
   relations_reviews: typeof relations_reviews
   relations_users_sessions: typeof relations_users_sessions
   relations_users: typeof relations_users
-  relations_media: typeof relations_media
+  relations_redirects_rels: typeof relations_redirects_rels
+  relations_redirects: typeof relations_redirects
   relations_payload_kv: typeof relations_payload_kv
+  relations_payload_folders_folder_type: typeof relations_payload_folders_folder_type
+  relations_payload_folders: typeof relations_payload_folders
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels
   relations_payload_locked_documents: typeof relations_payload_locked_documents
   relations_payload_preferences_rels: typeof relations_payload_preferences_rels
   relations_payload_preferences: typeof relations_payload_preferences
   relations_payload_migrations: typeof relations_payload_migrations
+  relations_navigation_header_links: typeof relations_navigation_header_links
+  relations_navigation_footer_columns_links: typeof relations_navigation_footer_columns_links
+  relations_navigation_footer_columns: typeof relations_navigation_footer_columns
+  relations_navigation: typeof relations_navigation
   relations_site_settings_steps: typeof relations_site_settings_steps
+  relations_site_settings_social_profiles: typeof relations_site_settings_social_profiles
   relations_site_settings: typeof relations_site_settings
   relations_scoring_rules: typeof relations_scoring_rules
   relations_catalog_state: typeof relations_catalog_state

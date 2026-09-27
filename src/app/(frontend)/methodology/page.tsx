@@ -15,11 +15,14 @@ import { ensureCatalog } from '@/lib/store'
 // Every threshold on this page is read from src/lib/rules.ts and the category data — the same
 // values the scoring code uses — so the published method can't drift from the real one.
 
-export const metadata: Metadata = pageMetadata({
-  title: 'How we score products',
-  description: 'How ReviewLens collects reviews, discounts manipulation, computes every number and reaches a verdict.',
-  path: routes.methodology(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'How we score products',
+    description: 'How ReviewLens collects reviews, discounts manipulation, computes every number and reaches a verdict.',
+    path: routes.methodology(),
+  })
+}
 
 export default async function MethodologyPage() {
   await ensureCatalog()

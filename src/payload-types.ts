@@ -74,12 +74,16 @@ export interface Config {
     comparisons: Comparison;
     guides: Guide;
     'review-requests': ReviewRequest;
+    pages: Page;
+    tags: Tag;
+    media: Media;
     aspects: Aspect;
     sources: Source;
     reviews: Review;
     users: User;
-    media: Media;
+    redirects: Redirect;
     'payload-kv': PayloadKv;
+    'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -91,6 +95,9 @@ export interface Config {
     brands: {
       products: 'products';
     };
+    'payload-folders': {
+      documentsAndFolders: 'payload-folders' | 'media';
+    };
   };
   collectionsSelect: {
     products: ProductsSelect<false> | ProductsSelect<true>;
@@ -100,12 +107,16 @@ export interface Config {
     comparisons: ComparisonsSelect<false> | ComparisonsSelect<true>;
     guides: GuidesSelect<false> | GuidesSelect<true>;
     'review-requests': ReviewRequestsSelect<false> | ReviewRequestsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
     aspects: AspectsSelect<false> | AspectsSelect<true>;
     sources: SourcesSelect<false> | SourcesSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
+    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -115,11 +126,13 @@ export interface Config {
   };
   fallbackLocale: null;
   globals: {
+    navigation: Navigation;
     'site-settings': SiteSetting;
     'scoring-rules': ScoringRule;
     'catalog-state': CatalogState;
   };
   globalsSelect: {
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'scoring-rules': ScoringRulesSelect<false> | ScoringRulesSelect<true>;
     'catalog-state': CatalogStateSelect<false> | CatalogStateSelect<true>;
@@ -251,10 +264,30 @@ export interface Product {
    * Shown on the page as "Updated". Moves only when new reviews are collected.
    */
   dataUpdatedAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
    * The page lives at /reviews/<this>. Filled in from the name; don’t change it after publishing.
    */
   slug: string;
+  /**
+   * Group this with related pages. Each tag has its own page listing everything tagged with it.
+   */
+  tags?: (number | Tag)[] | null;
   /**
    * Set automatically to whoever publishes.
    */
@@ -262,6 +295,7 @@ export interface Product {
   approvedAt?: string | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -288,8 +322,24 @@ export interface Brand {
       }[]
     | null;
   logo?: (number | null) | Media;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
-   * Filled in automatically from the name. Changing it after publishing breaks existing links.
+   * The brand’s page lives at /brands/<this>.
    */
   slug: string;
   products?: {
@@ -299,9 +349,10 @@ export interface Brand {
   };
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 /**
- * Product photos, brand logos and team photos.
+ * Every image on the site: product photos, logos, page images and share images. Drag an image in, write what it shows, and optionally click the point that must never be cropped.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -312,10 +363,20 @@ export interface Media {
    * What the image shows, for screen readers and search engines.
    */
   alt: string;
+  /**
+   * Optional. Shown under the image where there is room.
+   */
+  caption?: string | null;
+  /**
+   * Optional. Photographer or source, e.g. "Photo: boAt".
+   */
+  credit?: string | null;
   prefix?: string | null;
   _objectKey?: string | null;
+  folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   url?: string | null;
   thumbnailURL?: string | null;
   filename?: string | null;
@@ -325,6 +386,58 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    share?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'media';
+          value: number | Media;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: 'media'[] | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Sections (like "Apps") and the categories inside them (like "UPI & Payment Apps"). Every product belongs to one category.
@@ -396,8 +509,24 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
-   * Filled in automatically from the name. Changing it after publishing breaks existing links.
+   * Sections live at /<this>, categories at /<section>/<this>. Changing it later redirects the old address.
    */
   slug: string;
   /**
@@ -414,6 +543,7 @@ export interface Category {
   };
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * The things products are judged on, like taste or payment success. Categories choose which measures apply to them.
@@ -460,6 +590,43 @@ export interface Source {
   slug: string;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * Labels that group related pages, e.g. "Budget picks". Add them from the sidebar of any product, list, guide or page. Each tag has a page at /tags/<web address> listing everything with it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  /**
+   * Shown at the top of the tag’s page. A sentence or two on what ties these together.
+   */
+  description?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
+  /**
+   * The tag’s page lives at /tags/<this>.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * Everyone who can log in. Editors approve verdicts, and their name and bio appear on every page they publish.
@@ -551,12 +718,33 @@ export interface BestList {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
    * The page lives at /best/<this>.
    */
   slug: string;
+  /**
+   * Group this with related pages. Each tag has its own page listing everything tagged with it.
+   */
+  tags?: (number | Tag)[] | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -582,6 +770,22 @@ export interface Comparison {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
    * Taken from the products.
    */
@@ -592,6 +796,7 @@ export interface Comparison {
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -625,12 +830,33 @@ export interface Guide {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
   /**
    * The page lives at /topics/<this>.
    */
   slug: string;
+  /**
+   * Group this with related pages. Each tag has its own page listing everything tagged with it.
+   */
+  tags?: (number | Tag)[] | null;
   updatedAt: string;
   createdAt: string;
+  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
 }
 /**
@@ -677,6 +903,74 @@ export interface ReviewRequest {
   createdAt: string;
 }
 /**
+ * Your own pages: About, Contact, Privacy policy and so on. Each lives at /<web address>. Add them to the menu or footer under Website → Navigation.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  /**
+   * Optional. A sentence or two shown in large type under the title.
+   */
+  intro?: string | null;
+  /**
+   * Optional. Shown under the summary, full width.
+   */
+  heroImage?: (number | null) | Media;
+  /**
+   * Write as in a word processor. Type "/" for headings, lists, images, quotes, highlighted notes and buttons.
+   */
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * The page stays on the site, but Google and others are asked not to list it.
+     */
+    noindex?: boolean | null;
+    /**
+     * Only if this page copies another one: the address of the original. Leave empty otherwise.
+     */
+    canonical?: string | null;
+  };
+  /**
+   * The page lives at /<this>. Changing it later sends the old address to the new one automatically.
+   */
+  slug: string;
+  /**
+   * Group this with related pages. Each tag has its own page listing everything tagged with it.
+   */
+  tags?: (number | Tag)[] | null;
+  /**
+   * Set automatically the first time you publish.
+   */
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * Every collected review. They come in automatically and can’t be edited — but you can hide one (spam, abuse, wrong product) and it disappears from the site and the numbers.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -720,6 +1014,59 @@ export interface Review {
     | boolean
     | null;
   externalId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Send an old address to a new one, so old links and search results keep working. Made for you when you change a published page’s web address.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
+export interface Redirect {
+  id: number;
+  from: string;
+  to?: {
+    type?: ('reference' | 'custom') | null;
+    reference?:
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'products';
+          value: number | Product;
+        } | null)
+      | ({
+          relationTo: 'categories';
+          value: number | Category;
+        } | null)
+      | ({
+          relationTo: 'brands';
+          value: number | Brand;
+        } | null)
+      | ({
+          relationTo: 'best-lists';
+          value: number | BestList;
+        } | null)
+      | ({
+          relationTo: 'comparisons';
+          value: number | Comparison;
+        } | null)
+      | ({
+          relationTo: 'guides';
+          value: number | Guide;
+        } | null)
+      | ({
+          relationTo: 'tags';
+          value: number | Tag;
+        } | null);
+    url?: string | null;
+  };
+  /**
+   * Permanent (301) unless the old address will come back.
+   */
+  type: '301' | '302';
   updatedAt: string;
   createdAt: string;
 }
@@ -776,6 +1123,18 @@ export interface PayloadLockedDocument {
         value: number | ReviewRequest;
       } | null)
     | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
         relationTo: 'aspects';
         value: number | Aspect;
       } | null)
@@ -792,8 +1151,12 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'media';
-        value: number | Media;
+        relationTo: 'redirects';
+        value: number | Redirect;
+      } | null)
+    | ({
+        relationTo: 'payload-folders';
+        value: number | FolderInterface;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -897,11 +1260,22 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   dataUpdatedAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   slug?: T;
+  tags?: T;
   author?: T;
   approvedAt?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -936,11 +1310,21 @@ export interface CategoriesSelect<T extends boolean = true> {
         a?: T;
         id?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   slug?: T;
   refreshDays?: T;
   products?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -957,10 +1341,20 @@ export interface BrandsSelect<T extends boolean = true> {
         id?: T;
       };
   logo?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   slug?: T;
   products?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -981,9 +1375,20 @@ export interface BestListsSelect<T extends boolean = true> {
         a?: T;
         id?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   slug?: T;
+  tags?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1000,10 +1405,20 @@ export interface ComparisonsSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   category?: T;
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1022,9 +1437,20 @@ export interface GuidesSelect<T extends boolean = true> {
         a?: T;
         id?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   slug?: T;
+  tags?: T;
   updatedAt?: T;
   createdAt?: T;
+  deletedAt?: T;
   _status?: T;
 }
 /**
@@ -1048,6 +1474,111 @@ export interface ReviewRequestsSelect<T extends boolean = true> {
   normalizedQuery?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  intro?: T;
+  heroImage?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
+  slug?: T;
+  tags?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        noindex?: T;
+        canonical?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  credit?: T;
+  prefix?: T;
+  _objectKey?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        share?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1128,23 +1659,20 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
+ * via the `definition` "redirects_select".
  */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  prefix?: T;
-  _objectKey?: T;
+export interface RedirectsSelect<T extends boolean = true> {
+  from?: T;
+  to?:
+    | T
+    | {
+        type?: T;
+        reference?: T;
+        url?: T;
+      };
+  type?: T;
   updatedAt?: T;
   createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1153,6 +1681,18 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders_select".
+ */
+export interface PayloadFoldersSelect<T extends boolean = true> {
+  name?: T;
+  folder?: T;
+  documentsAndFolders?: T;
+  folderType?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1187,7 +1727,61 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
- * Homepage wording and the banner at the top of every page.
+ * The links in the menu at the top and the footer at the bottom of every page. Categories, ranked lists and comparisons are listed automatically; these are the links you choose.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  /**
+   * Shown after "Categories" in the top menu. Leave empty for the standard links: Best lists, Compare, How we score.
+   */
+  headerLinks?:
+    | {
+        label: string;
+        type?: ('page' | 'custom') | null;
+        page?: (number | null) | Page;
+        /**
+         * A path on this site (/best) or a full address.
+         */
+        url?: string | null;
+        newTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Columns of links in the footer, e.g. "Company" with About and Contact. Leave empty for the standard "Trust" column.
+   */
+  footerColumns?:
+    | {
+        title: string;
+        links?:
+          | {
+              label: string;
+              type?: ('page' | 'custom') | null;
+              page?: (number | null) | Page;
+              /**
+               * A path on this site (/best) or a full address.
+               */
+              url?: string | null;
+              newTab?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  footerAbout?: string | null;
+  /**
+   * Shown at the very bottom, after "© <year> ReviewLens."
+   */
+  footerNote?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Homepage wording, the banner, search engine settings, social profiles and analytics.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
@@ -1206,6 +1800,44 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Turn on while the site is on a temporary address or not ready. Search engines are asked not to list any page. Turn off when you launch.
+   */
+  hideFromSearch?: boolean | null;
+  /**
+   * Used by search results and link previews for pages without their own description. Up to 160 characters.
+   */
+  metaDescription?: string | null;
+  /**
+   * The picture shown when a link is shared on WhatsApp, X, LinkedIn and so on, unless the page has its own. 1200 × 630 works best.
+   */
+  shareImage?: (number | null) | Media;
+  /**
+   * A square logo. Search engines may show it next to your results.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Only the content="…" value from the HTML tag Google gives you.
+   */
+  googleVerification?: string | null;
+  /**
+   * Only the content="…" value.
+   */
+  bingVerification?: string | null;
+  twitterHandle?: string | null;
+  /**
+   * Links to your Instagram, X, YouTube, LinkedIn and so on. Search engines use them to recognise the brand.
+   */
+  socialProfiles?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Paste the ID from Google Analytics 4 to start counting visits. Leave empty for no analytics.
+   */
+  gaMeasurementId?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1247,6 +1879,43 @@ export interface CatalogState {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  headerLinks?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        page?: T;
+        url?: T;
+        newTab?: T;
+        id?: T;
+      };
+  footerColumns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              type?: T;
+              page?: T;
+              url?: T;
+              newTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  footerAbout?: T;
+  footerNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -1262,6 +1931,20 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         body?: T;
         id?: T;
       };
+  hideFromSearch?: T;
+  metaDescription?: T;
+  shareImage?: T;
+  logo?: T;
+  googleVerification?: T;
+  bingVerification?: T;
+  twitterHandle?: T;
+  socialProfiles?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  gaMeasurementId?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

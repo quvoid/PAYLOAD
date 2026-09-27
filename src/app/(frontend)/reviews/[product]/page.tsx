@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
+import { TagList } from '@/components/TagList'
 import { PriceTable, ProsCons, VerdictRationale } from '@/components/product'
 import {
   AspectTable,
@@ -47,6 +47,7 @@ import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
 import { breadcrumbLd, faqLd, graph, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
 import { verdictLabel } from '@/lib/verdict'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ product: string }>
@@ -64,6 +65,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${p.name} Review: ${verdictLabel(p.verdict, isApp(p))}`,
     description: p.answer.length > 158 ? `${p.answer.slice(0, 155).trimEnd()}…` : p.answer,
     path: routes.product(p.slug),
+    seo: p.seo,
     // Thin-data products and unapproved drafts stay out of the index (docs/PLAN.md §7).
     noindex: p.verdict === 'thin-data' || Boolean(p.draft),
   })
@@ -74,7 +76,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   const { isEnabled: previewing } = await draftMode()
   const slug = (await params).product
   const product = previewing ? getProductForPreview(slug) : getProduct(slug)
-  if (!product) notFound()
+  if (!product) notFoundOrRedirect(`/reviews/${slug}`)
 
   const category = getCategory(product.category)!
   const brand = getBrand(product.brand)!
@@ -159,6 +161,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                   </div>
                 )}
               </dl>
+              <TagList tags={product.tags} className="mt-6" />
             </div>
           </header>
 

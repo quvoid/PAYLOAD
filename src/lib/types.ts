@@ -48,6 +48,8 @@ export interface FAQ {
 
 export interface Category {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
   name: string
   /** Silo slug. Undefined means this category is a silo. */
   parent?: string
@@ -63,6 +65,8 @@ export interface Category {
 
 export interface Brand {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
   name: string
   about: string[]
   website?: string
@@ -120,6 +124,10 @@ export interface Claim {
 
 export interface Product {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
+  /** Tag slugs. */
+  tags?: string[]
   name: string
   shortName: string
   brand: string
@@ -148,6 +156,10 @@ export interface Product {
 
 export interface BestOf {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
+  /** Tag slugs. */
+  tags?: string[]
   title: string
   category: string
   /** Every best-of carries a qualifier so it never competes with its own category hub. */
@@ -160,6 +172,8 @@ export interface BestOf {
 /** Head-to-head pair. Pairs are chosen by an editor. */
 export interface PairComparison {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
   category: string
   products: [string, string]
   judgement: string[]
@@ -168,9 +182,59 @@ export interface PairComparison {
 
 export interface Topic {
   slug: string
+  /** Overrides from the SEO tab in the admin. */
+  seo?: Seo
+  /** Tag slugs. */
+  tags?: string[]
   aspect: string
   silo: string
   title: string
   explainer: string[]
   faq: FAQ[]
+}
+
+/** An uploaded image, resolved to what a page needs. */
+export interface MediaRef {
+  url: string
+  alt: string
+  width?: number
+  height?: number
+  caption?: string
+}
+
+/** The SEO tab of a document. Empty values fall back to the page's own title and description. */
+export interface Seo {
+  title?: string
+  description?: string
+  image?: MediaRef
+  noindex?: boolean
+  canonical?: string
+}
+
+export interface Tag {
+  slug: string
+  name: string
+  description: string
+  seo?: Seo
+}
+
+/** A free-form page (About, Privacy…) written in the admin's rich text editor. */
+export interface Page {
+  slug: string
+  title: string
+  intro: string
+  heroImage?: MediaRef
+  /** Lexical rich text, rendered with @payloadcms/richtext-lexical/react. */
+  content: unknown
+  tags: string[]
+  seo?: Seo
+  publishedAt: string
+  updatedAt: string
+  draft?: boolean
+}
+
+export interface NavLink {
+  label: string
+  href: string
+  newTab?: boolean
 }

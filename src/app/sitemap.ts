@@ -5,17 +5,22 @@ import {
   allBestOf,
   allBrands,
   allComparisons,
+  allPages,
   allProducts,
+  allTags,
   allTopics,
   categoryComparisons,
   leafCategories,
   productsByBrand,
   productsIn,
   silos,
+  TAG_INDEX_MIN,
+  taggedCount,
 } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { absoluteUrl, SITEMAPS } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { ensureCatalog, settings } from '@/lib/store'
+import type { Seo } from '@/lib/types'
 
 // One sitemap per page type (docs/PLAN.md §7), so indexing problems show up per type.
 // lastModified comes from content dates, never from build time.
@@ -29,6 +34,9 @@ const latest = (dates: string[]) => dates.sort().at(-1)
 export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
   await ensureCatalog()
   const id = (await props.id) as (typeof SITEMAPS)[number]
+  // A site hidden from search engines lists nothing; pages hidden one by one are left out.
+  if (settings.hideFromSearch) return []
+  const listed = (x: { seo?: Seo }) => !x.seo?.noindex && !x.seo?.canonical
   const entry = (path: string, lastModified?: string) => ({ url: absoluteUrl(path), lastModified })
   const updated = (slugs: string[]) => latest(slugs.map((s) => allProducts().find((p) => p.slug === s)!.updatedAt))
 
@@ -36,33 +44,40 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
     case 'products':
       // Thin-data products are noindex, so they stay out of the sitemap too.
       return allProducts()
-        .filter((p) => p.verdict !== 'thin-data' && !p.draft)
+        .filter((p) => p.verdict !== 'thin-data' && !p.draft && listed(p))
         .map((p) => entry(routes.product(p.slug), p.updatedAt))
     case 'hubs':
       return [
         entry(routes.home(), latest(allProducts().map((p) => p.updatedAt))),
         entry(routes.categories(), latest(allProducts().map((p) => p.updatedAt))),
-        ...[...silos(), ...leafCategories()].filter((c) => productsIn(c.slug).length > 0).map((c) =>
+        ...[...silos(), ...leafCategories()].filter((c) => productsIn(c.slug).length > 0 && listed(c)).map((c) =>
           entry(routes.category(c), latest(productsIn(c.slug).map((p) => p.updatedAt))),
         ),
       ]
     case 'lists':
-      return [entry(routes.bestIndex()), ...allBestOf().map((b) => entry(routes.best(b.slug), updated(productsIn(b.category).map((p) => p.slug))))]
+      return [entry(routes.bestIndex()), ...allBestOf().filter(listed).map((b) => entry(routes.best(b.slug), updated(productsIn(b.category).map((p) => p.slug))))]
     case 'comparisons':
       return [
         entry(routes.compareIndex()),
-        ...allComparisons().map((c) => entry(routes.compare(c.slug), updated(c.products))),
+        ...allComparisons().filter(listed).map((c) => entry(routes.compare(c.slug), updated(c.products))),
         ...categoryComparisons().map((c) => entry(routes.compare(c.slug), updated(productsIn(c.slug).map((p) => p.slug)))),
       ]
     case 'brands':
-      return allBrands().map((b) => entry(routes.brand(b.slug), latest(productsByBrand(b.slug).map((p) => p.updatedAt))))
+      return allBrands().filter(listed).map((b) => entry(routes.brand(b.slug), latest(productsByBrand(b.slug).map((p) => p.updatedAt))))
     case 'topics':
-      return allTopics().map((t) => entry(routes.topic(t.slug)))
+      return allTopics().filter(listed).map((t) => entry(routes.topic(t.slug)))
     case 'trust':
       return [
         entry(routes.methodology()),
         entry(routes.sources()),
         ...allAuthors().map((a) => entry(routes.author(a.slug))),
+      ]
+    case 'pages':
+      return [
+        ...allPages().filter(listed).map((p) => entry(routes.page(p.slug), p.updatedAt)),
+        ...allTags()
+          .filter((t) => listed(t) && taggedCount(t.slug) >= TAG_INDEX_MIN)
+          .map((t) => entry(routes.tag(t.slug))),
       ]
     default:
       return []

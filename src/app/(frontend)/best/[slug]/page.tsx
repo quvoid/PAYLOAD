@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
+import { TagList } from '@/components/TagList'
 import { Breadcrumbs, Faq, ProductCard } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
@@ -12,6 +12,7 @@ import { formatINR, formatRate, formatScore, inSentence } from '@/lib/format'
 import { aspectStat, compositeScore, lowestOffer } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ slug: string }>
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   await ensureCatalog()
   const list = getBestOf((await params).slug)
   if (!list) return {}
-  return pageMetadata({ title: list.title, description: list.intro[0].slice(0, 155), path: routes.best(list.slug) })
+  return pageMetadata({ title: list.title, description: list.intro[0].slice(0, 155), path: routes.best(list.slug), seo: list.seo })
 }
 
 export default async function BestOfPage({ params }: { params: Params }) {
@@ -33,7 +34,7 @@ export default async function BestOfPage({ params }: { params: Params }) {
   const { isEnabled: previewing } = await draftMode()
   const slug = (await params).slug
   const list = previewing ? getBestOfForPreview(slug) : getBestOf(slug)
-  if (!list) notFound()
+  if (!list) notFoundOrRedirect(`/best/${slug}`)
 
   const ranked = rankBestOf(list)
   const category = getCategory(list.category)!
@@ -53,6 +54,7 @@ export default async function BestOfPage({ params }: { params: Params }) {
             {list.rule.maxPrice ? ` · lowest price under ${formatINR(list.rule.maxPrice)}` : ''} · recalculated
             whenever reviews or prices change
           </p>
+          <TagList tags={list.tags} className="mt-6" />
         </header>
 
         <Section id="ranking" title={`Which is the ${list.title.replace(/^Best /, 'best ')}?`}>

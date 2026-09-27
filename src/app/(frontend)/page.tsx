@@ -21,11 +21,14 @@ import { routes } from '@/lib/routes'
 import { pageMetadata, SITE } from '@/lib/seo'
 import { ensureCatalog, settings } from '@/lib/store'
 
-export const metadata: Metadata = pageMetadata({
-  title: 'Every review, weighed — honest buying verdicts',
-  description: SITE.description,
-  path: routes.home(),
-})
+export async function generateMetadata(): Promise<Metadata> {
+  await ensureCatalog()
+  return pageMetadata({
+    title: 'Every review, weighed — honest buying verdicts',
+    description: SITE.description,
+    path: routes.home(),
+  })
+}
 
 // Hero copy and the "how it works" steps are edited in the admin: Settings → Site settings.
 

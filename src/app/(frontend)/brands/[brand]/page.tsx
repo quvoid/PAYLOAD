@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, ProductCard } from '@/components/review'
@@ -10,6 +9,7 @@ import { formatCount, formatRating } from '@/lib/format'
 import { countedReviews, weightedRating } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ brand: string }>
@@ -27,13 +27,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${brand.name} reviews: every product rated`,
     description: `Every ${brand.name} product we track, with verdicts and scores computed from real reviews.`,
     path: routes.brand(brand.slug),
+    seo: brand.seo,
   })
 }
 
 export default async function BrandPage({ params }: { params: Params }) {
   await ensureCatalog()
-  const brand = getBrand((await params).brand)
-  if (!brand) notFound()
+  const slug = (await params).brand
+  const brand = getBrand(slug)
+  if (!brand) notFoundOrRedirect(`/brands/${slug}`)
 
   const products = productsByBrand(brand.slug)
   const crumbs = [

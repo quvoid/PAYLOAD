@@ -1,8 +1,23 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, PayloadRequest } from 'payload'
 
-import { RESERVED_SEGMENTS } from '@/lib/routes'
+import { validateRootSlug } from './Pages'
+import {
+  faqField,
+  isAdmin,
+  loggedIn,
+  redirectOnSlugChange,
+  refreshAfterChange,
+  refreshAfterDelete,
+  slugField,
+} from './shared'
 
-import { faqField, isAdmin, loggedIn, refreshAfterChange, refreshAfterDelete, slugField } from './shared'
+/** /section or /section/category, for a category document read at depth 0. */
+const categoryPath = async (doc: Record<string, unknown>, req: PayloadRequest) => {
+  const parent = doc.parent && typeof doc.parent === 'object' ? (doc.parent as { id: number }).id : doc.parent
+  if (!parent) return `/${doc.slug}`
+  const section = await req.payload.findByID({ collection: 'categories', id: parent as number, depth: 0, req })
+  return `/${section.slug}/${doc.slug}`
+}
 
 // Sections (top level, e.g. "Apps") and the categories inside them (e.g. "UPI & Payment Apps").
 export const Categories: CollectionConfig = {
@@ -15,8 +30,16 @@ export const Categories: CollectionConfig = {
     description:
       'Sections (like "Apps") and the categories inside them (like "UPI & Payment Apps"). Every product belongs to one category.',
   },
+  versions: { maxPerDoc: 25 },
+  trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
-  hooks: { afterChange: [refreshAfterChange], afterDelete: [refreshAfterDelete] },
+  hooks: {
+    afterChange: [
+      refreshAfterChange,
+      (args) => redirectOnSlugChange('categories', (d) => categoryPath(d, args.req))(args),
+    ],
+    afterDelete: [refreshAfterDelete],
+  },
   fields: [
     {
       type: 'tabs',
@@ -122,15 +145,10 @@ export const Categories: CollectionConfig = {
       ],
     },
     slugField('name', {
-      validate: (value: unknown, { siblingData }: { siblingData: Record<string, unknown> }) => {
-        if (typeof value !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) {
-          return 'Use lowercase letters, numbers and hyphens only, e.g. whey-protein.'
-        }
-        // Sections live at the site root (/apps), so they can't reuse the address of another page.
-        if (!siblingData.parent && RESERVED_SEGMENTS.has(value)) {
-          return `"${value}" is already used by another page. Choose a different web address.`
-        }
-        return true
+      validate: validateRootSlug('categories'),
+      admin: {
+        position: 'sidebar',
+        description: 'Sections live at /<this>, categories at /<section>/<this>. Changing it later redirects the old address.',
       },
     }),
     {

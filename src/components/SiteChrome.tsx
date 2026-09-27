@@ -1,9 +1,9 @@
 import Link from 'next/link'
 import React from 'react'
 
-import { allBestOf, categoryComparisons, productsIn, listedChildren, listedSilos } from '@/lib/catalog'
+import { allBestOf, categoryComparisons, listedChildren, listedSilos, productsIn, siteNavigation } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import type { Track } from '@/lib/types'
+import type { NavLink, Track } from '@/lib/types'
 
 import { SearchForm } from './SearchForm'
 import { Container, GradientStrip, PillLink } from './ui'
@@ -12,11 +12,30 @@ import { Wordmark } from './Wordmark'
 // Header and footer. Each page picks one track (DESIGN.md: cinematic OR transactional, never
 // both), and the chrome follows it.
 
-const navLinks = () => [
+const defaultNavLinks: NavLink[] = [
   { href: routes.bestIndex(), label: 'Best lists' },
   { href: routes.compareIndex(), label: 'Compare' },
   { href: routes.methodology(), label: 'How we score' },
 ]
+
+/** Menu links from Website → Navigation in the admin, or the standard ones if none are set. */
+const navLinks = () => (siteNavigation().header.length ? siteNavigation().header : defaultNavLinks)
+
+/** An internal path goes through next/link; a full address opens as a plain link. */
+function NavAnchor({ link, className, children }: { link: NavLink; className: string; children: React.ReactNode }) {
+  if (/^(https?:|mailto:|tel:)/.test(link.href)) {
+    return (
+      <a href={link.href} className={className} {...(link.newTab && { target: '_blank', rel: 'noopener noreferrer' })}>
+        {children}
+      </a>
+    )
+  }
+  return (
+    <Link href={link.href} className={className} {...(link.newTab && { target: '_blank' })}>
+      {children}
+    </Link>
+  )
+}
 
 /**
  * "Categories" with a full-width panel of every section and its categories. Opens on hover and on
@@ -100,9 +119,9 @@ function SiteHeader({ track }: { track: Track }) {
             <CategoriesMenu track={track} />
             {navLinks().map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className={`whitespace-nowrap text-body-md transition-colors ${link}`}>
+                <NavAnchor link={l} className={`whitespace-nowrap text-body-md transition-colors ${link}`}>
                   {l.label}
-                </Link>
+                </NavAnchor>
               </li>
             ))}
           </ul>
@@ -148,9 +167,9 @@ function SiteHeader({ track }: { track: Track }) {
             <ul className="pt-2">
               {navLinks().map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className={`block rounded-md px-4 py-3 ${link}`}>
+                  <NavAnchor link={l} className={`block rounded-md px-4 py-3 ${link}`}>
                     {l.label}
-                  </Link>
+                  </NavAnchor>
                 </li>
               ))}
             </ul>
@@ -167,7 +186,7 @@ function FooterColumn({
   night,
 }: {
   title: string
-  links: { href: string; label: string }[]
+  links: NavLink[]
   night: boolean
 }) {
   return (
@@ -176,12 +195,12 @@ function FooterColumn({
       <ul className="mt-4 space-y-2">
         {links.map((l) => (
           <li key={l.href}>
-            <Link
-              href={l.href}
+            <NavAnchor
+              link={l}
               className={`text-caption underline decoration-1 underline-offset-4 ${night ? 'text-peach hover:text-aqua' : 'text-ink decoration-shade-40 hover:decoration-pink'}`}
             >
               {l.label}
-            </Link>
+            </NavAnchor>
           </li>
         ))}
       </ul>
@@ -191,16 +210,28 @@ function FooterColumn({
 
 function SiteFooter({ track }: { track: Track }) {
   const night = track === 'night'
+  const nav = siteNavigation()
+  const extraColumns = nav.footerColumns.length
+    ? nav.footerColumns
+    : [
+        {
+          title: 'Trust',
+          links: [
+            { href: routes.methodology(), label: 'How we score' },
+            { href: routes.sources(), label: 'Where our reviews come from' },
+          ],
+        },
+      ]
   return (
     <footer className={night ? 'bg-night text-white' : 'border-t border-hairline bg-cream text-ink'}>
       <GradientStrip />
       <Container className="py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className={`grid gap-10 sm:grid-cols-2 ${extraColumns.length > 1 ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
           <div className="lg:col-span-1">
             <Wordmark track={track} />
             <p className={`mt-4 max-w-[36ch] text-caption ${night ? 'text-shade-40' : 'text-shade-60'}`}>
-              Every review, weighed. Numbers are counted by code; every verdict is approved by a
-              named editor.
+              {nav.footerAbout ||
+                'Every review, weighed. Numbers are counted by code; every verdict is approved by a named editor.'}
             </p>
           </div>
           <FooterColumn
@@ -224,19 +255,17 @@ function SiteFooter({ track }: { track: Track }) {
               { href: routes.compareIndex(), label: 'All comparisons' },
             ]}
           />
-          <FooterColumn
-            night={night}
-            title="Trust"
-            links={[
-              { href: routes.methodology(), label: 'How we score' },
-              { href: routes.sources(), label: 'Where our reviews come from' },
-            ]}
-          />
+          {extraColumns.map((c) => (
+            <FooterColumn key={c.title} night={night} title={c.title} links={c.links} />
+          ))}
         </div>
         <div
           className={`mt-14 flex flex-col gap-2 border-t pt-6 text-micro sm:flex-row sm:justify-between ${night ? 'border-hairline-night text-shade-40' : 'border-hairline text-shade-60'}`}
         >
-          <p>© 2026 ReviewLens. We don&apos;t earn affiliate commission. If that changes, every affected page will say so.</p>
+          <p>
+            © {new Date().getFullYear()} ReviewLens.{' '}
+            {nav.footerNote || "We don't earn affiliate commission. If that changes, every affected page will say so."}
+          </p>
           <p>Review excerpts are short and link to the original.</p>
         </div>
       </Container>

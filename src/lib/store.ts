@@ -9,11 +9,16 @@ import type {
   Brand,
   Category,
   FAQ,
+  MediaRef,
+  NavLink,
+  Page,
   PairComparison,
   Product,
   Review,
   Source,
+  Seo,
   SourceId,
+  Tag,
   Topic,
 } from './types'
 
@@ -31,6 +36,10 @@ export const bestOf: BestOf[] = []
 export const comparisons: PairComparison[] = []
 export const topics: Topic[] = []
 export const authors: Author[] = []
+export const tags: Tag[] = []
+export const pages: Page[] = [] // published only
+/** Old address → where it now lives. Checked before a page answers "not found". */
+export const redirects = new Map<string, { to: string; permanent: boolean }>()
 
 /** The latest version of every document, drafts included. Only preview mode reads these. */
 export const drafts = {
@@ -38,6 +47,15 @@ export const drafts = {
   bestOf: new Map<string, BestOf>(),
   comparisons: new Map<string, PairComparison>(),
   topics: new Map<string, Topic>(),
+  pages: new Map<string, Page>(),
+}
+
+/** Menu and footer links chosen in Website → Navigation. Empty lists mean "use the standard ones". */
+export const navigation = {
+  header: [] as NavLink[],
+  footerColumns: [] as { title: string; links: NavLink[] }[],
+  footerAbout: '',
+  footerNote: '',
 }
 
 export const settings = {
@@ -47,6 +65,15 @@ export const settings = {
   heroTitle: 'Should you buy it? Every review, weighed.',
   heroText: '',
   steps: [] as { title: string; body: string }[],
+  hideFromSearch: false,
+  metaDescription: '',
+  shareImage: undefined as MediaRef | undefined,
+  logo: undefined as MediaRef | undefined,
+  googleVerification: '',
+  bingVerification: '',
+  twitterHandle: '',
+  socialProfiles: [] as string[],
+  gaMeasurementId: '',
 }
 
 export const getPayloadClient = async (): Promise<Payload> => {
@@ -107,6 +134,12 @@ async function load(payload: Payload) {
     guideDrafts,
     site,
     rules,
+    mediaDocs,
+    tagDocs,
+    pageDocs,
+    pageDrafts,
+    redirectDocs,
+    nav,
   ] = await Promise.all([
     payload.find({ collection: 'categories', ...all }),
     payload.find({ collection: 'aspects', ...all }),
@@ -144,6 +177,13 @@ async function load(payload: Payload) {
     payload.find({ collection: 'guides', ...all, draft: true }),
     payload.findGlobal({ slug: 'site-settings', depth: 0 }),
     payload.findGlobal({ slug: 'scoring-rules', depth: 0 }),
+    payload.find({ collection: 'media', pagination: false, depth: 0 }),
+    payload.find({ collection: 'tags', ...all }),
+    // Depth 1 fills in the images and links inside the rich text.
+    payload.find({ collection: 'pages', pagination: false, depth: 1, where: { _status: { equals: 'published' } } }),
+    payload.find({ collection: 'pages', pagination: false, depth: 1, draft: true }),
+    payload.find({ collection: 'redirects', pagination: false, depth: 1 }),
+    payload.findGlobal({ slug: 'navigation', depth: 1 }),
   ])
 
   const slugBy = (docs: Doc[]) => new Map(docs.map((d) => [d.id as number, d.slug as string]))
@@ -153,6 +193,35 @@ async function load(payload: Payload) {
   const brandSlug = slugBy(brs.docs)
   const userSlug = slugBy(users.docs)
   const productSlug = slugBy(latest.docs)
+  const tagSlug = slugBy(tagDocs.docs)
+  const tagsOf = (list: Rel[] | null | undefined) =>
+    (list ?? []).map((t) => tagSlug.get(idOf(t)!)).filter((t): t is string => Boolean(t))
+
+  const mediaById = new Map<number, Doc>((mediaDocs.docs as Doc[]).map((d) => [d.id, d]))
+  const toMedia = (d: Doc | undefined, size?: string): MediaRef | undefined => {
+    if (!d?.url) return undefined
+    const sized = size && d.sizes?.[size]?.url ? d.sizes[size] : undefined
+    return {
+      url: (sized ?? d).url,
+      alt: d.alt ?? '',
+      width: (sized ?? d).width ?? undefined,
+      height: (sized ?? d).height ?? undefined,
+      ...(d.caption && { caption: d.caption }),
+    }
+  }
+  const mediaOf = (r: Rel | Doc, size?: string) =>
+    toMedia(r && typeof r === 'object' && 'url' in r ? (r as Doc) : mediaById.get(idOf(r as Rel)!), size)
+  const seoOf = (meta: Doc | undefined): Seo | undefined => {
+    if (!meta) return undefined
+    const seo: Seo = {
+      ...(meta.title && { title: meta.title }),
+      ...(meta.description && { description: meta.description }),
+      ...(meta.image && { image: mediaOf(meta.image, 'share') }),
+      ...(meta.noindex && { noindex: true }),
+      ...(meta.canonical && { canonical: meta.canonical }),
+    }
+    return Object.keys(seo).length ? seo : undefined
+  }
 
   // Scoring rules first: everything downstream reads RULES.
   const r = rules as Doc
@@ -174,6 +243,15 @@ async function load(payload: Payload) {
     heroTitle: s.heroTitle || settings.heroTitle,
     heroText: s.heroText ?? '',
     steps: (s.steps ?? []).map((x: Doc) => ({ title: x.title, body: x.body })),
+    hideFromSearch: Boolean(s.hideFromSearch),
+    metaDescription: s.metaDescription ?? '',
+    shareImage: mediaOf(s.shareImage, 'share'),
+    logo: mediaOf(s.logo),
+    googleVerification: s.googleVerification ?? '',
+    bingVerification: s.bingVerification ?? '',
+    twitterHandle: s.twitterHandle ?? '',
+    socialProfiles: (s.socialProfiles ?? []).map((x: Doc) => x.url).filter(Boolean),
+    gaMeasurementId: s.gaMeasurementId ?? '',
   })
 
   const topicFor = new Map<string, string>()
@@ -212,6 +290,7 @@ async function load(payload: Payload) {
       appCategory: d.isApp ? d.appCategory || 'UtilitiesApplication' : undefined,
       refreshDays: d.refreshDays ?? 21,
       faq: faqOf(d.faq),
+      seo: seoOf(d.meta),
     })),
   )
   for (const c of categories) {
@@ -225,6 +304,7 @@ async function load(payload: Payload) {
       about: paragraphs(d.about),
       website: d.website || undefined,
       sameAs: (d.sameAs ?? []).map((x: Doc) => x.url),
+      seo: seoOf(d.meta),
     })),
   )
   replace(
@@ -293,6 +373,8 @@ async function load(payload: Payload) {
     updatedAt: d.dataUpdatedAt ?? d.updatedAt,
     draft: d._status !== 'published',
     sample: Boolean(d.sample),
+    seo: seoOf(d.meta),
+    tags: tagsOf(d.tags),
   })
 
   const toList = (d: Doc): BestOf => ({
@@ -306,6 +388,8 @@ async function load(payload: Payload) {
       ...(d.rankBy === 'fewest-problems' && d.aspect && { aspect: aspectSlug.get(idOf(d.aspect)!) }),
     },
     faq: faqOf(d.faq),
+    seo: seoOf(d.meta),
+    tags: tagsOf(d.tags),
   })
   const toPair = (d: Doc): PairComparison => {
     const [a, b] = (d.products ?? []).map((p: Rel) => productSlug.get(idOf(p)!)!)
@@ -315,6 +399,7 @@ async function load(payload: Payload) {
       products: [a, b],
       judgement: paragraphs(d.judgement),
       pickIf: Object.fromEntries((d.pickIf ?? []).map((x: Doc) => [productSlug.get(idOf(x.product)!), x.text])),
+      seo: seoOf(d.meta),
     }
   }
   const toTopic = (d: Doc): Topic => ({
@@ -324,6 +409,20 @@ async function load(payload: Payload) {
     title: d.title,
     explainer: paragraphs(d.explainer),
     faq: faqOf(d.faq),
+    seo: seoOf(d.meta),
+    tags: tagsOf(d.tags),
+  })
+  const toPage = (d: Doc): Page => ({
+    slug: d.slug,
+    title: d.title ?? '',
+    intro: d.intro ?? '',
+    heroImage: mediaOf(d.heroImage, 'card'),
+    content: d.content ?? null,
+    tags: tagsOf(d.tags),
+    seo: seoOf(d.meta),
+    publishedAt: d.publishedAt ?? d.createdAt,
+    updatedAt: d.updatedAt,
+    draft: d._status !== 'published',
   })
 
   replace(products, (published.docs as Doc[]).map(toProduct))
@@ -335,11 +434,54 @@ async function load(payload: Payload) {
     (pairs.docs as Doc[]).map(toPair).filter((c) => c.products.every((s) => publishedSlugs.has(s))),
   )
   replace(topics, (guides.docs as Doc[]).map(toTopic))
+  replace(
+    tags,
+    (tagDocs.docs as Doc[]).map((d) => ({ slug: d.slug, name: d.name, description: d.description ?? '', seo: seoOf(d.meta) })),
+  )
+  replace(pages, (pageDocs.docs as Doc[]).map(toPage))
+
+  // Where a document lives, for redirects and editor-chosen links (relationships read at depth 1).
+  const docPath = (relationTo: string, d: Doc | undefined): string | undefined => {
+    if (!d?.slug) return undefined
+    const paths: Record<string, () => string> = {
+      pages: () => `/${d.slug}`,
+      products: () => `/reviews/${d.slug}`,
+      brands: () => `/brands/${d.slug}`,
+      'best-lists': () => `/best/${d.slug}`,
+      comparisons: () => `/compare/${d.slug}`,
+      guides: () => `/topics/${d.slug}`,
+      tags: () => `/tags/${d.slug}`,
+      categories: () => (d.parent ? `/${catSlug.get(idOf(d.parent)!)}/${d.slug}` : `/${d.slug}`),
+    }
+    return paths[relationTo]?.()
+  }
+  redirects.clear()
+  for (const d of redirectDocs.docs as Doc[]) {
+    const to =
+      d.to?.type === 'custom' ? d.to.url : docPath(d.to?.reference?.relationTo, d.to?.reference?.value as Doc)
+    if (d.from && to && to !== d.from) redirects.set(d.from, { to, permanent: d.type !== '302' })
+  }
+
+  const publishedPages = new Set(pages.map((p) => p.slug))
+  const linkOf = (l: Doc): NavLink | undefined => {
+    if (l.type === 'custom') return l.url ? { label: l.label, href: l.url, newTab: Boolean(l.newTab) } : undefined
+    const page = l.page as Doc | undefined
+    return page?.slug && publishedPages.has(page.slug) ? { label: l.label, href: `/${page.slug}` } : undefined
+  }
+  const links = (list?: Doc[]) => (list ?? []).map(linkOf).filter((l): l is NavLink => Boolean(l))
+  const n = nav as Doc
+  Object.assign(navigation, {
+    header: links(n.headerLinks),
+    footerColumns: (n.footerColumns ?? []).map((c: Doc) => ({ title: c.title, links: links(c.links) })),
+    footerAbout: n.footerAbout ?? '',
+    footerNote: n.footerNote ?? '',
+  })
 
   drafts.products = new Map((latest.docs as Doc[]).map((d) => [d.slug, toProduct(d)]))
   drafts.bestOf = new Map((listDrafts.docs as Doc[]).map((d) => [d.slug, toList(d)]))
   drafts.comparisons = new Map((pairDrafts.docs as Doc[]).filter((d) => d.slug).map((d) => [d.slug, toPair(d)]))
   drafts.topics = new Map((guideDrafts.docs as Doc[]).map((d) => [d.slug, toTopic(d)]))
+  drafts.pages = new Map((pageDrafts.docs as Doc[]).filter((d) => d.slug).map((d) => [d.slug, toPage(d)]))
 
   // Verdicts are never stored: the rules decide them from the reviews, now that everything is loaded.
   const { ruleVerdict } = await import('./metrics')

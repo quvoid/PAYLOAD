@@ -3,7 +3,8 @@ import type { Metadata } from 'next'
 import { getAuthor, getBrand, getCategory, siloOf } from './catalog'
 import { claimEvidence, compositeScore, lowestOffer } from './metrics'
 import { routes } from './routes'
-import type { FAQ, Product } from './types'
+import { settings } from './store'
+import type { FAQ, MediaRef, Product, Seo } from './types'
 
 export const SITE = {
   name: 'ReviewLens',
@@ -16,23 +17,46 @@ export const SITE = {
 export const absoluteUrl = (path: string) => `${SITE.url}${path}`
 
 /** One sitemap per page type (docs/PLAN.md §7). Served at /sitemap/[id].xml. */
-export const SITEMAPS = ['products', 'hubs', 'lists', 'comparisons', 'brands', 'topics', 'trust'] as const
+export const SITEMAPS = ['products', 'hubs', 'lists', 'comparisons', 'brands', 'topics', 'trust', 'pages'] as const
 
 interface PageMeta {
   title: string
   description: string
   path: string
   noindex?: boolean
+  /** The document's SEO tab. Anything filled in there wins over the values above. */
+  seo?: Seo
+  /** A share image of the page's own, used when the SEO tab has none. */
+  image?: MediaRef
 }
 
-/** Canonical, Open Graph and robots for one page. Titles are absolute: the brand is appended here. */
-export const pageMetadata = ({ title, description, path, noindex }: PageMeta): Metadata => ({
-  title: { absolute: `${title} | ${SITE.name}` },
-  description,
-  alternates: { canonical: path },
-  openGraph: { title, description, url: path, siteName: SITE.name, locale: SITE.locale, type: 'website' },
-  robots: noindex ? { index: false, follow: true } : undefined,
-})
+/**
+ * Canonical, Open Graph, X card and robots for one page. Titles are absolute: the brand is
+ * appended here, unless an editor wrote the full title in the SEO tab. Gaps fall back to the
+ * defaults in Settings → Site settings → Search engines.
+ */
+export const pageMetadata = ({ title, description, path, noindex, seo, image }: PageMeta): Metadata => {
+  const fullTitle = seo?.title || `${title} | ${SITE.name}`
+  const shareTitle = seo?.title || title
+  const desc = seo?.description || description || settings.metaDescription || SITE.description
+  const img = seo?.image ?? image ?? settings.shareImage
+  const images = img ? [{ url: img.url, alt: img.alt, width: img.width, height: img.height }] : undefined
+  const hidden = noindex || seo?.noindex || settings.hideFromSearch
+  return {
+    title: { absolute: fullTitle },
+    description: desc,
+    alternates: { canonical: seo?.canonical || path },
+    openGraph: { title: shareTitle, description: desc, url: path, siteName: SITE.name, locale: SITE.locale, type: 'website', images },
+    twitter: {
+      card: img ? 'summary_large_image' : 'summary',
+      title: shareTitle,
+      description: desc,
+      images: images?.map((i) => i.url),
+      ...(settings.twitterHandle && { site: settings.twitterHandle, creator: settings.twitterHandle }),
+    },
+    robots: hidden ? { index: false, follow: true } : undefined,
+  }
+}
 
 export type Crumb = { name: string; path: string }
 
@@ -57,6 +81,8 @@ export const organizationLd = () => ({
   name: SITE.name,
   url: SITE.url,
   publishingPrinciples: absoluteUrl(routes.methodology()),
+  ...(settings.logo && { logo: settings.logo.url.startsWith('http') ? settings.logo.url : absoluteUrl(settings.logo.url) }),
+  ...(settings.socialProfiles.length && { sameAs: settings.socialProfiles }),
 })
 
 export const websiteLd = () => ({

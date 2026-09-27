@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs, Faq, ProductCard, SovChart } from '@/components/review'
@@ -21,6 +20,7 @@ import { formatCount, formatDate, inSentence, isoDate } from '@/lib/format'
 import { countedReviews, shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, pageMetadata } from '@/lib/seo'
+import { notFoundOrRedirect } from '@/lib/not-found'
 import { ensureCatalog } from '@/lib/store'
 
 type Params = Promise<{ silo: string; sub: string }>
@@ -44,6 +44,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${category.name} reviews and buying guide`,
     description: category.tagline,
     path: routes.category(category),
+    seo: category.seo,
     // Nothing published yet: nothing worth indexing.
     noindex: productsIn(category.slug).length === 0,
   })
@@ -52,7 +53,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function CategoryPage({ params }: { params: Params }) {
   await ensureCatalog()
   const category = await load(params)
-  if (!category) notFound()
+  if (!category) {
+    const { silo, sub } = await params
+    notFoundOrRedirect(`/${silo}/${sub}`)
+  }
 
   const products = productsIn(category.slug)
   const crumbs = categoryCrumbs(category.slug)

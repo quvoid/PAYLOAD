@@ -11,7 +11,7 @@ export const Reviews: CollectionConfig = {
   slug: 'reviews',
   labels: { singular: 'Review', plural: 'Reviews' },
   admin: {
-    group: 'Data',
+    group: 'Advanced · Raw data',
     useAsTitle: 'body',
     defaultColumns: ['body', 'product', 'source', 'rating', 'date', 'hidden'],
     listSearchableFields: ['body', 'author'],

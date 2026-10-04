@@ -528,7 +528,7 @@ html[data-theme='dark'] .rl-badge:not(.rl-badge--soft) {
   height: 72px;
   flex-shrink: 0;
 
-  svg {
+  > svg {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
@@ -646,4 +646,766 @@ html[data-theme='dark'] .rl-chip--buy {
 // Field help text: Payload sets it at elevation-400, which is under 4.5:1 on white in this ramp.
 .field-description {
   color: var(--rl-muted);
+}
+
+// --- Sidebar icons -------------------------------------------------------------------------------
+// One stroke icon per menu item, drawn as a mask so it takes the link colour in either theme.
+// Payload gives every link a stable id: nav-<collection> or nav-global-<global>.
+
+.nav__link::before {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 10px;
+  background: currentColor;
+  opacity: 0.8;
+  mask: var(--rl-nav-icon) center / contain no-repeat;
+}
+
+#nav-products {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M21 8 12 3 3 8v8l9 5 9-5V8Z'/><path d='m3 8 9 5 9-5M12 13v8'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-categories {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><rect x='3.5' y='3.5' width='7' height='7' rx='1.5'/><rect x='13.5' y='3.5' width='7' height='7' rx='1.5'/><rect x='3.5' y='13.5' width='7' height='7' rx='1.5'/><rect x='13.5' y='13.5' width='7' height='7' rx='1.5'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-brands {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8L12 3Z'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-best-lists {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M9 6h11M9 12h11M9 18h11'/><path d='M4 6h.01M4 12h.01M4 18h.01'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-comparisons {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M12 4v16M7 20h10M5 8h14'/><path d='m5 8-3 6a3 3 0 0 0 6 0L5 8Zm14 0-3 6a3 3 0 0 0 6 0l-3-6Z'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-guides {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z'/><path d='M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-review-requests {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5.1A8 8 0 1 1 21 12Z'/><path d='M12 8v4M12 15.5h.01'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-pages {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z'/><path d='M14 3v5h5M9 13h6M9 17h6'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-tags {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z'/><path d='M8 8h.01'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-media {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='16' rx='2'/><circle cx='9' cy='10' r='2'/><path d='m21 16-5-5-9 9'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-redirects {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h11l-3-3M20 17H9l3 3'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-users {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='8' r='3.5'/><path d='M2.5 20a6.5 6.5 0 0 1 13 0'/><path d='M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-aspects {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0'/><circle cx='16' cy='6' r='2'/><circle cx='10' cy='12' r='2'/><circle cx='18' cy='18' r='2'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-sources {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-reviews {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5h16v11H8l-4 4V5Z'/><path d='M8 9h8M8 12h5'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-global-navigation {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h16M4 12h16M4 17h10'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-global-page-texts {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6V4h16v2M9 20h6M12 4v16'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-global-site-settings {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+#nav-global-scoring-rules {
+  --rl-nav-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v18M3 12h18'/><circle cx='12' cy='12' r='9'/></svg>");
+
+  &::before {
+    content: '';
+  }
+}
+
+// --- Editor experience: dashboard, find-anything, checklist ---------------------------------------
+
+.rl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.rl-kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border: 1px solid var(--rl-hairline);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--rl-surface);
+  color: var(--rl-muted);
+  font: 600 11px/1.5 var(--font-body);
+  text-align: center;
+}
+
+// Counts along the bottom of the welcome band.
+.rl-hero__stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 12px;
+  margin: calc(var(--base) * 1.2) 0 0;
+
+  div {
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  dt {
+    color: var(--rl-peach);
+    font-size: 12px;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    color: var(--rl-aqua);
+    font-size: 28px;
+    font-weight: 330;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// "What would you like to do?" — big, friendly task tiles in the palette's soft fills.
+.rl-tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 12px;
+  margin: 0 0 calc(var(--base) * 1.5);
+  padding: 0;
+  list-style: none;
+}
+
+.rl-task {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--style-radius-m);
+  color: var(--rl-indigo);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+
+  &:hover,
+  &:focus-within {
+    transform: translateY(-2px);
+    box-shadow: var(--rl-shadow);
+  }
+
+  &--peach {
+    background: var(--rl-peach);
+  }
+  &--blush {
+    background: #ffd2d2;
+  }
+  &--shade {
+    background: #e3d9ec;
+  }
+  &--cream {
+    background: var(--rl-cream);
+    box-shadow: inset 0 0 0 1px #ece6f2;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--rl-pink);
+    box-shadow: 0 1px 2px rgba(68, 3, 129, 0.12);
+  }
+
+  &__title {
+    display: block;
+    color: var(--rl-indigo);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+  }
+
+  &__body {
+    display: block;
+    margin-top: 2px;
+    color: #69359a;
+    font-size: 13px;
+  }
+}
+
+// In the dark theme the tiles become night cards with an aqua icon.
+html[data-theme='dark'] .rl-task {
+  background: var(--rl-surface);
+  box-shadow: inset 0 0 0 1px var(--rl-hairline);
+  color: #ffffff;
+
+  .rl-task__icon {
+    background: var(--rl-night-deep);
+    color: var(--rl-aqua);
+  }
+
+  .rl-task__title {
+    color: #ffffff;
+  }
+
+  .rl-task__body {
+    color: var(--rl-muted);
+  }
+}
+
+.rl-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--base);
+  margin-bottom: calc(var(--base) * 1.5);
+}
+
+.rl-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--rl-hairline);
+    font-size: 13px;
+
+    &:first-child {
+      border-top: 0;
+    }
+  }
+
+  a {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--rl-ink);
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover strong {
+      text-decoration: underline;
+      text-decoration-color: var(--rl-highlight);
+      text-underline-offset: 3px;
+    }
+  }
+}
+
+.rl-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  align-self: center;
+  border-radius: 9999px;
+
+  &--draft {
+    background: var(--rl-peach);
+    box-shadow: inset 0 0 0 2px #f2a77f;
+  }
+  &--request {
+    background: var(--rl-pink);
+  }
+  &--live {
+    background: var(--rl-ok);
+  }
+}
+
+.rl-tag {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--rl-tint);
+  color: var(--rl-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.rl-empty {
+  margin: 8px 0 0;
+  padding: 16px;
+  border-radius: var(--style-radius-s);
+  background: var(--rl-tint);
+  color: var(--rl-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+// The beginner's tour: closed by default, one click to open.
+.rl-tour {
+  margin-bottom: calc(var(--base) * 1.5);
+  padding: 14px 16px;
+  border: 1px dashed var(--rl-faint);
+  border-radius: var(--style-radius-m);
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  &__chevron {
+    margin-left: auto;
+    transition: transform 150ms ease;
+  }
+
+  &[open] &__chevron {
+    transform: rotate(180deg);
+  }
+}
+
+.rl-tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 8px 24px;
+  margin: var(--base) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--rl-muted);
+  font-size: 13px;
+
+  strong {
+    color: var(--rl-ink);
+  }
+}
+
+// Find anything: the header button and the dialog.
+.rl-find {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-inline-end: 8px;
+  padding: 0 6px 0 12px;
+  border: 1px solid var(--rl-hairline);
+  border-radius: 9999px;
+  background: var(--rl-surface);
+  color: var(--rl-muted);
+  font: 500 13px var(--font-body);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--rl-faint);
+    color: var(--rl-ink);
+  }
+
+  @media (max-width: 768px) {
+    .rl-find__label,
+    .rl-kbd {
+      display: none;
+    }
+    padding: 0 10px;
+  }
+}
+
+.rl-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: rgba(25, 2, 50, 0.45);
+  backdrop-filter: blur(3px);
+  animation: rl-fade 120ms ease;
+
+  &__box {
+    width: min(640px, 100%);
+    overflow: hidden;
+    border-radius: var(--style-radius-l);
+    background: var(--rl-surface);
+    box-shadow: 0 25px 50px -12px rgba(25, 2, 50, 0.45);
+    animation: rl-rise 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  &__input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--rl-hairline);
+    color: var(--rl-muted);
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--rl-ink);
+      font: 400 16px var(--font-body);
+    }
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--rl-hairline);
+    border-top-color: var(--rl-highlight);
+    border-radius: 9999px;
+    animation: rl-spin 700ms linear infinite;
+  }
+
+  &__results {
+    max-height: min(60vh, 440px);
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    list-style: none;
+
+    li[role='option'] {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 10px;
+      border-radius: var(--style-radius-s);
+      color: var(--rl-ink);
+      cursor: pointer;
+
+      &.is-active {
+        background: var(--rl-tint);
+        box-shadow: inset 3px 0 0 var(--rl-highlight);
+      }
+    }
+
+    .rl-badge {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__empty {
+    padding: 24px;
+    color: var(--rl-muted);
+    text-align: center;
+  }
+
+  &__foot {
+    margin: 0;
+    padding: 8px 16px;
+    border-top: 1px solid var(--rl-hairline);
+    color: var(--rl-muted);
+    font-size: 12px;
+  }
+}
+
+// Publishing checklist (product sidebar).
+.rl-ring--sm {
+  width: 56px;
+  height: 56px;
+
+  .rl-ring__value {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.rl-check {
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    p {
+      margin-top: 2px;
+    }
+  }
+
+  &__arc {
+    stroke: var(--rl-pink);
+    transition: stroke-dasharray 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  &__list {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+
+    button {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      padding: 7px 8px;
+      border: 0;
+      border-radius: var(--style-radius-s);
+      background: transparent;
+      color: var(--rl-ink);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: var(--rl-surface);
+      }
+
+      &:disabled {
+        cursor: default;
+      }
+    }
+  }
+
+  &__box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 2px solid var(--rl-faint);
+    border-radius: 9999px;
+    color: #ffffff;
+    transition: background-color 200ms ease;
+  }
+
+  li.is-done &__box {
+    border-color: var(--rl-ok);
+    background: var(--rl-ok);
+    animation: rl-pop 300ms cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+
+  html[data-theme='dark'] li.is-done &__box {
+    color: var(--rl-indigo);
+  }
+
+  &__label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  li.is-done &__label {
+    color: var(--rl-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--rl-faint);
+  }
+
+  &__hint {
+    display: block;
+    color: var(--rl-muted);
+    font-size: 12px;
+  }
+
+  &--ready {
+    border-color: var(--rl-pink);
+
+    .rl-check__arc {
+      stroke: var(--rl-ok);
+    }
+  }
+}
+
+// A small burst of palette dots when the checklist completes.
+.rl-confetti {
+  position: absolute;
+  inset: 50%;
+  pointer-events: none;
+
+  i {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--rl-pink);
+    animation: rl-burst 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 18ms);
+    --angle: calc(var(--i) * 36deg);
+
+    &:nth-child(3n) {
+      background: var(--rl-aqua);
+    }
+    &:nth-child(3n + 1) {
+      background: var(--rl-blush);
+    }
+  }
+}
+
+@keyframes rl-burst {
+  from {
+    transform: rotate(var(--angle)) translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--angle)) translateX(38px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes rl-pop {
+  from {
+    transform: scale(0.5);
+  }
+}
+
+@keyframes rl-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes rl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-confetti,
+  .rl-palette,
+  .rl-palette__box {
+    animation: none;
+  }
+
+  .rl-confetti {
+    display: none;
+  }
+}
+
+// Keyboard hints mean nothing on a phone.
+@media (max-width: 768px) {
+  .rl-hide-sm {
+    display: none;
+  }
 }

@@ -1,6 +1,8 @@
 import { Inter } from 'next/font/google'
 import React from 'react'
 
+import { EditorFlag } from './EditorFlag'
+
 // Admin logo, icon and typeface: the same five palette bars and Inter as the public site.
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
@@ -40,12 +42,14 @@ export function AdminIcon() {
 
 /**
  * Wraps the admin (admin.components.providers) to load Inter through next/font — self-hosted,
- * no request to Google — and hand it to Payload as its body font.
+ * no request to Google — and hand it to Payload as its body font. Also flags the browser as an
+ * editor's, for the site's "Edit this page" button.
  */
 export function AdminFont({ children }: { children?: React.ReactNode }) {
   return (
     <>
       <style>{`:root{--font-body:${inter.style.fontFamily},-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}`}</style>
+      <EditorFlag />
       {children}
     </>
   )

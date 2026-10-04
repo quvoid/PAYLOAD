@@ -55,6 +55,8 @@ export default buildConfig({
     },
     components: {
       providers: ['/components/admin/Brand#AdminFont'],
+      // "Find anything" (Ctrl/⌘ K) in the header of every admin screen.
+      actions: ['/components/admin/CommandPalette#CommandPalette'],
       beforeDashboard: ['/components/admin/Welcome#Welcome', '/components/admin/SiteHealth#SiteHealth'],
       graphics: {
         Logo: '/components/admin/Brand#AdminLogo',
@@ -74,10 +76,11 @@ export default buildConfig({
     Pages,
     Tags,
     Media,
+    Users,
+    // Advanced: the scoring setup and raw review data, last so everyday work stays at the top.
     Aspects,
     Sources,
     Reviews,
-    Users,
   ],
   globals: [Navigation, PageTexts, SiteSettings, ScoringRules, CatalogState],
   editor: lexicalEditor(),

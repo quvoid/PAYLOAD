@@ -6,7 +6,7 @@ export const Sources: CollectionConfig = {
   slug: 'sources',
   labels: { singular: 'Source', plural: 'Sources' },
   admin: {
-    group: 'Scoring',
+    group: 'Advanced · Scoring',
     useAsTitle: 'name',
     defaultColumns: ['name', 'kind', 'weight'],
     description: 'Where reviews come from. Listed publicly on the "Where our reviews come from" page.',

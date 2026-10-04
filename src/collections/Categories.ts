@@ -80,7 +80,7 @@ export const Categories: CollectionConfig = {
   slug: 'categories',
   labels: { singular: 'Category', plural: 'Categories' },
   admin: {
-    group: 'Catalogue',
+    group: 'Products',
     useAsTitle: 'name',
     defaultColumns: ['name', 'parent', 'slug'],
     description:

@@ -15,7 +15,7 @@ export const Brands: CollectionConfig = {
   slug: 'brands',
   labels: { singular: 'Brand', plural: 'Brands' },
   admin: {
-    group: 'Catalogue',
+    group: 'Products',
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug'],
     description: 'Every brand gets its own page listing its products.',

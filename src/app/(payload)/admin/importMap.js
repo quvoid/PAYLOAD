@@ -3,6 +3,7 @@ import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c08
 import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { PublishChecklist as PublishChecklist_ba5ff3d977a9fa1ad0fa1587bd352b2e } from '../../../components/admin/PublishChecklist'
 import { VerdictPreview as VerdictPreview_2f7406f4e216cc30702ce250981c5fa1 } from '../../../components/admin/VerdictPreview'
 import { UniquenessPanel as UniquenessPanel_2e06b78044057be5e094edb6b4332661 } from '../../../components/admin/UniquenessPanel'
 import { DraftComparisons as DraftComparisons_25f72923c504d2740fd36d13bed7c267 } from '../../../components/admin/DraftComparisons'
@@ -36,6 +37,7 @@ import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@pa
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { AdminIcon as AdminIcon_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
 import { AdminLogo as AdminLogo_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
+import { CommandPalette as CommandPalette_73d9bfc042b227ff1b21493f062213db } from '../../../components/admin/CommandPalette'
 import { Welcome as Welcome_72e830871eb26c77002633e2e2cc9dea } from '../../../components/admin/Welcome'
 import { SiteHealth as SiteHealth_0967ce80fb00ab7735b91dc6decd1be6 } from '../../../components/admin/SiteHealth'
 import { AdminFont as AdminFont_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
@@ -49,6 +51,7 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "/components/admin/PublishChecklist#PublishChecklist": PublishChecklist_ba5ff3d977a9fa1ad0fa1587bd352b2e,
   "/components/admin/VerdictPreview#VerdictPreview": VerdictPreview_2f7406f4e216cc30702ce250981c5fa1,
   "/components/admin/UniquenessPanel#UniquenessPanel": UniquenessPanel_2e06b78044057be5e094edb6b4332661,
   "/components/admin/DraftComparisons#DraftComparisons": DraftComparisons_25f72923c504d2740fd36d13bed7c267,
@@ -82,6 +85,7 @@ export const importMap = {
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/Brand#AdminIcon": AdminIcon_81fda60f3e3709e861f40982a767707d,
   "/components/admin/Brand#AdminLogo": AdminLogo_81fda60f3e3709e861f40982a767707d,
+  "/components/admin/CommandPalette#CommandPalette": CommandPalette_73d9bfc042b227ff1b21493f062213db,
   "/components/admin/Welcome#Welcome": Welcome_72e830871eb26c77002633e2e2cc9dea,
   "/components/admin/SiteHealth#SiteHealth": SiteHealth_0967ce80fb00ab7735b91dc6decd1be6,
   "/components/admin/Brand#AdminFont": AdminFont_81fda60f3e3709e861f40982a767707d,

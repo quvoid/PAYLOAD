@@ -9,7 +9,7 @@ export const ReviewRequests: CollectionConfig = {
   admin: {
     useAsTitle: 'query',
     defaultColumns: ['query', 'requestCount', 'status', 'lastRequestedAt'],
-    group: 'Editorial',
+    group: 'Lists & guides',
     description: 'Products readers asked us to review. Most-requested first.',
   },
   defaultSort: '-requestCount',

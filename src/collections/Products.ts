@@ -38,7 +38,7 @@ export const Products: CollectionConfig = {
   slug: 'products',
   labels: { singular: 'Product', plural: 'Products' },
   admin: {
-    group: 'Catalogue',
+    group: 'Products',
     useAsTitle: 'name',
     defaultColumns: ['name', 'category', 'brand', '_status', 'updatedAt'],
     listSearchableFields: ['name', 'slug'],
@@ -249,6 +249,11 @@ export const Products: CollectionConfig = {
           ],
         },
       ],
+    },
+    {
+      name: 'publishChecklist',
+      type: 'ui',
+      admin: { position: 'sidebar', components: { Field: '/components/admin/PublishChecklist#PublishChecklist' } },
     },
     {
       name: 'verdictPreview',

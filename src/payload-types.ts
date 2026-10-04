@@ -77,10 +77,10 @@ export interface Config {
     pages: Page;
     tags: Tag;
     media: Media;
+    users: User;
     aspects: Aspect;
     sources: Source;
     reviews: Review;
-    users: User;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
@@ -110,10 +110,10 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     aspects: AspectsSelect<false> | AspectsSelect<true>;
     sources: SourcesSelect<false> | SourcesSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
@@ -1272,6 +1272,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
         relationTo: 'aspects';
         value: number | Aspect;
       } | null)
@@ -1282,10 +1286,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reviews';
         value: number | Review;
-      } | null)
-    | ({
-        relationTo: 'users';
-        value: number | User;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1729,6 +1729,42 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  role?: T;
+  jobTitle?: T;
+  bio?: T;
+  credentials?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  photo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "aspects_select".
  */
 export interface AspectsSelect<T extends boolean = true> {
@@ -1779,42 +1815,6 @@ export interface ReviewsSelect<T extends boolean = true> {
   externalId?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  slug?: T;
-  role?: T;
-  jobTitle?: T;
-  bio?: T;
-  credentials?: T;
-  sameAs?:
-    | T
-    | {
-        url?: T;
-        id?: T;
-      };
-  photo?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  resetPasswordRequestedAt?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

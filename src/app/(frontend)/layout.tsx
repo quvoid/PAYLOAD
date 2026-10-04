@@ -4,6 +4,7 @@ import { draftMode } from 'next/headers'
 import Script from 'next/script'
 import React, { Suspense } from 'react'
 
+import { EditThisPage } from '@/components/EditThisPage'
 import { JsonLd } from '@/components/JsonLd'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { NavigationProgress } from '@/components/NavigationProgress'
@@ -52,6 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {bannerText && <SampleBanner text={bannerText} />}
         {children}
         <SearchShortcut />
+        <EditThisPage />
         <JsonLd data={graph(organizationLd(), websiteLd())} />
         {/* Google Analytics, when an ID is set in Site settings → Analytics. Never counts editors previewing. */}
         {settings.gaMeasurementId && !previewing && (

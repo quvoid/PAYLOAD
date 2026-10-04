@@ -346,7 +346,7 @@ export const ScoringRules: GlobalConfig = {
   slug: 'scoring-rules',
   label: 'Scoring rules',
   admin: {
-    group: 'Scoring',
+    group: 'Advanced · Scoring',
     description:
       'The thresholds every verdict is decided by. The "How we score" page shows these exact values. Admins only — changing one changes verdicts across the whole site.',
   },

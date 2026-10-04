@@ -7,7 +7,7 @@ export const Aspects: CollectionConfig = {
   slug: 'aspects',
   labels: { singular: 'Measure', plural: 'Measures' },
   admin: {
-    group: 'Scoring',
+    group: 'Advanced · Scoring',
     useAsTitle: 'label',
     defaultColumns: ['label', 'question', 'slug'],
     description:

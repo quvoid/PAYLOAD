@@ -200,7 +200,7 @@ export function MobileBuyBar({ product }: { product: Product }) {
   const lowest = lowestOffer(product)
   const free = product.offers.every((o) => o.price === 0)
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-l4 backdrop-blur-lg lg:hidden">
+    <div data-mobile-buy-bar className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-l4 backdrop-blur-lg lg:hidden">
       <div className="mx-auto flex max-w-xl items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-body-strong">{product.shortName}</p>

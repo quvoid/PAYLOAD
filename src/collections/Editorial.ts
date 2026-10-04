@@ -23,7 +23,7 @@ export const BestLists: CollectionConfig = {
   slug: 'best-lists',
   labels: { singular: 'Ranked list', plural: 'Ranked lists' },
   admin: {
-    group: 'Editorial',
+    group: 'Lists & guides',
     useAsTitle: 'title',
     defaultColumns: ['title', 'category', '_status'],
     description:
@@ -140,7 +140,7 @@ export const Comparisons: CollectionConfig = {
   slug: 'comparisons',
   labels: { singular: 'Head-to-head', plural: 'Head-to-heads' },
   admin: {
-    group: 'Editorial',
+    group: 'Lists & guides',
     useAsTitle: 'slug',
     defaultColumns: ['slug', 'category', '_status'],
     description:
@@ -228,7 +228,7 @@ export const Guides: CollectionConfig = {
   slug: 'guides',
   labels: { singular: 'Guide', plural: 'Guides' },
   admin: {
-    group: 'Editorial',
+    group: 'Lists & guides',
     useAsTitle: 'title',
     defaultColumns: ['title', 'aspect', '_status'],
     description:

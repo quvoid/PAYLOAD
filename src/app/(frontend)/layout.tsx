@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import { Inter, Noto_Sans_Devanagari } from 'next/font/google'
 import { draftMode } from 'next/headers'
 import Script from 'next/script'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 import { JsonLd } from '@/components/JsonLd'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { NavigationProgress } from '@/components/NavigationProgress'
 import { PreviewBar, SampleBanner } from '@/components/SampleBanner'
 import { banner } from '@/lib/catalog'
 import { ensureCatalog, settings } from '@/lib/store'
@@ -42,6 +43,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en-IN" className={`${inter.variable} ${devanagari.variable}`}>
       <body>
+        <Suspense>
+          <NavigationProgress />
+        </Suspense>
         {previewing && <PreviewBar />}
         {previewing && <LivePreviewListener />}
         {bannerText && <SampleBanner text={bannerText} />}

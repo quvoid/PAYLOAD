@@ -8,6 +8,7 @@ import { JsonLd } from '@/components/JsonLd'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { NavigationProgress } from '@/components/NavigationProgress'
 import { PreviewBar, SampleBanner } from '@/components/SampleBanner'
+import { SearchShortcut } from '@/components/SearchShortcut'
 import { banner } from '@/lib/catalog'
 import { ensureCatalog, settings } from '@/lib/store'
 import { graph, organizationLd, SITE, websiteLd } from '@/lib/seo'
@@ -50,6 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {previewing && <LivePreviewListener />}
         {bannerText && <SampleBanner text={bannerText} />}
         {children}
+        <SearchShortcut />
         <JsonLd data={graph(organizationLd(), websiteLd())} />
         {/* Google Analytics, when an ID is set in Site settings → Analytics. Never counts editors previewing. */}
         {settings.gaMeasurementId && !previewing && (

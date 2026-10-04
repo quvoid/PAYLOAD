@@ -17,7 +17,7 @@ import {
 import { routes } from '@/lib/routes'
 import type { Category, Product } from '@/lib/types'
 
-import { VerdictBadge } from './review'
+import { ProductMark, ScoreRing, VerdictBadge } from './review'
 
 // The measures every comparison uses: stats, sentiment and share of voice. `better` says which
 // direction wins; rows without one (share of voice) describe rather than rank.
@@ -77,7 +77,7 @@ function Cell({ metric, product, winner }: { metric: Metric; product: Product; w
   const v = metric.value(product)
   const wins = winner === product
   return (
-    <td className={`whitespace-nowrap px-4 py-3 tabular-nums ${wins ? 'text-body-strong' : ''}`}>
+    <td className={`whitespace-nowrap px-4 py-3 tabular-nums ${wins ? 'bg-cream text-body-strong' : ''}`}>
       {v === undefined ? <span className="text-shade-50">—</span> : metric.format(v)}
       {wins && (
         <>
@@ -92,17 +92,25 @@ function Cell({ metric, product, winner }: { metric: Metric; product: Product; w
 /** Two products, measures down the side. */
 export function PairTable({ products, category }: { products: Product[]; category: Category }) {
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative overflow-x-auto rounded-lg border border-hairline bg-white">
       <table className="w-full min-w-[520px] border-collapse text-left">
-        <caption className="mb-4 text-left text-caption text-shade-60">
-          Every measure is computed from reviews. A pink dot marks the better result where one direction is better.
+        <caption className="border-b border-hairline px-4 py-3 text-left text-caption text-shade-60">
+          Every measure is computed from reviews. A pink dot and a tinted cell mark the better result where one
+          direction is better.
         </caption>
         <thead>
           <tr className="border-b border-hairline">
-            <td className="w-[40%]" />
+            <td className="w-[36%]" />
             {products.map((p) => (
-              <th key={p.slug} scope="col" className="px-4 py-4 align-bottom">
-                <Link href={routes.product(p.slug)} className="text-heading-md underline decoration-shade-40 underline-offset-4 hover:decoration-pink">
+              <th key={p.slug} scope="col" className="px-4 py-5 align-bottom font-normal">
+                <div className="flex items-center justify-between gap-3">
+                  <ProductMark product={p} size="sm" />
+                  <ScoreRing product={p} size="sm" />
+                </div>
+                <Link
+                  href={routes.product(p.slug)}
+                  className="mt-4 block text-heading-md underline decoration-shade-40 underline-offset-4 hover:decoration-pink"
+                >
                   {p.shortName}
                 </Link>
                 <div className="mt-3">
@@ -116,8 +124,8 @@ export function PairTable({ products, category }: { products: Product[]; categor
           {compareMetrics(category).map((m) => {
             const winner = winnerOf(m, products)
             return (
-              <tr key={m.key} className="border-b border-hairline">
-                <th scope="row" className="py-3 pr-4 text-caption font-normal text-shade-60">
+              <tr key={m.key} className="border-b border-hairline last:border-0 hover:bg-cream/50">
+                <th scope="row" className="px-4 py-3 text-caption font-normal text-shade-60">
                   {m.label}
                 </th>
                 {products.map((p) => (
@@ -141,7 +149,7 @@ export function CategoryTable({ products, category }: { products: Product[]; cat
         <caption className="sr-only">Every {category.name} product compared on the same measures</caption>
         <thead className="bg-cream">
           <tr>
-            <th scope="col" className="sticky left-0 bg-cream px-4 py-3 font-normal text-shade-60">
+            <th scope="col" className="sticky left-0 bg-cream px-4 py-3 font-normal text-shade-60 shadow-[1px_0_0_var(--color-hairline)]">
               Product
             </th>
             <th scope="col" className="px-4 py-3 font-normal text-shade-60">
@@ -157,10 +165,16 @@ export function CategoryTable({ products, category }: { products: Product[]; cat
         <tbody>
           {products.map((p) => (
             <tr key={p.slug} className="border-t border-hairline">
-              <th scope="row" className="sticky left-0 bg-white px-4 py-3 text-left">
-                <Link href={routes.product(p.slug)} className="text-body-strong underline decoration-shade-40 underline-offset-4 hover:decoration-pink">
-                  {p.shortName}
-                </Link>
+              <th scope="row" className="sticky left-0 bg-white px-4 py-3 text-left shadow-[1px_0_0_var(--color-hairline)]">
+                <span className="flex items-center gap-3">
+                  <ProductMark product={p} size="sm" />
+                  <Link
+                    href={routes.product(p.slug)}
+                    className="text-body-strong whitespace-nowrap underline decoration-shade-40 underline-offset-4 hover:decoration-pink"
+                  >
+                    {p.shortName}
+                  </Link>
+                </span>
               </th>
               <td className="px-4 py-3">
                 <VerdictBadge verdict={p.verdict} app={Boolean(category.appCategory)} />

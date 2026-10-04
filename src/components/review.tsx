@@ -16,7 +16,9 @@ import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
 import type { Crumb } from '@/lib/seo'
 import type { FAQ, Product, Track, Verdict } from '@/lib/types'
-import { verdictLabel, verdictMeta } from '@/lib/verdict'
+import { verdictLabel } from '@/lib/verdict'
+
+import { Icon, Stars, type IconName } from './Icon'
 
 // Verdict chips: indigo text on light fills (≥7:1), coloured text on night (≥6:1). Never colour
 // alone — every verdict carries a glyph and a label.
@@ -33,6 +35,13 @@ const verdictNight: Record<Verdict, string> = {
   'thin-data': 'border-shade-40 text-shade-40',
 }
 
+const verdictIcon: Record<Verdict, IconName> = {
+  buy: 'check',
+  'buy-with-caveats': 'alert',
+  skip: 'x',
+  'thin-data': 'clock',
+}
+
 export function VerdictBadge({
   verdict,
   track = 'light',
@@ -45,14 +54,11 @@ export function VerdictBadge({
   /** Apps get "Use it" wording instead of "Buy". */
   app?: boolean
 }) {
-  const meta = verdictMeta[verdict]
   const tone = track === 'night' ? `border ${verdictNight[verdict]}` : verdictLight[verdict]
-  const sizing = size === 'lg' ? 'px-4 py-2 text-body-strong' : 'px-3 py-1 text-caption'
+  const sizing = size === 'lg' ? 'gap-2 py-2 pr-5 pl-4 text-body-strong' : 'gap-1.5 py-1 pr-3 pl-2.5 text-caption'
   return (
-    <span className={`inline-flex items-center gap-2 whitespace-nowrap rounded-pill ${sizing} ${tone}`}>
-      <span aria-hidden className="font-mono">
-        {meta.glyph}
-      </span>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-pill ${sizing} ${tone}`}>
+      <Icon name={verdictIcon[verdict]} className={size === 'lg' ? 'size-4.5' : 'size-3.5'} />
       {verdictLabel(verdict, app)}
     </span>
   )
@@ -76,11 +82,7 @@ export function Breadcrumbs({ crumbs, track = 'light' }: { crumbs: Crumb[]; trac
                   {c.name}
                 </Link>
               )}
-              {!last && (
-                <span aria-hidden className="text-shade-40">
-                  ›
-                </span>
-              )}
+              {!last && <Icon name="chevron" className="size-3 -rotate-90 text-shade-40" />}
             </li>
           )
         })}
@@ -106,11 +108,19 @@ export function ProductMark({
   const silo = getCategory(getCategory(product.category)!.parent!)!
   const lightFill: Record<string, string> = { skincare: 'bg-blush', apps: 'bg-shade-30' }
   const fill =
-    track === 'night' ? 'bg-night-elevated text-aqua shadow-l1' : `${lightFill[silo.slug] ?? 'bg-peach'} text-indigo`
-  const box = { sm: 'size-14 text-heading-lg', md: 'size-20 text-display-sm', lg: 'size-28 md:size-36 text-display-md' }[size]
+    track === 'night'
+      ? 'bg-night-deep text-aqua shadow-l1'
+      : `${lightFill[silo.slug] ?? 'bg-peach'} text-indigo ring-1 ring-inset ring-indigo/5`
+  const box = { sm: 'size-12 rounded-md text-heading-lg', md: 'size-20 rounded-lg text-display-sm', lg: 'size-28 rounded-xl md:size-36 text-display-md' }[size]
   return (
-    <div aria-hidden className={`flex shrink-0 items-center justify-center rounded-lg font-display ${box} ${fill}`}>
-      {brand.name.charAt(0)}
+    <div aria-hidden className={`relative flex shrink-0 items-center justify-center overflow-hidden font-display ${box} ${fill}`}>
+      {/* The wordmark's five bars, faint, so the stand-in reads as ours rather than empty. */}
+      <svg viewBox="0 0 40 40" className="absolute -right-1 -bottom-1 h-1/2 opacity-15">
+        {[22, 32, 26, 18, 12].map((h, i) => (
+          <rect key={i} x={2 + i * 8} y={40 - h} width={5} height={h} rx={2.5} fill="currentColor" />
+        ))}
+      </svg>
+      <span className="relative">{brand.name.charAt(0)}</span>
     </div>
   )
 }
@@ -129,7 +139,7 @@ export function Meter({
   const track = tone === 'aqua' || tone === 'white' ? 'bg-night-deep' : 'bg-hairline'
   return (
     <div aria-hidden className={`h-2 w-full overflow-hidden rounded-pill ${track} ${className}`}>
-      <div className={`h-full rounded-pill ${fill}`} style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }} />
+      <div className={`h-full rounded-pill transition-[width] duration-500 ${fill}`} style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }} />
     </div>
   )
 }
@@ -138,10 +148,10 @@ export function SentimentBar({ split, label }: { split: SentimentSplit; label?: 
   return (
     <div>
       {label && <p className="mb-2 text-caption text-shade-60">{label}</p>}
-      <div aria-hidden className="flex h-3 w-full overflow-hidden rounded-pill bg-hairline">
-        <div className="bg-indigo" style={{ width: `${split.positive * 100}%` }} />
+      <div aria-hidden className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-pill">
+        <div className="rounded-l-pill bg-indigo" style={{ width: `${split.positive * 100}%` }} />
         <div className="bg-shade-30" style={{ width: `${split.neutral * 100}%` }} />
-        <div className="bg-pink" style={{ width: `${split.negative * 100}%` }} />
+        <div className="rounded-r-pill bg-pink" style={{ width: `${split.negative * 100}%` }} />
       </div>
       <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-micro text-shade-60 tabular-nums">
         <span className="inline-flex items-center gap-1.5">
@@ -246,14 +256,69 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
 
 export function Faq({ items }: { items: FAQ[] }) {
   return (
-    <dl className="divide-y divide-hairline border-y border-hairline">
+    <dl className="grid gap-4 xl:grid-cols-2">
       {items.map((f) => (
-        <div key={f.q} className="py-6">
-          <dt className="text-heading-md">{f.q}</dt>
-          <dd className="mt-2 max-w-[70ch] text-shade-60">{f.a}</dd>
+        <div key={f.q} className="rounded-lg border border-hairline bg-white p-6">
+          <dt className="flex gap-3 text-heading-sm">
+            <Icon name="message" className="mt-0.5 size-5 text-pink" />
+            {f.q}
+          </dt>
+          <dd className="mt-3 max-w-[70ch] pl-8 text-shade-60">{f.a}</dd>
         </div>
       ))}
     </dl>
+  )
+}
+
+/**
+ * The satisfaction score as a ring gauge, the number printed in the middle — the ring is
+ * decoration. Pink only when the verdict is Skip (a mark, never a fill behind text); a dashed
+ * ring and a dash when there's too little data to score.
+ */
+export function ScoreRing({
+  product,
+  track = 'light',
+  size = 'md',
+}: {
+  product: Product
+  track?: Track
+  size?: 'sm' | 'md' | 'lg'
+}) {
+  const night = track === 'night'
+  const thin = product.verdict === 'thin-data'
+  const score = compositeScore(product)
+  const box = { sm: 'size-14', md: 'size-24', lg: 'size-32' }[size]
+  const text = { sm: 'text-body-strong', md: 'text-heading-lg', lg: 'text-display-sm' }[size]
+  const stroke = night ? 'stroke-aqua' : product.verdict === 'skip' ? 'stroke-pink' : 'stroke-indigo'
+  const r = 16
+  const c = 2 * Math.PI * r
+  return (
+    <div className={`relative shrink-0 ${box}`}>
+      <svg aria-hidden viewBox="0 0 40 40" className="size-full -rotate-90">
+        <circle cx="20" cy="20" r={r} fill="none" strokeWidth={size === 'lg' ? 2.5 : 3.25} className={night ? 'stroke-night-deep' : 'stroke-hairline'} {...(thin && { strokeDasharray: '2 3' })} />
+        {!thin && (
+          <circle
+            cx="20"
+            cy="20"
+            r={r}
+            fill="none"
+            strokeWidth={size === 'lg' ? 2.5 : 3.25}
+            strokeLinecap="round"
+            strokeDasharray={`${(Math.max(0, Math.min(10, score)) / 10) * c} ${c}`}
+            className={stroke}
+          />
+        )}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={`font-display leading-none tabular-nums ${text} ${night ? 'text-white' : 'text-ink'}`}>
+          {thin ? '—' : formatScore(score)}
+        </span>
+        {size !== 'sm' && (
+          <span className={`mt-1 text-micro ${night ? 'text-shade-40' : 'text-shade-60'}`}>{size === 'lg' ? 'out of 10' : '/ 10'}</span>
+        )}
+        <span className="sr-only">{thin ? 'Not scored' : ' out of 10'}</span>
+      </div>
+    </div>
   )
 }
 
@@ -262,18 +327,24 @@ export function ProductCard({ product, track = 'light', rank }: { product: Produ
   const night = track === 'night'
   const category = getCategory(product.category)!
   const value = valueFor(product)
+  const muted = night ? 'text-shade-40' : 'text-shade-60'
   return (
     <article
-      className={`relative flex h-full flex-col gap-5 rounded-lg p-6 ${night ? 'bg-night-elevated shadow-l1' : 'bg-white shadow-l3'}`}
+      className={`group relative flex h-full flex-col gap-5 rounded-lg p-6 ${night ? 'bg-night-elevated shadow-l1' : 'card-lift bg-white'}`}
     >
       <div className="flex items-start gap-4">
         {rank !== undefined ? (
-          <span className={`font-display text-display-sm tabular-nums ${night ? 'text-aqua' : 'text-pink'}`}>{rank}</span>
+          <span
+            className={`flex size-12 shrink-0 items-center justify-center rounded-md font-display text-heading-xl tabular-nums ${night ? 'bg-night-deep text-aqua' : 'bg-cream text-pink'}`}
+          >
+            <span className="sr-only">Rank </span>
+            {rank}
+          </span>
         ) : (
           <ProductMark product={product} track={track} size="sm" />
         )}
-        <div className="min-w-0">
-          <p className={`text-eyebrow uppercase ${night ? 'text-peach' : 'text-shade-60'}`}>
+        <div className="min-w-0 flex-1">
+          <p className={`truncate text-eyebrow uppercase ${night ? 'text-peach' : 'text-shade-60'}`}>
             {getBrand(product.brand)!.name} · {category.name}
           </p>
           <h3 className="mt-1 text-heading-md">
@@ -281,8 +352,9 @@ export function ProductCard({ product, track = 'light', rank }: { product: Produ
               {product.name}
             </Link>
           </h3>
-          <p className={`text-caption ${night ? 'text-shade-40' : 'text-shade-60'}`}>{product.variant}</p>
+          <p className={`text-caption ${muted}`}>{product.variant}</p>
         </div>
+        <ScoreRing product={product} track={track} size="sm" />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <VerdictBadge verdict={product.verdict} track={track} app={isApp(product)} />
@@ -294,20 +366,37 @@ export function ProductCard({ product, track = 'light', rank }: { product: Produ
           </span>
         )}
       </div>
-      <dl className={`mt-auto grid grid-cols-3 gap-3 border-t pt-4 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
-        {[
-          { label: 'Score', value: product.verdict === 'thin-data' ? '—' : formatScore(compositeScore(product)) },
-          { label: 'Weighted ★', value: formatRating(weightedRating(product)) },
-          category.valueMetric
-            ? { label: `₹ ${category.valueMetric.label.replace('per ', '/ ')}`, value: value ? formatINR(value) : '—' }
-            : { label: 'Store ratings', value: formatCompact(marketplaceAverage(product).total) },
-        ].map((s) => (
-          <div key={s.label}>
-            <dt className={`text-micro ${night ? 'text-shade-40' : 'text-shade-60'}`}>{s.label}</dt>
-            <dd className="text-body-strong tabular-nums">{s.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className={`mt-auto flex items-end gap-4 border-t pt-4 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
+        <dl className="grid flex-1 grid-cols-2 gap-3">
+          {[
+            {
+              label: 'Weighted rating',
+              value: (
+                <span className="inline-flex items-center gap-1">
+                  {formatRating(weightedRating(product))}
+                  <span className={`text-caption ${night ? 'text-peach' : 'text-pink'}`} aria-hidden>
+                    ★
+                  </span>
+                </span>
+              ),
+            },
+            category.valueMetric
+              ? { label: `₹ ${category.valueMetric.label.replace('per ', '/ ')}`, value: value ? formatINR(value) : '—' }
+              : { label: 'Store ratings', value: formatCompact(marketplaceAverage(product).total) },
+          ].map((s) => (
+            <div key={s.label}>
+              <dt className={`text-micro ${muted}`}>{s.label}</dt>
+              <dd className="text-body-strong tabular-nums">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <span
+          aria-hidden
+          className={`flex size-9 items-center justify-center rounded-pill transition-colors ${night ? 'border border-hairline-night text-white group-hover:border-aqua group-hover:text-aqua' : 'bg-cream text-ink group-hover:bg-indigo group-hover:text-white'}`}
+        >
+          <Icon name="arrow-up-right" className="size-4" />
+        </span>
+      </div>
     </article>
   )
 }
@@ -320,9 +409,14 @@ export function RatingPair({ product }: { product: Product }) {
   const hasBrandStore = product.reviews.some((r) => sourceById(r.source).kind === 'brand-store')
   return (
     <dl className="grid gap-6 sm:grid-cols-2">
-      <div className="rounded-lg border border-hairline p-6">
+      <div className="rounded-lg border border-hairline bg-white p-6">
         <dt className="text-caption text-shade-60">{appStores ? 'App store average' : 'Marketplace average'}</dt>
-        <dd className="mt-2 font-display text-display-md tabular-nums">{formatRating(market.rating)}★</dd>
+        <dd className="mt-2 flex items-baseline gap-3">
+          <span className="font-display text-display-md tabular-nums">{formatRating(market.rating)}</span>
+          <span className="text-shade-50">
+            <Stars rating={market.rating} />
+          </span>
+        </dd>
         <dd className="mt-1 text-caption text-shade-60">
           Across {market.total.toLocaleString('en-IN')} ratings on{' '}
           {rated.map((s) => sourceById(s.source).name).join(' and ')}
@@ -330,8 +424,16 @@ export function RatingPair({ product }: { product: Product }) {
         </dd>
       </div>
       <div className="rounded-lg bg-peach p-6">
-        <dt className="text-caption">Credibility-weighted</dt>
-        <dd className="mt-2 font-display text-display-md tabular-nums">{formatRating(weightedRating(product))}★</dd>
+        <dt className="flex items-center gap-2 text-caption">
+          <Icon name="shield" className="size-4" />
+          Credibility-weighted
+        </dt>
+        <dd className="mt-2 flex items-baseline gap-3">
+          <span className="font-display text-display-md tabular-nums">{formatRating(weightedRating(product))}</span>
+          <span className="text-indigo">
+            <Stars rating={weightedRating(product)} />
+          </span>
+        </dd>
         <dd className="mt-1 text-caption">
           Our average of {formatCount(product.reviews.filter((r) => r.rating !== undefined).length)} collected ratings, discounting
           ones that look manipulated{hasBrandStore ? ' and brand-store reviews' : ''}.

@@ -345,6 +345,54 @@ components:
     textColor: "{colors.peach-fuzz}"
     typography: "{typography.micro}"
     padding: 8px 16px
+  score-ring:
+    backgroundColor: "{colors.hairline-light}"
+    textColor: "{colors.ink}"
+    typography: "{typography.heading-lg}"
+    rounded: "{rounded.pill}"
+    padding: 0px
+  score-ring-on-night:
+    backgroundColor: "{colors.surface-elevated-dark}"
+    textColor: "{colors.on-dark}"
+    typography: "{typography.heading-lg}"
+    rounded: "{rounded.pill}"
+    padding: 0px
+  card-product:
+    backgroundColor: "{colors.canvas-light}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body-md}"
+    rounded: "{rounded.lg}"
+    padding: 24px
+  card-scorecard:
+    backgroundColor: "{colors.canvas-cream}"
+    textColor: "{colors.ink}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xl}"
+    padding: 24px
+  card-category-tile:
+    backgroundColor: "{colors.peach-fuzz}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body-md}"
+    rounded: "{rounded.lg}"
+    padding: 28px
+  card-review:
+    backgroundColor: "{colors.canvas-light}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body-md}"
+    rounded: "{rounded.lg}"
+    padding: 24px
+  section-tabs:
+    backgroundColor: "{colors.canvas-light}"
+    textColor: "{colors.shade-60}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.xs}"
+    padding: 0px 12px
+  nav-bar-sticky-light:
+    backgroundColor: "{colors.canvas-light}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body-md}"
+    rounded: "{rounded.xs}"
+    padding: 12px 24px
 ---
 
 ## Overview
@@ -605,6 +653,31 @@ The components that carry ReviewLens's data. They follow the same rules as every
 **`caption-secondary`** and **`caption-tertiary`** — `{colors.shade-60}` at caption size for secondary copy (leads, labels, metadata), `{colors.shade-50}` for tertiary detail (counts in brackets, "deal-breaker" labels).
 
 **`sample-banner`** — a thin `{colors.shade-70}` strip with `{colors.peach-fuzz}` micro text across the top of every page while the site runs on fictional sample data.
+
+### Product-grade components
+
+Added in the production redesign. Each one follows the rules above; nothing here adds a colour or
+a button shape.
+
+**`score-ring`** — the satisfaction score as a circular gauge. Track in `{colors.hairline-light}`, arc in `{colors.indigo}` (`{colors.deep-pink}` when the verdict is Skip: a mark, never a fill behind text), the number printed in the centre in the display face. Thin-data products get a dashed track and a dash instead of a number. On night (`score-ring-on-night`) the track is `{colors.surface-elevated-dark}` and the arc `{colors.electric-aqua}`. Three sizes: 56px in cards, 96px in the hero showcase, 128px on the product scorecard. The number is always text; the ring is decoration.
+
+**`card-product`** — the listing card. Brand mark (or the rank on a cream square), eyebrow, name, variant, and a small `score-ring` on the right; the verdict chip below; a hairline-topped footer with two measures and a round arrow affordance that fills indigo on hover. The card sits at Level 3 and lifts to Level 3-hover (`--shadow-l3-hover`, translate −2px) under the pointer or keyboard focus — the `card-lift` utility. On night it stays flat (`{colors.canvas-night-elevated}` + Level 1), per the cinematic track's no-shadow rule.
+
+**`card-scorecard`** — the product page's summary panel, right of the headline: a large `score-ring`, confidence, two white mini-cards for the weighted and marketplace ratings (each with a star row), and one `button-primary-pill` that jumps to the reasoning. `{colors.canvas-cream}` fill, `{rounded.xl}`, Level 3.
+
+**`card-category-tile`** — peach tile for a category: a white icon square with a `{colors.deep-pink}` icon, the name in `{typography.heading-xl}`, the tagline in shade-60, then a count and a round arrow pinned to the bottom. Lifts like `card-product`.
+
+**`card-review`** — one review per white card with a hairline border: initials avatar on a palette fill (peach, shade-30 or blush, chosen from the name so a reviewer keeps one colour), name, verified badge, source and date, and a star row on the right. Flagged reviews get a dashed `{colors.powder-blush}` border on top of the existing Flagged pill. Aspect chips carry a sentiment dot.
+
+**`section-tabs`** — on long pages, a row of anchor links that sticks under the header. The section being read gets a 2px `{colors.deep-pink}` underline and ink text; the rest are shade-60. They're plain anchors, so they work without JavaScript; a script only moves the marker.
+
+**`nav-bar-sticky-light`** — on single-track pages the header sticks to the top, white at 85% with a backdrop blur. A cinematic header over a light page (the home page) scrolls away with its hero instead, so an indigo bar never sits over the transactional track. Nav items get a pill hover fill (`{colors.canvas-cream}` on light, `{colors.canvas-night-elevated}` on night). The search field carries a leading search icon and a `/` key hint; pressing `/` anywhere focuses it.
+
+**Mega menu** — the Categories panel adds an icon square per section and a featured "Counted, not guessed" card linking to the methodology (`{colors.canvas-cream}` on light, `{colors.surface-elevated-dark}` on night).
+
+**Hero verdict showcase** — the home hero's right column shows one real verdict as a bento of night cards: the product with its verdict chip and `score-ring-on-night`, a positive-share figure with a sentiment bar, the site-wide fake count, and the sources read. All figures are live; the tiles are `{colors.canvas-night-elevated}` with Level 1 only.
+
+**Icons** — one inline stroke set (24px grid, 1.75 stroke, round caps) in `src/components/Icon.tsx`. Icons are always `aria-hidden` and always sit beside a text label; they never carry meaning alone.
 
 ## Do's and Don'ts
 

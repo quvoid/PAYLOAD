@@ -13,11 +13,14 @@ import {
   ProductCard,
   ProductMark,
   RatingPair,
+  ScoreRing,
   SentimentBar,
   SovChart,
   VerdictBadge,
 } from '@/components/review'
+import { Icon, Stars } from '@/components/Icon'
 import { ReviewList } from '@/components/ReviewList'
+import { SectionTabs } from '@/components/SectionTabs'
 import { PageShell } from '@/components/SiteChrome'
 import { Container, Section } from '@/components/ui'
 import {
@@ -33,16 +36,18 @@ import {
   getProductForPreview,
   isApp,
 } from '@/lib/catalog'
-import { formatDate, formatPct, inSentence, isoDate } from '@/lib/format'
+import { formatDate, formatPct, formatRating, inSentence, isoDate } from '@/lib/format'
 import {
   aspectStats,
   claimQuotes,
   confidence,
   countedReviews,
+  marketplaceAverage,
   productSentiment,
   reviewsBySource,
   shareOfVoice,
   sourcesUsed,
+  weightedRating,
 } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
@@ -113,22 +118,24 @@ export default async function ProductPage({ params }: { params: Params }) {
             </p>
           )}
 
-          <header className="grid gap-8 border-b border-hairline pb-10 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-10">
-            <div className="hidden sm:block">
-              <ProductMark product={product} size="lg" />
-            </div>
+          <header className="grid gap-10 pb-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
             <div>
-              <p className="text-eyebrow uppercase text-shade-60">
-                <Link href={routes.category(category)} className="hover:text-ink">
-                  {category.name}
-                </Link>{' '}
-                ·{' '}
-                <Link href={routes.brand(brand.slug)} className="hover:text-ink">
-                  {brand.name}
-                </Link>{' '}
-                · {product.variant}
-              </p>
-              <h1 className="mt-3 font-display text-display-sm md:text-display-md lg:text-display-lg">
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:block">
+                  <ProductMark product={product} size="md" />
+                </div>
+                <p className="text-eyebrow uppercase text-shade-60">
+                  <Link href={routes.category(category)} className="hover:text-ink">
+                    {category.name}
+                  </Link>{' '}
+                  ·{' '}
+                  <Link href={routes.brand(brand.slug)} className="hover:text-ink">
+                    {brand.name}
+                  </Link>{' '}
+                  · {product.variant}
+                </p>
+              </div>
+              <h1 className="mt-6 font-display text-display-sm md:text-display-md lg:text-display-lg">
                 {product.name} review
               </h1>
               <div className="mt-6">
@@ -136,38 +143,102 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
               {/* Answer first: the verdict in one extractable paragraph (≤320 chars). */}
               <p className="answer mt-5 max-w-[62ch] text-body-lg">{product.answer}</p>
-              <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-caption">
-                <div>
-                  <dt className="text-shade-60">Based on</dt>
-                  <dd className="tabular-nums">
-                    {counted.length.toLocaleString('en-IN')} reviews across {used.length} sources
-                  </dd>
+              <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4 text-caption">
+                <div className="flex items-start gap-2.5">
+                  <Icon name="message" className="mt-0.5 size-4 text-pink" />
+                  <div>
+                    <dt className="text-shade-60">Based on</dt>
+                    <dd className="tabular-nums">
+                      {counted.length.toLocaleString('en-IN')} reviews across {used.length} sources
+                    </dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-shade-60">Updated</dt>
-                  <dd>
-                    <time dateTime={isoDate(product.updatedAt)}>{formatDate(product.updatedAt)}</time>
-                  </dd>
+                <div className="flex items-start gap-2.5">
+                  <Icon name="clock" className="mt-0.5 size-4 text-pink" />
+                  <div>
+                    <dt className="text-shade-60">Updated</dt>
+                    <dd>
+                      <time dateTime={isoDate(product.updatedAt)}>{formatDate(product.updatedAt)}</time>
+                    </dd>
+                  </div>
                 </div>
                 {product.draft ? (
-                  <div>
-                    <dt className="text-shade-60">Status</dt>
-                    <dd>Draft, awaiting approval</dd>
+                  <div className="flex items-start gap-2.5">
+                    <Icon name="user" className="mt-0.5 size-4 text-pink" />
+                    <div>
+                      <dt className="text-shade-60">Status</dt>
+                      <dd>Draft, awaiting approval</dd>
+                    </div>
                   </div>
                 ) : author && (
-                  <div>
-                    <dt className="text-shade-60">Approved by</dt>
-                    <dd>
-                      <Link rel="author" href={routes.author(author.slug)} className="underline decoration-pink underline-offset-4">
-                        {author.name}
-                      </Link>
-                    </dd>
+                  <div className="flex items-start gap-2.5">
+                    <Icon name="user" className="mt-0.5 size-4 text-pink" />
+                    <div>
+                      <dt className="text-shade-60">Approved by</dt>
+                      <dd>
+                        <Link rel="author" href={routes.author(author.slug)} className="underline decoration-pink underline-offset-4">
+                          {author.name}
+                        </Link>
+                      </dd>
+                    </div>
                   </div>
                 )}
               </dl>
               <TagList tags={product.tags} className="mt-6" />
             </div>
+
+            {/* The scorecard: the numbers behind the verdict at a glance. */}
+            <div className="rounded-xl bg-cream p-6 shadow-l3">
+              <div className="flex items-center gap-5">
+                <ScoreRing product={product} size="lg" />
+                <div>
+                  <p className="text-body-strong">Satisfaction score</p>
+                  <p className="mt-1 text-caption text-shade-60">
+                    <span className="capitalize">{confidence(product)}</span> confidence ·{' '}
+                    {counted.length.toLocaleString('en-IN')} reviews
+                  </p>
+                </div>
+              </div>
+              <dl className="mt-6 grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-white p-4">
+                  <dt className="flex items-center gap-1.5 text-micro text-shade-60">
+                    <Icon name="shield" className="size-3.5" />
+                    Weighted
+                  </dt>
+                  <dd className="mt-1 font-display text-heading-xl tabular-nums">{formatRating(weightedRating(product))}</dd>
+                  <dd className="text-indigo">
+                    <Stars rating={weightedRating(product)} className="size-3.5" />
+                  </dd>
+                </div>
+                <div className="rounded-lg bg-white p-4">
+                  <dt className="text-micro text-shade-60">{app ? 'App stores' : 'Marketplaces'}</dt>
+                  <dd className="mt-1 font-display text-heading-xl tabular-nums">{formatRating(marketplaceAverage(product).rating)}</dd>
+                  <dd className="text-shade-50">
+                    <Stars rating={marketplaceAverage(product).rating} className="size-3.5" />
+                  </dd>
+                </div>
+              </dl>
+              <a
+                href="#verdict"
+                className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-pill bg-indigo px-6 text-body-md text-white transition-colors hover:bg-shade-70"
+              >
+                Why we say “{verdictLabel(product.verdict, app)}”
+                <Icon name="arrow-right" className="size-4 rotate-90" />
+              </a>
+            </div>
           </header>
+
+          <SectionTabs
+            items={[
+              { id: 'verdict', label: 'Verdict' },
+              { id: 'pros-cons', label: 'Pros & cons' },
+              { id: 'aspects', label: 'Performance' },
+              { id: 'voice', label: 'Share of voice' },
+              ...(alternatives.length ? [{ id: 'alternatives', label: 'Alternatives' }] : []),
+              { id: 'faq', label: 'FAQ' },
+              { id: 'reviews', label: `Reviews (${product.reviews.length.toLocaleString('en-IN')})` },
+            ]}
+          />
 
           <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="min-w-0">
@@ -288,32 +359,38 @@ export default async function ProductPage({ params }: { params: Params }) {
               </Section>
             </div>
 
-            <aside className="pb-10 lg:pt-14">
-              <div className="space-y-6 lg:sticky lg:top-6">
+            <aside className="pb-10 lg:pt-16">
+              <div className="space-y-6 lg:sticky lg:top-36">
                 <PriceTable product={product} category={category} />
-                <div className="rounded-lg border border-hairline p-6">
+                <div className="rounded-lg border border-hairline bg-white p-6">
                   <h2 className="text-heading-md">Key facts</h2>
                   <dl className="mt-4 space-y-3 text-caption">
                     {product.specs.map((s) => (
-                      <div key={s.label} className="flex justify-between gap-4">
+                      <div key={s.label} className="flex justify-between gap-4 border-b border-hairline pb-3 last:border-0 last:pb-0">
                         <dt className="text-shade-60">{s.label}</dt>
                         <dd className="text-right">{s.value}</dd>
                       </div>
                     ))}
-                    <div className="flex justify-between gap-4">
+                    <div className="flex justify-between gap-4 pt-0">
                       <dt className="text-shade-60">Confidence</dt>
                       <dd className="text-right capitalize">{confidence(product)}</dd>
                     </div>
                   </dl>
                 </div>
                 {lists.length > 0 && (
-                  <div className="rounded-lg border border-hairline p-6">
+                  <div className="rounded-lg border border-hairline bg-white p-6">
                     <h2 className="text-heading-md">Ranked in</h2>
-                    <ul className="mt-3 space-y-2 text-caption">
+                    <ul className="mt-3 space-y-1 text-caption">
                       {lists.map(({ list, rank }) => (
                         <li key={list.slug}>
-                          <Link href={routes.best(list.slug)} className="underline decoration-shade-40 underline-offset-4 hover:decoration-pink">
-                            #{rank} in {list.title}
+                          <Link
+                            href={routes.best(list.slug)}
+                            className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-cream"
+                          >
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-cream font-display text-body-strong text-pink tabular-nums">
+                              {rank}
+                            </span>
+                            {list.title}
                           </Link>
                         </li>
                       ))}

@@ -10,7 +10,7 @@ export function SampleBanner({ text }: { text: string }) {
 /** Shown while a logged-in editor is looking at drafts through the admin's Preview button. */
 export function PreviewBar() {
   return (
-    <div role="status" className="sticky top-0 z-40 bg-night-deep px-4 py-2 text-center text-caption text-aqua">
+    <div role="status" className="bg-night-deep px-4 py-2 text-center text-caption text-aqua">
       Preview: you’re seeing drafts that readers can’t see yet.{' '}
       {/* A full page load, not a client-side <Link>: /exit-preview is a route handler that clears
           the draft-mode cookie and redirects. */}

@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Review, Sentiment } from '@/lib/types'
 
+import { Icon, Stars } from './Icon'
+
 // Filtering happens in the browser with no URL change, so review facets can never become
 // crawlable URLs (docs/PLAN.md §7). The first reviews ship in the server HTML; the rest load from
 // a static JSON file the first time a reader filters or asks for them.
@@ -28,6 +30,31 @@ const sentimentStyle: Record<Sentiment, string> = {
   negative: 'bg-blush text-indigo',
 }
 
+const sentimentDot: Record<Sentiment, string> = {
+  positive: 'bg-indigo',
+  neutral: 'bg-shade-40',
+  negative: 'bg-pink',
+}
+
+/** Two initials on a palette fill, picked from the name so the same reviewer keeps one colour. */
+function Avatar({ name }: { name: string }) {
+  const initials =
+    name
+      .replace(/^u\//, '')
+      .split(/[\s_.-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join('') || '?'
+  const fills = ['bg-peach', 'bg-shade-30', 'bg-blush']
+  const fill = fills[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % fills.length]
+  return (
+    <span aria-hidden className={`flex size-10 shrink-0 items-center justify-center rounded-pill text-caption text-indigo ${fill}`}>
+      {initials}
+    </span>
+  )
+}
+
 function FilterGroup<T extends string>({
   label,
   value,
@@ -50,7 +77,7 @@ function FilterGroup<T extends string>({
             aria-pressed={value === o.value}
             onClick={() => onChange(o.value)}
             className={`min-h-9 rounded-pill px-4 text-caption transition-colors ${
-              value === o.value ? 'bg-indigo text-white' : 'border border-hairline bg-white text-ink hover:border-indigo'
+              value === o.value ? 'bg-indigo text-white' : 'border border-hairline bg-white text-ink hover:border-indigo hover:bg-cream'
             }`}
           >
             {o.label}
@@ -123,7 +150,7 @@ export function ReviewList({ reviews, total, allUrl, sources, aspects, suspiciou
 
   return (
     <div>
-      <div className="grid gap-6 rounded-lg border border-hairline p-5 md:grid-cols-3">
+      <div className="grid gap-6 rounded-lg bg-cream p-5 md:grid-cols-3">
         <FilterGroup
           label="Source"
           value={source}
@@ -152,37 +179,54 @@ export function ReviewList({ reviews, total, allUrl, sources, aspects, suspiciou
             }`}
       </p>
 
-      <ol className="mt-4 divide-y divide-hairline border-y border-hairline">
+      <ol className="mt-4 grid gap-4">
         {filtered.map((r, i) => {
           const flagged = r.credibility < suspiciousBelow
           return (
-            <li key={r.id} id={`rv-${r.id}`} hidden={!expanded && i >= INITIAL} className="py-5">
+            <li
+              key={r.id}
+              id={`rv-${r.id}`}
+              hidden={!expanded && i >= INITIAL}
+              className={`rounded-lg border bg-white p-5 target:border-pink target:shadow-l3 md:p-6 ${flagged ? 'border-dashed border-blush' : 'border-hairline'}`}
+            >
               <article>
-                <header className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
-                  <span className="text-body-strong">{r.author}</span>
-                  <span className="text-shade-60">{sourceName(r.source)}</span>
+                <header className="flex flex-wrap items-center gap-x-3 gap-y-2 text-caption">
+                  <Avatar name={r.author} />
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-x-2">
+                      <span className="text-body-strong">{r.author}</span>
+                      {r.verified && (
+                        <span className="inline-flex items-center gap-1 text-micro text-shade-60">
+                          <Icon name="shield" className="size-3.5 text-indigo" />
+                          Verified purchase
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-micro text-shade-60">
+                      {sourceName(r.source)} ·{' '}
+                      <time dateTime={r.date.slice(0, 10)}>
+                        {new Date(r.date).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          timeZone: 'Asia/Kolkata',
+                        })}
+                      </time>
+                    </p>
+                  </div>
                   {r.rating !== undefined && (
-                    <span className="tabular-nums" aria-label={`${r.rating} out of 5 stars`}>
-                      {'★'.repeat(r.rating)}
-                      <span className="text-shade-40">{'★'.repeat(5 - r.rating)}</span>
+                    <span className="ml-auto inline-flex items-center gap-2 text-indigo">
+                      <Stars rating={r.rating} />
+                      <span className="sr-only">{r.rating} out of 5 stars</span>
                     </span>
                   )}
-                  {r.verified && <span className="text-shade-60">Verified purchase</span>}
-                  <time dateTime={r.date.slice(0, 10)} className="text-shade-60">
-                    {new Date(r.date).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      timeZone: 'Asia/Kolkata',
-                    })}
-                  </time>
                 </header>
                 {r.original && (
-                  <p lang={r.original.lang} className="mt-2 text-body-md">
+                  <p lang={r.original.lang} className="mt-4 text-body-md">
                     {r.original.text}
                   </p>
                 )}
-                <p className={`mt-2 ${r.original ? 'text-caption text-shade-60' : ''}`}>
+                <p className={`${r.original ? 'mt-2 text-caption text-shade-60' : 'mt-4'}`}>
                   {r.original && <span className="text-micro uppercase">Translated · </span>}
                   {r.body.length > EXCERPT ? `${r.body.slice(0, EXCERPT).trimEnd()}…` : r.body}
                 </p>
@@ -197,14 +241,19 @@ export function ReviewList({ reviews, total, allUrl, sources, aspects, suspiciou
                   </a>
                 )}
                 {flagged && (
-                  <p className="mt-2 inline-flex rounded-pill bg-blush px-3 py-1 text-micro">
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-pill bg-blush px-3 py-1 text-micro">
+                    <Icon name="flag" className="size-3.5" />
                     Flagged: part of a burst of generic 5★ reviews — excluded from our counts
                   </p>
                 )}
                 {r.aspects.length > 0 && (
-                  <ul className="mt-3 flex flex-wrap gap-2" aria-label="Topics mentioned">
+                  <ul className="mt-4 flex flex-wrap gap-2" aria-label="Topics mentioned">
                     {r.aspects.map((a) => (
-                      <li key={a.aspect} className={`rounded-pill px-3 py-0.5 text-micro ${sentimentStyle[a.sentiment]}`}>
+                      <li
+                        key={a.aspect}
+                        className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-0.5 text-micro ${sentimentStyle[a.sentiment]}`}
+                      >
+                        <span aria-hidden className={`size-1.5 rounded-pill ${sentimentDot[a.sentiment]}`} />
                         {aspectLabel(a.aspect)} · {a.sentiment}
                       </li>
                     ))}

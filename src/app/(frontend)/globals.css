@@ -96,6 +96,10 @@
     0 8px 8px rgba(68, 3, 129, 0.08), 0 4px 4px rgba(68, 3, 129, 0.08),
     0 2px 2px rgba(68, 3, 129, 0.08), 0 0 0 1px rgba(68, 3, 129, 0.1);
   --shadow-l4: 0 25px 50px -12px rgba(68, 3, 129, 0.25);
+  /* Level 3 lifted: the same indigo halo, spread further, for cards under the pointer. */
+  --shadow-l3-hover:
+    0 18px 28px -10px rgba(68, 3, 129, 0.18), 0 6px 10px rgba(68, 3, 129, 0.08),
+    0 2px 2px rgba(68, 3, 129, 0.08), 0 0 0 1px rgba(68, 3, 129, 0.16);
 
   --breakpoint-wide: 90rem;
 }
@@ -116,6 +120,27 @@
     var(--color-blush),
     var(--color-peach)
   );
+}
+
+/* A card that lifts on hover: Level 3 at rest, Level 3 lifted under the pointer. */
+@utility card-lift {
+  box-shadow: var(--shadow-l3);
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms ease;
+  &:hover,
+  &:focus-within {
+    box-shadow: var(--shadow-l3-hover);
+    transform: translateY(-2px);
+  }
+}
+
+/* Faint indigo dot grid for the cinematic hero, fading out toward the bottom. Never behind text
+   smaller than display size. */
+@utility bg-night-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
 }
 
 @layer base {
@@ -143,7 +168,24 @@
     outline-color: var(--color-aqua);
   }
 
+  /* Clears the sticky header and the product page's section tabs. */
   [id] {
-    scroll-margin-top: 1.5rem;
+    scroll-margin-top: 8rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
   }
 }

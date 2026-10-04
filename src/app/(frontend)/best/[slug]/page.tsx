@@ -69,11 +69,18 @@ export default async function BestOfPage({ params }: { params: Params }) {
                 return (
                   <li key={p.slug} id={`rank-${i + 1}`} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
                     <ProductCard product={p} rank={i + 1} />
-                    <p className="text-caption text-shade-60 tabular-nums">
+                    <p className="rounded-lg bg-cream p-5 text-caption text-shade-60 tabular-nums">
+                      {i === 0 && (
+                        <span className="mb-2 inline-flex rounded-pill bg-blush px-3 py-1 text-eyebrow uppercase text-indigo">
+                          Top pick
+                        </span>
+                      )}
+                      <span className="block">
                       {stat && stat.scored
                         ? `${aspect!.label}: problems reported by ${formatRate(stat.problemRate)} of reviewers.`
                         : `Satisfaction score ${formatScore(compositeScore(p))} / 10.`}{' '}
                       {lowestOffer(p)!.price === 0 ? 'Free to download.' : `Lowest price ${formatINR(lowestOffer(p)!.price)}.`}
+                      </span>
                     </p>
                   </li>
                 )

@@ -9,7 +9,8 @@ import { RichText } from '@/components/RichText'
 import { SearchForm } from '@/components/SearchForm'
 import { TagList } from '@/components/TagList'
 import { PageShell } from '@/components/SiteChrome'
-import { Container, Prose, Section } from '@/components/ui'
+import { siloIcon } from '@/components/Icon'
+import { CategoryTile, Container, Prose, Section } from '@/components/ui'
 import {
   bestOfFor,
   comparisonsIn,
@@ -165,14 +166,14 @@ function SiloView({ silo }: { silo: Category }) {
         <Section id="categories" title={`Which kind of ${inSentence(silo.name.split(' & ')[0])} do you need?`}>
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {children.map((c) => (
-              <li key={c.slug} className="relative rounded-lg bg-peach p-8">
-                <h3 className="font-display text-heading-xl">
-                  <Link href={routes.category(c)} className="after:absolute after:inset-0 after:rounded-lg">
-                    {c.name}
-                  </Link>
-                </h3>
-                <p className="mt-2">{c.tagline}</p>
-                <p className="mt-6 text-caption">{productsIn(c.slug).length} products reviewed</p>
+              <li key={c.slug}>
+                <CategoryTile
+                  href={routes.category(c)}
+                  title={c.name}
+                  body={c.tagline}
+                  meta={`${productsIn(c.slug).length} products reviewed`}
+                  icon={siloIcon(silo.slug)}
+                />
               </li>
             ))}
           </ul>

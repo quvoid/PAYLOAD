@@ -5,8 +5,9 @@ import { allBestOf, categoryComparisons, listedChildren, listedSilos, productsIn
 import { routes } from '@/lib/routes'
 import type { NavLink, Track } from '@/lib/types'
 
+import { Icon, siloIcon } from './Icon'
 import { SearchForm } from './SearchForm'
-import { Container, GradientStrip, PillLink } from './ui'
+import { ArrowLink, Container, GradientStrip, PillLink } from './ui'
 import { Wordmark } from './Wordmark'
 
 // Header and footer. Each page picks one track (DESIGN.md: cinematic OR transactional, never
@@ -46,59 +47,70 @@ function CategoriesMenu({ track }: { track: Track }) {
   const night = track === 'night'
   const link = night ? 'text-white hover:text-aqua' : 'text-ink hover:text-shade-60'
   const muted = night ? 'text-shade-40' : 'text-shade-60'
+  const tile = night ? 'bg-night-deep text-aqua' : 'bg-peach text-indigo'
   return (
     <li className="group">
       {/* The ::after strip bridges the gap between the label and the panel so hover isn't lost. */}
       <Link
         href={routes.categories()}
-        className={`relative inline-flex items-center gap-1.5 whitespace-nowrap text-body-md transition-colors after:absolute after:inset-x-0 after:top-full after:h-8 ${link}`}
+        className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill px-3 py-2 text-body-md transition-colors after:absolute after:inset-x-0 after:top-full after:h-6 ${night ? 'text-white hover:bg-night-elevated' : 'text-ink hover:bg-cream'}`}
       >
         Categories
-        <svg
-          aria-hidden
-          viewBox="0 0 12 12"
-          className="size-3 transition-transform group-focus-within:rotate-180 group-hover:rotate-180"
-        >
-          <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
+        <Icon name="chevron" className="size-3.5 transition-transform group-focus-within:rotate-180 group-hover:rotate-180" />
       </Link>
       <div
         role="region"
         aria-label="All categories"
-        className="invisible absolute inset-x-0 top-full z-30 opacity-0 transition-[opacity,visibility] delay-150 duration-150 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:delay-0 group-hover:visible group-hover:opacity-100 group-hover:delay-0"
+        className="invisible absolute inset-x-0 top-full z-30 -translate-y-1 opacity-0 transition-[opacity,visibility,translate] delay-150 duration-200 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:delay-0 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-0"
       >
         <div className={night ? 'bg-night-elevated shadow-l2' : 'border-t border-hairline bg-white shadow-l4'}>
-          <Container className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-10 gap-y-8 py-10">
-            {listedSilos().map((silo) => (
-              <div key={silo.slug}>
-                <Link href={routes.category(silo)} className={`text-heading-md ${link}`}>
-                  {silo.name}
-                </Link>
-                <p className={`mt-1 text-caption ${muted}`}>{silo.tagline}</p>
-                <ul className={`mt-4 space-y-1 border-t pt-3 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
-                  {listedChildren(silo.slug).map((c) => (
-                    <li key={c.slug}>
-                      <Link
-                        href={routes.category(c)}
-                        className={`flex items-baseline justify-between gap-4 rounded-md py-1.5 text-body-md ${link}`}
-                      >
-                        <span>{c.name}</span>
-                        <span className={`text-caption tabular-nums ${muted}`}>{productsIn(c.slug).length}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+          <Container className="grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-x-10 gap-y-8">
+              {listedSilos().map((silo) => (
+                <div key={silo.slug}>
+                  <Link href={routes.category(silo)} className={`group/silo flex items-start gap-3 ${link}`}>
+                    <span className={`flex size-10 shrink-0 items-center justify-center rounded-md ${tile}`}>
+                      <Icon name={siloIcon(silo.slug)} className="size-5" />
+                    </span>
+                    <span>
+                      <span className="block text-heading-sm">{silo.name}</span>
+                      <span className={`mt-0.5 block text-caption ${muted}`}>{silo.tagline}</span>
+                    </span>
+                  </Link>
+                  <ul className={`mt-4 space-y-0.5 border-t pt-3 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
+                    {listedChildren(silo.slug).map((c) => (
+                      <li key={c.slug}>
+                        <Link
+                          href={routes.category(c)}
+                          className={`-mx-2 flex items-baseline justify-between gap-4 rounded-md px-2 py-1.5 text-body-md transition-colors ${night ? 'text-white hover:bg-night-deep hover:text-aqua' : 'text-ink hover:bg-cream'}`}
+                        >
+                          <span>{c.name}</span>
+                          <span className={`text-caption tabular-nums ${muted}`}>{productsIn(c.slug).length}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className={`flex flex-col justify-between gap-6 rounded-lg p-6 ${night ? 'bg-night-deep' : 'bg-cream'}`}>
+              <div>
+                <Icon name="scale" className={`size-6 ${night ? 'text-aqua' : 'text-pink'}`} />
+                <p className={`mt-4 text-heading-sm ${night ? 'text-white' : 'text-ink'}`}>Counted, not guessed</p>
+                <p className={`mt-2 text-caption ${muted}`}>
+                  Every figure comes from reviews, with the likely fakes set aside. See exactly how a verdict is made.
+                </p>
               </div>
-            ))}
+              <ArrowLink href={routes.methodology()} track={track}>
+                How we score
+              </ArrowLink>
+            </div>
           </Container>
           <div className={`border-t ${night ? 'border-hairline-night' : 'border-hairline'}`}>
             <Container className="py-4">
-              <Link
-                href={routes.categories()}
-                className={`text-caption underline underline-offset-4 ${night ? 'text-aqua' : 'text-ink decoration-pink'}`}
-              >
+              <ArrowLink href={routes.categories()} track={track} className="text-caption">
                 See all categories
-              </Link>
+              </ArrowLink>
             </Container>
           </div>
         </div>
@@ -107,55 +119,68 @@ function CategoriesMenu({ track }: { track: Track }) {
   )
 }
 
-function SiteHeader({ track }: { track: Track }) {
+function SiteHeader({ track, sticky }: { track: Track; sticky: boolean }) {
   const night = track === 'night'
   const link = night ? 'text-white hover:text-aqua' : 'text-ink hover:text-shade-60'
+  const navItem = night ? 'text-white hover:bg-night-elevated' : 'text-ink hover:bg-cream'
+  const surface = night
+    ? sticky
+      ? 'bg-night/90 backdrop-blur-lg backdrop-saturate-150'
+      : 'bg-night'
+    : 'border-b border-hairline bg-white/85 backdrop-blur-lg backdrop-saturate-150'
   return (
-    <header className={`relative z-30 ${night ? 'bg-night' : 'border-b border-hairline bg-white'}`}>
-      <Container className="flex items-center justify-between gap-6 py-4">
+    <header className={`relative z-30 ${surface}`}>
+      <Container className="flex min-h-18 items-center justify-between gap-6 py-3">
         <Wordmark track={track} />
         <nav aria-label="Primary" className="hidden md:block">
-          <ul className="flex items-center gap-7">
+          <ul className="flex items-center gap-1">
             <CategoriesMenu track={track} />
             {navLinks().map((l) => (
               <li key={l.href}>
-                <NavAnchor link={l} className={`whitespace-nowrap text-body-md transition-colors ${link}`}>
+                <NavAnchor link={l} className={`whitespace-nowrap rounded-pill px-3 py-2 text-body-md transition-colors ${navItem}`}>
                   {l.label}
                 </NavAnchor>
               </li>
             ))}
           </ul>
         </nav>
-        <SearchForm track={track} className="hidden w-72 xl:flex" />
+        <SearchForm track={track} shortcut className="hidden w-[22rem] xl:flex" />
         <div className="hidden md:block xl:hidden">
           <PillLink href={routes.search()} variant={night ? 'outline-night' : 'primary'}>
+            <Icon name="search" className="size-4" />
             Search
           </PillLink>
         </div>
         {/* Below 768px the nav collapses into a disclosure — no JS needed. */}
-        <details className="group relative md:hidden">
+        <details className="group md:hidden">
           <summary
-            className={`flex min-h-11 cursor-pointer list-none items-center rounded-pill px-5 ${night ? 'border-2 border-white text-white' : 'border border-indigo text-ink'}`}
+            className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-pill px-4 [&::-webkit-details-marker]:hidden ${night ? 'border-2 border-white text-white' : 'border border-indigo text-ink'}`}
           >
+            <Icon name="menu" className="size-4 group-open:hidden" />
+            <Icon name="x" className="hidden size-4 group-open:block" />
             <span className="group-open:hidden">Menu</span>
             <span className="hidden group-open:inline">Close</span>
           </summary>
           <nav
             aria-label="Primary"
-            className={`absolute right-0 z-20 mt-2 max-h-[75vh] w-72 overflow-y-auto rounded-lg p-2 shadow-l4 ${night ? 'bg-night-elevated shadow-l2' : 'bg-white'}`}
+            className={`absolute inset-x-0 top-full z-20 max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t px-4 pt-4 pb-8 shadow-l4 ${night ? 'border-hairline-night bg-night-elevated' : 'border-hairline bg-white'}`}
           >
-            <SearchForm track={track} className="p-2" />
-            <p className={`px-4 pt-3 text-eyebrow uppercase ${night ? 'text-shade-40' : 'text-shade-60'}`}>Categories</p>
-            <ul className={`border-b pb-2 ${night ? 'border-hairline-night' : 'border-hairline'}`}>
+            <SearchForm track={track} />
+            <p className={`mt-6 text-eyebrow uppercase ${night ? 'text-shade-40' : 'text-shade-60'}`}>Categories</p>
+            <ul className="mt-3 grid gap-3">
               {listedSilos().map((silo) => (
-                <li key={silo.slug}>
-                  <Link href={routes.category(silo)} className={`block rounded-md px-4 pt-3 pb-1 text-body-strong ${link}`}>
+                <li key={silo.slug} className={`rounded-lg p-4 ${night ? 'bg-night-deep' : 'bg-cream'}`}>
+                  <Link href={routes.category(silo)} className={`flex items-center gap-3 text-body-strong ${link}`}>
+                    <Icon name={siloIcon(silo.slug)} className={`size-5 ${night ? 'text-aqua' : 'text-pink'}`} />
                     {silo.name}
                   </Link>
-                  <ul>
+                  <ul className="mt-3 flex flex-wrap gap-2">
                     {listedChildren(silo.slug).map((c) => (
                       <li key={c.slug}>
-                        <Link href={routes.category(c)} className={`block rounded-md py-2 pr-4 pl-8 text-caption ${link}`}>
+                        <Link
+                          href={routes.category(c)}
+                          className={`inline-flex min-h-10 items-center rounded-pill px-4 text-caption ${night ? 'border border-hairline-night text-white' : 'bg-white text-ink shadow-l3'}`}
+                        >
                           {c.name}
                         </Link>
                       </li>
@@ -164,11 +189,12 @@ function SiteHeader({ track }: { track: Track }) {
                 </li>
               ))}
             </ul>
-            <ul className="pt-2">
+            <ul className={`mt-4 divide-y ${night ? 'divide-hairline-night' : 'divide-hairline'}`}>
               {navLinks().map((l) => (
                 <li key={l.href}>
-                  <NavAnchor link={l} className={`block rounded-md px-4 py-3 ${link}`}>
+                  <NavAnchor link={l} className={`flex items-center justify-between py-4 text-body-strong ${link}`}>
                     {l.label}
+                    <Icon name="arrow-right" className="size-4" />
                   </NavAnchor>
                 </li>
               ))}
@@ -192,12 +218,12 @@ function FooterColumn({
   return (
     <div>
       <h2 className={`text-eyebrow uppercase ${night ? 'text-shade-40' : 'text-shade-60'}`}>{title}</h2>
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 space-y-2.5">
         {links.map((l) => (
           <li key={l.href}>
             <NavAnchor
               link={l}
-              className={`text-caption underline decoration-1 underline-offset-4 ${night ? 'text-peach hover:text-aqua' : 'text-ink decoration-shade-40 hover:decoration-pink'}`}
+              className={`text-caption decoration-1 underline-offset-4 transition-colors hover:underline ${night ? 'text-peach hover:text-aqua' : 'text-ink hover:decoration-pink'}`}
             >
               {l.label}
             </NavAnchor>
@@ -226,14 +252,27 @@ function SiteFooter({ track }: { track: Track }) {
     <footer className={night ? 'bg-night text-white' : 'border-t border-hairline bg-cream text-ink'}>
       <GradientStrip />
       <Container className="py-16">
-        <div className={`grid gap-10 sm:grid-cols-2 ${extraColumns.length > 1 ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
-          <div className="lg:col-span-1">
+        <div
+          className={`mb-14 flex flex-col gap-6 border-b pb-12 md:flex-row md:items-end md:justify-between ${night ? 'border-hairline-night' : 'border-hairline'}`}
+        >
+          <div>
             <Wordmark track={track} />
-            <p className={`mt-4 max-w-[36ch] text-caption ${night ? 'text-shade-40' : 'text-shade-60'}`}>
+            <p className={`mt-5 max-w-[40ch] font-display text-heading-lg md:text-heading-xl ${night ? 'text-white' : 'text-ink'}`}>
               {nav.footerAbout ||
                 'Every review, weighed. Numbers are counted by code; every verdict is approved by a named editor.'}
             </p>
           </div>
+          <div className="flex flex-wrap gap-3">
+            <PillLink href={routes.search()} variant={night ? 'outline-night' : 'primary'}>
+              <Icon name="search" className="size-4" />
+              Find a product
+            </PillLink>
+            <PillLink href={routes.methodology()} variant={night ? 'outline-night' : 'outline-light'} arrow>
+              How we score
+            </PillLink>
+          </div>
+        </div>
+        <div className={`grid gap-10 sm:grid-cols-2 ${extraColumns.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <FooterColumn
             night={night}
             title="Categories"
@@ -288,8 +327,10 @@ export function PageShell({
 }) {
   return (
     <div className={track === 'night' ? 'track-night bg-night text-white' : 'track-light bg-white text-ink'}>
-      <div className={headerTrack === 'night' ? 'track-night' : undefined}>
-        <SiteHeader track={headerTrack} />
+      {/* The header sticks on single-track pages. A cinematic header over a light page scrolls
+          away with its hero, so an indigo bar never sits over the transactional track. */}
+      <div className={`${headerTrack === 'night' ? 'track-night' : ''} ${headerTrack === track ? 'sticky top-0 z-30' : 'relative z-30'}`}>
+        <SiteHeader track={headerTrack} sticky={headerTrack === track} />
       </div>
       <main id="main">{children}</main>
       <SiteFooter track={track} />

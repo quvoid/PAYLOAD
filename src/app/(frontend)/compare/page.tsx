@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { JsonLd } from '@/components/JsonLd'
 import { Breadcrumbs } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
-import { Container, Section } from '@/components/ui'
+import { siloIcon } from '@/components/Icon'
+import { CategoryTile, Container, Section } from '@/components/ui'
 import { allComparisons, categoryComparisons, getCategory, getProduct, productsIn } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
 import { breadcrumbLd, fixedPageMetadata, graph } from '@/lib/seo'
@@ -30,13 +31,13 @@ export default async function CompareIndexPage() {
         <Section id="categories" title="Which category do you want to compare?">
           <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {categoryComparisons().map((c) => (
-              <li key={c.slug} className="relative rounded-lg bg-peach p-8">
-                <h3 className="font-display text-heading-xl">
-                  <Link href={routes.compare(c.slug)} className="after:absolute after:inset-0 after:rounded-lg">
-                    {c.name} compared
-                  </Link>
-                </h3>
-                <p className="mt-3 text-caption">{productsIn(c.slug).length} products</p>
+              <li key={c.slug}>
+                <CategoryTile
+                  href={routes.compare(c.slug)}
+                  title={`${c.name} compared`}
+                  meta={`${productsIn(c.slug).length} products side by side`}
+                  icon={siloIcon(c.parent ?? c.slug)}
+                />
               </li>
             ))}
           </ul>
@@ -46,7 +47,7 @@ export default async function CompareIndexPage() {
           <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {allComparisons().map((c) => (
               <li key={c.slug}>
-                <Link href={routes.compare(c.slug)} className="block h-full rounded-lg border border-hairline p-6 hover:border-indigo">
+                <Link href={routes.compare(c.slug)} className="block h-full rounded-lg border border-hairline bg-white p-6 transition-colors hover:border-indigo hover:bg-cream">
                   <span className="text-eyebrow uppercase text-shade-60">{getCategory(c.category)!.name}</span>
                   <span className="mt-2 block text-heading-md">
                     {c.products.map((s) => getProduct(s)!.shortName).join(' vs ')}

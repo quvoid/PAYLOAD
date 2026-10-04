@@ -1,5 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
 
+import { pingIndexNow } from '@/lib/indexnow'
+
 import {
   faqField,
   isAdmin,
@@ -53,7 +55,11 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeChange: [recordApproval, uniquenessGuard('products')],
     beforeDelete: [deleteReviews],
-    afterChange: [refreshAfterChange, redirectOnSlugChange('products', (d) => `/reviews/${d.slug}`)],
+    afterChange: [
+      refreshAfterChange,
+      redirectOnSlugChange('products', (d) => `/reviews/${d.slug}`),
+      pingIndexNow((d) => `/reviews/${d.slug}`),
+    ],
     afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/reviews/${d.slug}`)],
   },
   fields: [

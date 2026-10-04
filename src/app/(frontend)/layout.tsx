@@ -17,10 +17,13 @@ import { graph, organizationLd, SITE, websiteLd } from '@/lib/seo'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
+// Only reviews written in Hindi use this face, so it isn't preloaded: browsers fetch it (by its
+// unicode-range) on the pages that show Devanagari text, and every other page saves ~120 KB.
 const devanagari = Noto_Sans_Devanagari({
   subsets: ['devanagari'],
   variable: '--font-devanagari',
   display: 'swap',
+  preload: false,
 })
 
 // Site-wide defaults. Search-engine settings come from Settings → Site settings in the admin.

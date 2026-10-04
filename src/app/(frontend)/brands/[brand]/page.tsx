@@ -8,7 +8,7 @@ import { allBrands, getBrand, productsByBrand } from '@/lib/catalog'
 import { formatCount, formatRating } from '@/lib/format'
 import { countedReviews, weightedRating } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { absoluteUrl, brandId, breadcrumbLd, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
+import { absoluteUrl, brandId, breadcrumbLd, describe, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { brandIndexable } from '@/lib/sitemaps'
 import { brandTemplated } from '@/lib/seo-templates'
@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!brand) return {}
   return pageMetadata({
     title: `${brand.name} reviews: every product rated`,
-    description: `Every ${brand.name} product we track, with verdicts and scores computed from real reviews.`,
+    description: describe(
+      `Every ${brand.name} product we track, with verdicts computed from real reviews.`,
+      brand.about[0],
+    ),
     path: routes.brand(brand.slug),
     seo: brand.seo,
     templated: brandTemplated(brand),

@@ -1,7 +1,10 @@
 import { ImageResponse } from 'next/og'
 
 import {
+  allProducts,
+  allSources,
   getAspect,
+  getAuthor,
   getBestOf,
   getBrand,
   getCategory,
@@ -11,6 +14,7 @@ import {
   getTag,
   getTopic,
   isApp,
+  productsByAuthor,
   productsByBrand,
   productsIn,
   rankBestOf,
@@ -20,8 +24,9 @@ import {
 } from '@/lib/catalog'
 import { formatScore } from '@/lib/format'
 import { compositeScore, countedReviews } from '@/lib/metrics'
+import { PAGE_TEXT_KEYS, type PageTextKey } from '@/lib/page-texts'
 import { SITE } from '@/lib/seo'
-import { ensureCatalog } from '@/lib/store'
+import { ensureCatalog, pageTexts, settings } from '@/lib/store'
 import { verdictLabel } from '@/lib/verdict'
 
 // Share images (1200×630) made for each page from its own data (docs: programmatic-seo), used
@@ -90,6 +95,31 @@ function card(kind: string, slug: string): Card | undefined {
       const p = getPage(slug)
       if (!p) return
       return { eyebrow: SITE.name, title: p.title, detail: p.intro }
+    }
+    case 'compare-category': {
+      const c = getCategory(slug)
+      if (!c) return
+      const n = productsIn(c.slug).length
+      return { eyebrow: 'Compared side by side', title: `${c.name} compared`, detail: `${n} products on the same measures, counted from real reviews` }
+    }
+    case 'author': {
+      const a = getAuthor(slug)
+      if (!a) return
+      const n = productsByAuthor(a.slug).filter((p) => !p.draft).length
+      return { eyebrow: 'Editor', title: a.name, detail: `${a.role} · ${n} verdicts approved` }
+    }
+    // Fixed pages (Website → Page texts): the page's own heading and a line of live figures.
+    case 'fixed': {
+      if (!(PAGE_TEXT_KEYS as readonly string[]).includes(slug)) return
+      const t = pageTexts[slug as PageTextKey]
+      const products = allProducts()
+      const reviews = products.reduce((n, p) => n + countedReviews(p).length, 0)
+      const figures = `${products.length} products · ${reviews.toLocaleString('en-IN')} reviews counted · ${allSources().length} sources`
+      return {
+        eyebrow: slug === 'home' ? 'Every review, weighed' : SITE.name,
+        title: slug === 'home' ? settings.heroTitle : t.heading || t.title,
+        detail: figures,
+      }
     }
   }
 }

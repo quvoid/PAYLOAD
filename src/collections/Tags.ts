@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { pingIndexNow } from '@/lib/indexnow'
+
 import {
   loggedIn,
   goneOnDelete,
@@ -24,7 +26,11 @@ export const Tags: CollectionConfig = {
   trash: true,
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: loggedIn },
   hooks: {
-    afterChange: [refreshAfterChange, redirectOnSlugChange('tags', (d) => `/tags/${d.slug}`)],
+    afterChange: [
+      refreshAfterChange,
+      redirectOnSlugChange('tags', (d) => `/tags/${d.slug}`),
+      pingIndexNow((d) => `/tags/${d.slug}`),
+    ],
     afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/tags/${d.slug}`)],
   },
   fields: [

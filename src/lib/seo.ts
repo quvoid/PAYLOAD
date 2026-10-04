@@ -38,8 +38,27 @@ interface PageMeta {
  * appended here, unless an editor wrote the full title in the SEO tab. Gaps fall back to the
  * defaults in Settings → Site settings → Search engines.
  */
+/** Search results show about 60 characters of a title; past that, drop our name rather than the words. */
+const TITLE_LIMIT = 60
+
+/**
+ * A search-result description from several facts: joined, and cut at a word near 155 characters
+ * (what Google shows) so it never ends mid-word.
+ */
+export const describe = (...parts: (string | undefined | false)[]) => {
+  const text = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+  if (text.length <= 155) return text
+  const head = text.slice(0, 156)
+  // Prefer ending on a whole sentence, if one ends late enough to still say something.
+  const sentence = Math.max(head.lastIndexOf('. '), head.lastIndexOf('? '), head.lastIndexOf('! '))
+  if (sentence >= 100) return head.slice(0, sentence + 1)
+  const word = head.slice(0, 154).lastIndexOf(' ')
+  return `${head.slice(0, word > 100 ? word : 154).replace(/[\s,;:·—–-]+$/, '')}…`
+}
+
 export const pageMetadata = ({ title, description, path, noindex, seo, image, templated }: PageMeta): Metadata => {
-  const fullTitle = seo?.title || templated?.title || `${title} | ${SITE.name}`
+  const branded = `${title} | ${SITE.name}`
+  const fullTitle = seo?.title || templated?.title || (branded.length > TITLE_LIMIT && title.length <= TITLE_LIMIT ? title : branded)
   const shareTitle = seo?.title || templated?.title || title
   const desc =
     seo?.description || templated?.description || description || settings.metaDescription || SITE.description
@@ -73,7 +92,8 @@ export const fixedPageMetadata = (key: PageTextKey, path: string, extra: Partial
     title: t.title,
     description: t.description,
     path,
-    image: t.shareImage,
+    // The editor's share image, else a card made from the page's own heading.
+    image: t.shareImage ?? ogImage('fixed', key, t.title),
     noindex: t.noindex,
     ...extra,
   })

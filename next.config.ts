@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // /reviews/<product>.md: the review as Markdown for answer engines (src/lib/markdown.ts). Checked
+  // before the page routes, or /reviews/[product] would take it as a product called "x.md".
+  async rewrites() {
+    return { beforeFiles: [{ source: '/reviews/:product.md', destination: '/reviews-md/:product' }] }
+  },
   images: {
     localPatterns: [
       {

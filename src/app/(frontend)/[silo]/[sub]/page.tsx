@@ -19,7 +19,7 @@ import {
 import { formatCount, formatDate, inSentence, isoDate } from '@/lib/format'
 import { countedReviews, shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, describe, faqLd, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { categoryTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
@@ -41,9 +41,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   await ensureCatalog()
   const category = await load(params)
   if (!category) return {}
+  const products = productsIn(category.slug)
+  const reviews = products.reduce((n, p) => n + countedReviews(p).length, 0)
   return pageMetadata({
     title: `${category.name} reviews and buying guide`,
-    description: category.tagline,
+    description: describe(
+      category.tagline,
+      `${products.length} products compared, from ${reviews.toLocaleString('en-IN')} real reviews.`,
+    ),
     path: routes.category(category),
     seo: category.seo,
     templated: categoryTemplated(category),

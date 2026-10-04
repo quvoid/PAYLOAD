@@ -51,8 +51,9 @@ import {
 } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
-import { breadcrumbLd, faqLd, graph, ogImage, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
+import { breadcrumbLd, describe, faqLd, graph, ogImage, pageMetadata, productCrumbs, productReviewLd } from '@/lib/seo'
 import { verdictLabel } from '@/lib/verdict'
+import { markdownPath } from '@/lib/markdown'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { productTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
@@ -68,9 +69,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   await ensureCatalog()
   const p = getProduct((await params).product)
   if (!p) return {}
-  return pageMetadata({
+  const meta = pageMetadata({
     title: `${p.name} Review: ${verdictLabel(p.verdict, isApp(p))}`,
-    description: p.answer.length > 158 ? `${p.answer.slice(0, 155).trimEnd()}…` : p.answer,
+    description: describe(p.answer),
     path: routes.product(p.slug),
     seo: p.seo,
     templated: productTemplated(p),
@@ -78,6 +79,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     // Thin-data products and unapproved drafts stay out of the index (docs/PLAN.md §7).
     noindex: p.verdict === 'thin-data' || Boolean(p.draft),
   })
+  // The same review as Markdown, for answer engines (/reviews/<slug>.md).
+  return p.draft ? meta : { ...meta, alternates: { ...meta.alternates, types: { 'text/markdown': markdownPath(p.slug) } } }
 }
 
 export default async function ProductPage({ params }: { params: Params }) {

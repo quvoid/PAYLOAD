@@ -1,5 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
+import { pingIndexNow } from '@/lib/indexnow'
+
 import {
   faqField,
   isAdmin,
@@ -36,7 +38,11 @@ export const BestLists: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     beforeChange: [uniquenessGuard('best-lists')],
-    afterChange: [refreshAfterChange, redirectOnSlugChange('best-lists', (d) => `/best/${d.slug}`)],
+    afterChange: [
+      refreshAfterChange,
+      redirectOnSlugChange('best-lists', (d) => `/best/${d.slug}`),
+      pingIndexNow((d) => `/best/${d.slug}`),
+    ],
     afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/best/${d.slug}`)],
   },
   fields: [
@@ -154,7 +160,7 @@ export const Comparisons: CollectionConfig = {
   hooks: {
     beforeValidate: [pairDetails],
     beforeChange: [uniquenessGuard('comparisons')],
-    afterChange: [refreshAfterChange],
+    afterChange: [refreshAfterChange, pingIndexNow((d) => `/compare/${d.slug}`)],
     afterDelete: [refreshAfterDelete],
   },
   fields: [
@@ -241,7 +247,11 @@ export const Guides: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     beforeChange: [uniquenessGuard('guides')],
-    afterChange: [refreshAfterChange, redirectOnSlugChange('guides', (d) => `/topics/${d.slug}`)],
+    afterChange: [
+      refreshAfterChange,
+      redirectOnSlugChange('guides', (d) => `/topics/${d.slug}`),
+      pingIndexNow((d) => `/topics/${d.slug}`),
+    ],
     afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/topics/${d.slug}`)],
   },
   fields: [

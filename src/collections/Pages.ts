@@ -6,6 +6,8 @@ import {
 } from '@payloadcms/richtext-lexical'
 import type { Block, CollectionConfig, TextFieldSingleValidation } from 'payload'
 
+import { pingIndexNow } from '@/lib/indexnow'
+
 import { RESERVED_SEGMENTS } from '@/lib/routes'
 
 import {
@@ -105,7 +107,11 @@ export const Pages: CollectionConfig = {
   access: { read: loggedIn, create: loggedIn, update: loggedIn, delete: isAdmin },
   hooks: {
     beforeChange: [uniquenessGuard('pages')],
-    afterChange: [refreshAfterChange, redirectOnSlugChange('pages', (d) => `/${d.slug}`)],
+    afterChange: [
+      refreshAfterChange,
+      redirectOnSlugChange('pages', (d) => `/${d.slug}`),
+      pingIndexNow((d) => `/${d.slug}`),
+    ],
     afterDelete: [refreshAfterDelete, goneOnDelete((d) => `/${d.slug}`)],
   },
   fields: [

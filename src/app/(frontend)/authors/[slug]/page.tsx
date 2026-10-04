@@ -6,7 +6,7 @@ import { PageShell } from '@/components/SiteChrome'
 import { Container, Prose, Section } from '@/components/ui'
 import { allAuthors, getAuthor, productsByAuthor } from '@/lib/catalog'
 import { routes } from '@/lib/routes'
-import { absoluteUrl, breadcrumbLd, graph, pageMetadata, personId, SITE } from '@/lib/seo'
+import { absoluteUrl, breadcrumbLd, describe, graph, ogImage, pageMetadata, personId, SITE } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { authorIndexable } from '@/lib/sitemaps'
 import { ensureCatalog } from '@/lib/store'
@@ -24,9 +24,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!author) return {}
   return pageMetadata({
     title: `${author.name}, ${author.role}`,
-    description: (author.bio[0] ?? `${author.name}, ${author.role} at ReviewLens.`).slice(0, 155),
+    description: describe(author.bio[0] ?? `${author.name}, ${author.role} at ReviewLens.`),
     path: routes.author(author.slug),
     noindex: !authorIndexable(author.slug),
+    image: ogImage('author', author.slug, author.name),
   })
 }
 

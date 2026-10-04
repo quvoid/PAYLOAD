@@ -26,7 +26,8 @@ import {
 } from '@/lib/catalog'
 import { formatDate, inSentence, isoDate } from '@/lib/format'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
+import { countedReviews } from '@/lib/metrics'
+import { breadcrumbLd, categoryCrumbs, describe, graph, itemListLd, ogImage, pageMetadata, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { categoryTemplated, pageTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
@@ -57,9 +58,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       noindex: page.draft,
     })
   }
+  const products = productsIn(silo.slug)
+  const reviews = products.reduce((n, p) => n + countedReviews(p).length, 0)
   return pageMetadata({
     title: `${silo.name} reviews`,
-    description: silo.tagline,
+    description: describe(
+      silo.tagline,
+      `${products.length} products in ${listedChildren(silo.slug).length} categories, judged from ${reviews.toLocaleString('en-IN')} real reviews.`,
+    ),
     path: routes.category(silo),
     seo: silo.seo,
     templated: categoryTemplated(silo),

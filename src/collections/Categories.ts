@@ -1,5 +1,7 @@
 import type { CollectionConfig, Endpoint, PayloadRequest } from 'payload'
 
+import { pingIndexNow } from '@/lib/indexnow'
+
 import { validateRootSlug } from './Pages'
 import {
   faqField,
@@ -94,6 +96,7 @@ export const Categories: CollectionConfig = {
     afterChange: [
       refreshAfterChange,
       (args) => redirectOnSlugChange('categories', (d) => categoryPath(d, args.req))(args),
+      pingIndexNow((d, req) => categoryPath(d, req)),
     ],
     afterDelete: [refreshAfterDelete, (args) => goneOnDelete((d) => categoryPath(d, args.req))(args)],
   },

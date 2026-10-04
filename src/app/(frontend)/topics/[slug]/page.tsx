@@ -13,7 +13,7 @@ import { formatPct, formatRate, inSentence } from '@/lib/format'
 import { countedReviews } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { RULES } from '@/lib/rules'
-import { breadcrumbLd, faqLd, graph, itemListLd, ogImage, pageMetadata, SITE, thingLd } from '@/lib/seo'
+import { breadcrumbLd, describe, faqLd, graph, itemListLd, ogImage, pageMetadata, SITE, thingLd } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { guideTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!topic) return {}
   return pageMetadata({
     title: topic.title,
-    description: (topic.explainer[0] ?? topic.title).slice(0, 155),
+    description: describe(topic.explainer[0] ?? topic.title),
     path: routes.topic(topic.slug),
     seo: topic.seo,
     templated: guideTemplated(topic),

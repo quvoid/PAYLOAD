@@ -12,7 +12,7 @@ import { allBestOf, getAspect, getBestOf, getBestOfForPreview, getCategory, rank
 import { formatINR, formatRate, formatScore, inSentence } from '@/lib/format'
 import { aspectStat, compositeScore, lowestOffer } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, faqLd, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, describe, faqLd, graph, itemListLd, ogImage, pageMetadata } from '@/lib/seo'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { listTemplated } from '@/lib/seo-templates'
 import { ensureCatalog } from '@/lib/store'
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   await ensureCatalog()
   const list = getBestOf((await params).slug)
   if (!list) return {}
-  return pageMetadata({ title: list.title, description: (list.intro[0] ?? list.qualifier).slice(0, 155), path: routes.best(list.slug), seo: list.seo, templated: listTemplated(list), image: ogImage('list', list.slug, list.title) })
+  return pageMetadata({ title: list.title, description: describe(list.intro[0] ?? list.qualifier), path: routes.best(list.slug), seo: list.seo, templated: listTemplated(list), image: ogImage('list', list.slug, list.title) })
 }
 
 export default async function BestOfPage({ params }: { params: Params }) {

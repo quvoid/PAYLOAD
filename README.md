@@ -104,13 +104,16 @@ Built against the [WithAgenticAI SEO guides](https://github.com/WithAgenticAI/se
 | Status codes | `src/proxy.ts` answers redirects with real **301/302**, removed pages with **410 Gone**, and sends uppercase addresses to lowercase (301), before any page renders. | Website → Redirects (made automatically when a published address changes or a published page is deleted) |
 | Sitemaps | `/sitemap.xml` is a sitemap index; `/sitemap/<type>.xml` lists only live, indexable, canonical pages (split at 50,000). | SEO tab → "Hide this page from search engines" |
 | robots.txt | Admin, API and search always blocked; points to the sitemap index. | Site settings → Crawlers (extra paths, AI search / AI training crawlers) |
-| Titles & descriptions | Page SEO tab → search-result template → standard wording. | SEO tab; Site settings → Programmatic SEO → templates; Website → Page texts (fixed pages) |
-| Share images | 1200×630 cards generated per page at `/og/<type>/<address>`. | SEO tab image (wins), Site settings default |
+| Titles & descriptions | Page SEO tab → search-result template → standard wording. Titles over 60 characters drop the " \| ReviewLens" suffix; descriptions are cut at a sentence or word near 155 characters. | SEO tab; Site settings → Programmatic SEO → templates; Website → Page texts (fixed pages) |
+| Share images | 1200×630 cards generated for every page — including fixed pages, category comparisons and editors — at `/og/<type>/<address>`. | SEO tab image (wins), Site settings default |
 | Structured data | One connected `@graph` per page: WebPage (`@id`, isPartOf WebSite, breadcrumb, mainEntity), Organization, Product/Review, Brand, Person, FAQ, ItemList; `about`/`sameAs` pinned to Wikidata. | Site settings → Organisation, Social; "Same thing elsewhere" on categories, measures, brands, team members |
 | Security | HSTS (2 years, **no preload** until the domain is final), nosniff, SAMEORIGIN, referrer policy, `upgrade-insecure-requests`; no `X-Powered-By`. Payload: CSRF/CORS limited to the site, 5 failed logins lock an account for 10 minutes. Links typed in the admin are forced to https://. | — |
 | Architecture | Every indexable page within 3 clicks of the homepage; related links editors pick. | Related (sidebar), Navigation; dashboard → Site health |
 | Duplicates | 3-word-phrase Jaccard distance against the closest page of the same type (≥ 0.40). | Sidebar "Uniqueness"; Site settings → Programmatic SEO (threshold, block publishing) |
 | Head-to-heads | Draft comparisons for the top products of a category in one click. | Category sidebar → Draft head-to-heads |
+| Answer engines | `/llms.txt` indexes the site for AI tools; every review is also served as Markdown at `/reviews/<product>.md` (canonical header → the HTML page; advertised with `<link rel="alternate" type="text/markdown">`). | Follows publishing; off while the site is hidden from search |
+| IndexNow | Publishing or updating a page tells Bing, Yandex, Naver, Seznam and Yep at once (Bing also feeds ChatGPT search and Copilot). Old addresses are sent too when one changes. Never pings from localhost or http://. | Set `INDEXNOW_KEY` in the environment; the key is served at `/indexnow-key.txt` |
+| Speed | The Devanagari face isn't preloaded: only pages that show Hindi reviews fetch it (~120 KB saved elsewhere). | — |
 
 Run `pnpm seo:audit` (or `pnpm seo:audit https://your-domain`) to crawl a running site and check all of the above; it exits with an error code when something is wrong.
 
@@ -245,6 +248,6 @@ $PY pipeline/analyse.py [--only <slug>]               # → src/data/real/<slug>
 1. Create the Neon project and fill `.env`. Then build the Payload collections from docs/PLAN.md §8: Product, Category, Brand, Aspect, Collection, Comparison, Author, Redirect.
 2. Register the high-volume pipeline tables (Review, ReviewAspect, SourceRun, PriceSnapshot) with Payload's Postgres adapter so migrations know about them.
 3. Integrate the existing scrapers, including a server for the headful Amazon browser, then replace `src/data` with real data.
-4. Background jobs (Inngest), writing-skill prompts, product images, markdown mirrors and `llms.txt`.
+4. Background jobs (Inngest), writing-skill prompts and product images.
 
 `next dev` writes `AGENTS.md` and `CLAUDE.md` (pointers for AI coding agents to the bundled Next.js docs). Set `agentRules: false` in `next.config.ts` to stop it.

@@ -17,9 +17,10 @@ import {
   getProduct,
   productsIn,
 } from '@/lib/catalog'
-import { shareOfVoice } from '@/lib/metrics'
+import { inSentence } from '@/lib/format'
+import { countedReviews, shareOfVoice } from '@/lib/metrics'
 import { routes } from '@/lib/routes'
-import { breadcrumbLd, categoryCrumbs, graph, itemListLd, ogImage, pageMetadata, productReviewLd } from '@/lib/seo'
+import { breadcrumbLd, categoryCrumbs, describe, graph, itemListLd, ogImage, pageMetadata, productReviewLd } from '@/lib/seo'
 import type { Category, PairComparison } from '@/lib/types'
 import { notFoundOrRedirect } from '@/lib/not-found'
 import { pairTemplated } from '@/lib/seo-templates'
@@ -50,18 +51,23 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (found.kind === 'pair') {
     const [a, b] = found.pair.products.map((s) => getProduct(s)!)
     return pageMetadata({
-      title: `${a.shortName} vs ${b.shortName}: which should you buy?`,
-      description: found.pair.judgement[0].slice(0, 155),
+      title: `${a.shortName} vs ${b.shortName}: which to buy?`,
+      description: describe(found.pair.judgement[0]),
       path: routes.compare(found.pair.slug),
       seo: found.pair.seo,
       templated: pairTemplated(found.pair),
       image: ogImage('compare', found.pair.slug, 'Head-to-head comparison'),
     })
   }
+  const products = productsIn(found.category.slug)
+  const reviews = products.reduce((n, p) => n + countedReviews(p).length, 0)
   return pageMetadata({
-    title: `${found.category.name} compared: scores, sentiment and share of voice`,
-    description: `Every product we track in ${found.category.name}, side by side on the same measures.`,
+    title: `${found.category.name} compared side by side`,
+    description: describe(
+      `All ${products.length} ${inSentence(found.category.name)} we track, side by side on score, weighted rating, share of voice and problems per measure, from ${reviews.toLocaleString('en-IN')} real reviews.`,
+    ),
     path: routes.compare(found.category.slug),
+    image: ogImage('compare-category', found.category.slug, `${found.category.name} compared`),
   })
 }
 

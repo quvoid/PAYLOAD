@@ -685,6 +685,17 @@ a button shape.
 
 **Icons** — one inline stroke set (24px grid, 1.75 stroke, round caps) in `src/components/Icon.tsx`. Icons are always `aria-hidden` and always sit beside a text label; they never carry meaning alone.
 
+## Admin
+
+The Payload admin (`/admin`) wears the same system; everything lives in `src/app/(payload)/custom.scss` and `src/components/admin/`.
+
+- **Two themes, two tracks.** Payload's light theme is the transactional track (white and cream surfaces, indigo ink, pink marks); its dark theme is the night track (deep indigo `{colors.shade-70}`-family surfaces, white ink, `{colors.electric-aqua}` highlights). The `--rl-*` role variables switch between them, so every custom panel follows the editor's theme choice.
+- **Neutral ramp.** Payload's grey `--color-base-*` scale is replaced with an indigo-tinted ramp built from the shade ladder, so the whole admin — borders, inputs, tables, text — sits inside the palette. The step Payload uses for help text and table headers is held at ≥4.5:1 on white.
+- **Type and shape.** Inter, self-hosted through `next/font` by the `AdminFont` provider and set as Payload's `--font-body`, with `ss03`. Buttons are pills; the primary button is filled indigo (white with indigo text in the dark theme). Focus rings are pink (aqua in the dark theme).
+- **Chrome.** A 3px brand-gradient strip across the top of every admin screen; the login screen is cream with a white card at Level 3. The sidebar marks the current page with a pink (aqua) bar.
+- **Dashboard.** Opens with one cinematic band (`rl-hero`): indigo, dot grid, thin display headline, white and outline pills, the gradient strip along its bottom edge. Below it: live counts (published, drafts waiting, new reader requests, reviews collected), the four publishing steps as numbered cards with indigo icon badges, website shortcuts with soft icon badges, and Site health as status cards — indigo/aqua top edge and an "All clear" pill when a check passes, pink with "Needs attention" when it doesn't — with a summary pill of checks passing.
+- **Sidebar panels.** "What the rules say" shows the product's `score-ring` and verdict chip in the site's own colours with a facts list; "Uniqueness" shows the own-wording percentage with a meter and a pass/fail chip; "Head-to-heads" uses the primary pill. All use `rl-panel`: a cream (deep indigo) card with a hairline border.
+
 ## Do's and Don'ts
 
 ### Do

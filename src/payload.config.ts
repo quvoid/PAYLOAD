@@ -54,6 +54,7 @@ export default buildConfig({
       ],
     },
     components: {
+      providers: ['/components/admin/Brand#AdminFont'],
       beforeDashboard: ['/components/admin/Welcome#Welcome', '/components/admin/SiteHealth#SiteHealth'],
       graphics: {
         Logo: '/components/admin/Brand#AdminLogo',

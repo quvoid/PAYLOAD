@@ -3,18 +3,14 @@
 import { useDocumentInfo } from '@payloadcms/ui'
 import React, { useState } from 'react'
 
+import { Icon } from '@/components/Icon'
+
 // Category sidebar: draft head-to-heads between the category's best-scoring products, for an
 // editor to write and publish. Nothing is published automatically.
 
 type Result = { created: { id: number; slug: string }[]; skipped: number; message?: string }
 
-const box: React.CSSProperties = {
-  border: '1px solid var(--theme-elevation-150)',
-  borderRadius: 'var(--style-radius-m)',
-  padding: 'calc(var(--base) * 0.75)',
-  marginBottom: 'var(--base)',
-  background: 'var(--theme-elevation-50)',
-}
+// Styles live in app/(payload)/custom.scss (.rl-panel).
 
 export function DraftComparisons() {
   const { id } = useDocumentInfo()
@@ -39,9 +35,12 @@ export function DraftComparisons() {
     }
   }
   return (
-    <div style={box}>
-      <strong>Head-to-heads</strong>
-      <p style={{ color: 'var(--theme-elevation-600)', fontSize: 13, margin: '6px 0' }}>
+    <div className="rl-panel">
+      <strong>
+        <Icon name="scale" className="rl-icon rl-icon--sm" />
+        Head-to-heads
+      </strong>
+      <p style={{ margin: '6px 0' }}>
         Draft a comparison for every pair among this category’s best-scoring products. You write the judgement
         and publish.
       </p>
@@ -57,7 +56,7 @@ export function DraftComparisons() {
         products ({(top * (top - 1)) / 2} pairs)
       </label>
       <div style={{ marginTop: 8 }}>
-        <button type="button" className="btn btn--style-secondary btn--size-small" disabled={busy} onClick={run}>
+        <button type="button" className="btn btn--style-primary btn--size-small" disabled={busy} onClick={run}>
           {busy ? 'Drafting…' : 'Draft head-to-heads'}
         </button>
       </div>

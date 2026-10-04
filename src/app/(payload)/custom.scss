@@ -1,5 +1,649 @@
+// The admin in the site's look (DESIGN.md). Payload's own styles sit in a CSS layer, so these
+// unlayered rules win without !important. Light theme = the transactional track (white, cream,
+// indigo ink); dark theme = the night track (deep indigo, aqua highlights).
+
+// --- Palette ------------------------------------------------------------------------------------
+
+:root {
+  // Payload's neutral ramp, rebuilt from the indigo shade ladder so nothing reads as cold grey.
+  --color-base-0: #ffffff;
+  --color-base-50: #faf7fd;
+  --color-base-100: #f3eef8;
+  --color-base-150: #ece6f2;
+  --color-base-200: #e3d9ec;
+  --color-base-250: #d3c4e0;
+  --color-base-300: #bea7d3;
+  --color-base-350: #a98cc4;
+  --color-base-400: #8a62b0; // ≥4.5:1 on white: Payload sets help text and table headers at this step
+  --color-base-450: #855bad;
+  --color-base-500: #7748a3;
+  --color-base-550: #69359a;
+  --color-base-600: #5c2490;
+  --color-base-650: #500f88;
+  --color-base-700: #440381;
+  --color-base-750: #3a0370;
+  --color-base-800: #2c0254;
+  --color-base-850: #220243;
+  --color-base-900: #190232;
+  --color-base-950: #110124;
+  --color-base-1000: #0a0016;
+
+  --rl-aqua: #51e5ff;
+  --rl-indigo: #440381;
+  --rl-pink: #ec368d;
+  --rl-blush: #ffa5a5;
+  --rl-peach: #ffd6c0;
+  --rl-cream: #fff5ef;
+  --rl-night-elevated: #4f1289;
+  --rl-night-deep: #2c0254;
+  --rl-gradient: linear-gradient(90deg, #51e5ff, #440381, #ec368d, #ffa5a5, #ffd6c0);
+
+  // Roles, swapped for the dark theme below.
+  --rl-ink: var(--rl-indigo);
+  --rl-muted: #69359a;
+  --rl-faint: #855bad;
+  --rl-hairline: #ece6f2;
+  --rl-surface: #ffffff;
+  --rl-tint: var(--rl-cream);
+  --rl-highlight: var(--rl-pink);
+  --rl-ok: var(--rl-indigo);
+  --rl-ok-bg: #e3d9ec;
+  --rl-warn: #b3175f;
+  --rl-warn-bg: #ffe3e3;
+  --rl-shadow:
+    0 8px 8px rgba(68, 3, 129, 0.06), 0 4px 4px rgba(68, 3, 129, 0.06), 0 2px 2px rgba(68, 3, 129, 0.06),
+    0 0 0 1px rgba(68, 3, 129, 0.08);
+
+  --style-radius-s: 6px;
+  --style-radius-m: 10px;
+  --style-radius-l: 14px;
+  --accessibility-outline: 2px solid var(--rl-pink);
+  --accessibility-outline-offset: 3px;
+}
+
+html[data-theme='dark'] {
+  --rl-ink: #ffffff;
+  --rl-muted: #bea7d3;
+  --rl-faint: #a98cc4;
+  --rl-hairline: #3a0370;
+  --rl-surface: #220243;
+  --rl-tint: #2c0254;
+  --rl-highlight: var(--rl-aqua);
+  --rl-ok: var(--rl-aqua);
+  --rl-ok-bg: rgba(81, 229, 255, 0.12);
+  --rl-warn: var(--rl-blush);
+  --rl-warn-bg: rgba(236, 54, 141, 0.18);
+  --rl-shadow: 0 1px 2px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --accessibility-outline: 2px solid var(--rl-aqua);
+}
+
+::selection {
+  background: var(--rl-blush);
+  color: var(--rl-indigo);
+}
+
+// --- Type -----------------------------------------------------------------------------------------
+// --font-body is set to self-hosted Inter by AdminFont (components/admin/Brand.tsx).
+
+html {
+  font-feature-settings: 'ss03';
+}
+
 // The rich text editor uses the admin's sans-serif (Payload defaults it to serif), so what
 // editors type looks like the site it will appear on.
 .rich-text-lexical .editor-container {
   font-family: var(--font-body);
+}
+
+// --- Buttons: pills, as on the site --------------------------------------------------------------
+
+.btn {
+  border-radius: 9999px;
+}
+
+.btn--style-primary {
+  background-color: var(--rl-indigo);
+  color: #ffffff;
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--rl-night-deep);
+  }
+}
+
+html[data-theme='dark'] .btn--style-primary {
+  background-color: #ffffff;
+  color: var(--rl-indigo);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--rl-peach);
+  }
+}
+
+// --- Chrome ---------------------------------------------------------------------------------------
+
+// The brand gradient as a 3px strip across the very top of the admin.
+.app-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--rl-gradient);
+  z-index: 1;
+}
+
+// Sidebar: a pink bar (aqua in the dark theme) marks the page you're on.
+.nav__link-indicator {
+  width: 3px;
+  height: 18px;
+  background: var(--rl-highlight);
+}
+
+.nav-group__toggle {
+  letter-spacing: 0.04em;
+}
+
+// Login, sign-up and password screens: a cream page with the gradient strip on top.
+.template-minimal {
+  background-color: var(--rl-tint);
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto;
+    height: 4px;
+    background: var(--rl-gradient);
+  }
+}
+
+.template-minimal__wrap {
+  background: var(--rl-surface);
+  border-radius: var(--style-radius-l);
+  box-shadow: var(--rl-shadow);
+  padding: calc(var(--base) * 1.6);
+}
+
+// Dashboard cards for collections and globals.
+.card {
+  border-radius: var(--style-radius-m);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+
+  &:hover {
+    box-shadow: var(--rl-shadow);
+    transform: translateY(-1px);
+  }
+}
+
+// --- ReviewLens dashboard and sidebar panels (components/admin) ----------------------------------
+
+.rl-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.rl-icon--sm {
+  width: 16px;
+  height: 16px;
+}
+
+.rl-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rl-muted);
+}
+
+.rl-muted {
+  margin: 0;
+  color: var(--rl-muted);
+}
+
+.rl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--rl-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rl-highlight);
+  text-underline-offset: 4px;
+
+  .rl-icon {
+    transition: transform 150ms ease;
+  }
+
+  &:hover .rl-icon {
+    transform: translateX(2px);
+  }
+}
+
+.rl-section {
+  margin-bottom: calc(var(--base) * 2);
+}
+
+.rl-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: var(--base);
+
+  h3 {
+    margin: 0;
+  }
+}
+
+// The cinematic band at the top of the dashboard.
+.rl-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: calc(var(--base) * 1.5);
+  padding: calc(var(--base) * 1.6);
+  border-radius: var(--style-radius-l);
+  background: var(--rl-indigo);
+  color: #ffffff;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 4px;
+    background: var(--rl-gradient);
+  }
+
+  &__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(to right, transparent 30%, black 100%);
+    pointer-events: none;
+  }
+
+  &__body {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--base) calc(var(--base) * 2);
+  }
+
+  h2 {
+    margin: 8px 0 0;
+    color: #ffffff;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 330;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 10px 0 0;
+    max-width: 62ch;
+    color: var(--rl-peach);
+    font-size: 14px;
+  }
+
+  .rl-eyebrow {
+    color: var(--rl-peach);
+  }
+}
+
+.rl-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+
+  &--white {
+    background: #ffffff;
+    color: var(--rl-indigo);
+
+    &:hover {
+      background: var(--rl-peach);
+    }
+  }
+
+  &--outline {
+    border: 2px solid #ffffff;
+    color: #ffffff;
+
+    &:hover {
+      border-color: var(--rl-aqua);
+      color: var(--rl-aqua);
+    }
+  }
+}
+
+.rl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--base);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--base);
+  border: 1px solid var(--rl-hairline);
+  border-radius: var(--style-radius-m);
+  background: var(--rl-surface);
+  color: var(--rl-ink);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+
+  h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--rl-muted);
+    font-size: 13px;
+  }
+
+  &--link:hover,
+  &--link:focus-within {
+    box-shadow: var(--rl-shadow);
+    transform: translateY(-2px);
+  }
+
+  // The whole card is the link; the visible link text keeps its own focus ring.
+  &--link a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__foot {
+    margin-top: auto;
+    padding-top: 6px;
+  }
+}
+
+.rl-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: var(--rl-indigo);
+  color: #ffffff;
+
+  &--soft {
+    border-radius: var(--style-radius-s);
+    background: var(--rl-tint);
+    color: var(--rl-highlight);
+  }
+}
+
+html[data-theme='dark'] .rl-badge:not(.rl-badge--soft) {
+  background: var(--rl-aqua);
+  color: var(--rl-indigo);
+}
+
+.rl-num {
+  font-size: 22px;
+  font-weight: 330;
+  color: var(--rl-highlight);
+  font-variant-numeric: tabular-nums;
+}
+
+// Site health
+.rl-health {
+  border-top: 3px solid var(--rl-ok);
+
+  &--warn {
+    border-top-color: var(--rl-pink);
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    padding: 3px 10px 3px 8px;
+    border-radius: 9999px;
+    background: var(--rl-ok-bg);
+    color: var(--rl-ok);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &--warn &__status {
+    background: var(--rl-warn-bg);
+    color: var(--rl-warn);
+  }
+
+  ul {
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+
+    li + li {
+      margin-top: 4px;
+    }
+
+    a {
+      color: var(--rl-ink);
+      text-decoration: underline;
+      text-decoration-color: var(--rl-faint);
+      text-underline-offset: 3px;
+    }
+  }
+}
+
+.rl-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--rl-tint);
+  color: var(--rl-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+// Sidebar panels (verdict, uniqueness, head-to-heads)
+.rl-panel {
+  margin-bottom: var(--base);
+  padding: calc(var(--base) * 0.8);
+  border: 1px solid var(--rl-hairline);
+  border-radius: var(--style-radius-m);
+  background: var(--rl-tint);
+  color: var(--rl-ink);
+
+  > strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--rl-muted);
+    font-size: 13px;
+  }
+
+  p + p {
+    margin-top: 8px;
+  }
+
+  a {
+    color: var(--rl-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rl-highlight);
+    text-underline-offset: 3px;
+  }
+}
+
+.rl-score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0;
+}
+
+.rl-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  &__track {
+    stroke: var(--rl-hairline);
+  }
+
+  &__arc {
+    stroke: var(--rl-ink);
+  }
+
+  &--skip &__arc {
+    stroke: var(--rl-pink);
+  }
+
+  &__value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+html[data-theme='dark'] .rl-ring__arc {
+  stroke: var(--rl-aqua);
+}
+
+.rl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 10px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--buy {
+    background: var(--rl-indigo);
+    color: #ffffff;
+  }
+
+  &--buy-with-caveats {
+    background: var(--rl-peach);
+    color: var(--rl-indigo);
+  }
+
+  &--skip {
+    background: var(--rl-blush);
+    color: var(--rl-indigo);
+  }
+
+  &--thin-data {
+    background: #e3d9ec;
+    color: var(--rl-indigo);
+  }
+}
+
+html[data-theme='dark'] .rl-chip--buy {
+  background: transparent;
+  border: 1px solid var(--rl-aqua);
+  color: var(--rl-aqua);
+}
+
+.rl-meter {
+  height: 6px;
+  margin: 10px 0 8px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--rl-hairline);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--rl-ok);
+  }
+
+  &--warn span {
+    background: var(--rl-pink);
+  }
+}
+
+.rl-facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 6px;
+    border-top: 1px solid var(--rl-hairline);
+  }
+
+  dt {
+    color: var(--rl-muted);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+  }
+}
+
+// Field help text: Payload sets it at elevation-400, which is under 4.5:1 on white in this ramp.
+.field-description {
+  color: var(--rl-muted);
 }

@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Icon, type IconName } from '@/components/Icon'
 import { clickDepth, MAX_DEPTH } from '@/lib/site-health'
 import { ensureCatalog, getPayloadClient } from '@/lib/store'
 import {
@@ -12,15 +13,7 @@ import {
 // Dashboard: SEO problems an editor can fix from the admin — pages too deep or unlinked
 // (docs: site-architecture) and near-duplicate wording (docs: programmatic-seo).
 
-const card: React.CSSProperties = {
-  border: '1px solid var(--theme-elevation-150)',
-  borderRadius: 'var(--style-radius-m)',
-  padding: 'var(--base)',
-  background: 'var(--theme-elevation-50)',
-}
-const muted: React.CSSProperties = { color: 'var(--theme-elevation-600)', margin: 0, fontSize: 13 }
-const good = '#2a7a3b'
-const bad = '#b3261e'
+// Styles live in app/(payload)/custom.scss (.rl-health and friends).
 
 const labels: Record<string, string> = {
   products: 'Product',
@@ -55,9 +48,10 @@ export async function SiteHealth() {
   }
 
   const maxDepth = Math.max(0, ...depth.pages.map((p) => (p.depth === Infinity ? 0 : p.depth)))
-  const checks = [
+  const checks: { title: string; icon: IconName; ok: boolean; summary: string; items: { href: string; label: string }[] }[] = [
     {
       title: 'Click depth',
+      icon: 'layers',
       ok: depth.deep.length === 0,
       summary:
         depth.deep.length === 0
@@ -67,6 +61,7 @@ export async function SiteHealth() {
     },
     {
       title: 'Unlinked pages',
+      icon: 'arrow-up-right',
       ok: depth.orphans.length === 0,
       summary:
         depth.orphans.length === 0
@@ -76,6 +71,7 @@ export async function SiteHealth() {
     },
     {
       title: 'Near-duplicate wording',
+      icon: 'scale',
       ok: duplicates.length === 0,
       summary:
         duplicates.length === 0
@@ -88,31 +84,38 @@ export async function SiteHealth() {
     },
   ]
 
+  const passing = checks.filter((c) => c.ok).length
   return (
-    <section style={{ marginBottom: 'calc(var(--base) * 2)' }}>
-      <h3 style={{ margin: '0 0 calc(var(--base) * 0.5)' }}>Site health</h3>
-      <p style={{ ...muted, marginBottom: 'var(--base)', maxWidth: '70ch', fontSize: 14 }}>
-        Checked live against the published site. For a full crawl (status codes, titles, structured data), run{' '}
-        <code>pnpm seo:audit</code>.
-      </p>
-      <ul
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))',
-          gap: 'var(--base)',
-          listStyle: 'none',
-          padding: 0,
-          margin: 0,
-        }}
-      >
+    <section className="rl-section">
+      <div className="rl-section__head">
+        <div>
+          <h3>Site health</h3>
+          <p className="rl-muted" style={{ marginTop: 4, maxWidth: '70ch', fontSize: 13 }}>
+            Checked live against the published site. For a full crawl (status codes, titles, structured data), run{' '}
+            <code>pnpm seo:audit</code>.
+          </p>
+        </div>
+        <span className="rl-summary">
+          <Icon name={passing === checks.length ? 'shield' : 'alert'} className="rl-icon rl-icon--sm" />
+          {passing} of {checks.length} checks passing
+        </span>
+      </div>
+      <ul className="rl-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))' }}>
         {checks.map((c) => (
-          <li key={c.title} style={card}>
-            <strong style={{ color: c.ok ? good : bad }}>
-              {c.ok ? '✓' : '!'} {c.title}
-            </strong>
-            <p style={{ ...muted, marginTop: 6 }}>{c.summary}</p>
+          <li key={c.title} className={`rl-card rl-health ${c.ok ? '' : 'rl-health--warn'}`}>
+            <div className="rl-card__top">
+              <span className="rl-badge rl-badge--soft">
+                <Icon name={c.icon} className="rl-icon rl-icon--sm" />
+              </span>
+              <span className="rl-health__status">
+                <Icon name={c.ok ? 'check' : 'alert'} className="rl-icon rl-icon--sm" />
+                {c.ok ? 'All clear' : 'Needs attention'}
+              </span>
+            </div>
+            <h4>{c.title}</h4>
+            <p>{c.summary}</p>
             {c.items.length > 0 && (
-              <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13 }}>
+              <ul>
                 {c.items.map((i) => (
                   <li key={i.href}>
                     <a href={i.href}>{i.label}</a>

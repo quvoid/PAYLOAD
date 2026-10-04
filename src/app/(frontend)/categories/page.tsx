@@ -32,7 +32,7 @@ export default async function CategoriesPage() {
         </p>
 
         <Section id="sections" title="What are you shopping for?">
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {listedSilos().map((silo) => (
               <li key={silo.slug} className="rounded-lg bg-white p-8 shadow-l3">
                 <h3 className="font-display text-heading-xl">

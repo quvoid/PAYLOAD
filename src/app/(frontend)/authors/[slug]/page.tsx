@@ -51,7 +51,7 @@ export default async function AuthorPage({ params }: { params: Params }) {
           {author.credentials && <p className="mt-4 text-caption text-shade-60">{author.credentials}</p>}
         </header>
         <Section id="verdicts" title={`Which verdicts has ${author.name.split(' ')[0]} approved?`}>
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {products.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />

@@ -67,7 +67,7 @@ export default async function TagPage({ params }: { params: Params }) {
 
         {products.length > 0 && (
           <Section id="products" title="Products">
-            <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {products.map((p) => (
                 <li key={p.slug}>
                   <ProductCard product={p} />
@@ -79,7 +79,7 @@ export default async function TagPage({ params }: { params: Params }) {
 
         {links.length > 0 && (
           <Section id="more" title="More on this">
-            <div className="grid gap-10 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
               {links.map((g) => (
                 <div key={g.title}>
                   <h3 className="text-heading-md">{g.title}</h3>

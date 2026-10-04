@@ -65,7 +65,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
         {found && (
           <Section id="results" title={results.exact ? 'Products we’ve reviewed' : 'Closest matches'}>
-            <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {results.products.map((p) => (
                 <li key={p.slug}>
                   <ProductCard product={p} />

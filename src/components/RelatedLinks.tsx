@@ -11,7 +11,7 @@ export function RelatedLinks({ related, title = 'Related' }: { related?: Related
   if (!links.length) return null
   return (
     <Section id="related" title={title}>
-      <ul className="grid gap-4 md:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {links.map((l) => (
           <li key={l.href}>
             <Link href={l.href} className="block h-full rounded-lg border border-hairline p-6 hover:border-indigo">

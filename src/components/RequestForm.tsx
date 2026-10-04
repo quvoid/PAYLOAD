@@ -24,7 +24,7 @@ export function RequestForm({ query }: { query: string }) {
   }
 
   return (
-    <form action={action} className="grid gap-5 md:grid-cols-2">
+    <form action={action} className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <label className="md:col-span-2">
         <span className="text-caption">Which product?</span>
         <input name="query" required maxLength={QUERY_MAX} defaultValue={state.values?.query ?? query} className={field} />

@@ -125,7 +125,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
         </Section>
 
         <Section id="products" title={`All the ${inSentence(category.name)} we've reviewed`} lead="Best composite score first.">
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {products.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />
@@ -153,7 +153,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
 
         {(lists.length > 0 || pairs.length > 0) && (
           <Section id="lists" title="Ranked lists and head-to-heads">
-            <ul className="grid gap-4 md:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {lists.map((b) => (
                 <li key={b.slug}>
                   <Link href={routes.best(b.slug)} className="block h-full rounded-lg bg-blush p-6">

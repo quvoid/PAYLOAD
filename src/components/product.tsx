@@ -66,7 +66,7 @@ export function ProsCons({ product }: { product: Product }) {
     },
   ]
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {columns.map((col) => (
         <div key={col.className} className="rounded-lg border border-hairline bg-white">
           <h3 className="flex items-center gap-3 border-b border-hairline px-6 py-4 text-heading-md">
@@ -135,7 +135,7 @@ export function PriceTable({ product, category }: { product: Product; category: 
   const value = valueFor(product)
   const free = product.offers.every((o) => o.price === 0)
   return (
-    <div className="rounded-lg bg-cream p-6">
+    <div id="buy" className="rounded-lg bg-cream p-6">
       <h2 className="text-heading-md">{free ? 'Where to get it' : 'Where to buy'}</h2>
       <p className="mt-2 inline-flex items-center gap-1.5 rounded-pill bg-white px-2.5 py-1 text-micro text-shade-60">
         <Icon name="shield" className="size-3.5 text-indigo" />
@@ -188,6 +188,36 @@ export function PriceTable({ product, category }: { product: Product; category: 
       <p className="mt-3 text-micro text-shade-60">
         {free ? 'Checked' : 'Prices checked'} {formatDate(product.offers[0].checkedAt)}. We earn nothing from these links.
       </p>
+    </div>
+  )
+}
+
+/**
+ * Phones only: a bar pinned to the bottom of the product page with the verdict, the score and a
+ * jump to the prices, which otherwise sit below every section.
+ */
+export function MobileBuyBar({ product }: { product: Product }) {
+  const lowest = lowestOffer(product)
+  const free = product.offers.every((o) => o.price === 0)
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-l4 backdrop-blur-lg lg:hidden">
+      <div className="mx-auto flex max-w-xl items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-body-strong">{product.shortName}</p>
+          <p className="truncate text-micro text-shade-60 tabular-nums">
+            {verdictLabel(product.verdict, isApp(product))}
+            {product.verdict !== 'thin-data' && ` · ${formatScore(compositeScore(product))} / 10`}
+            {lowest && !free && ` · from ${formatPrice(lowest.price)}`}
+          </p>
+        </div>
+        <a
+          href="#buy"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-pill bg-indigo px-5 text-body-md text-white"
+        >
+          {free ? 'Get it' : 'Where to buy'}
+          <Icon name="arrow-right" className="size-4 rotate-90" />
+        </a>
+      </div>
     </div>
   )
 }

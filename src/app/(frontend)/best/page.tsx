@@ -27,7 +27,7 @@ export default async function BestIndexPage() {
           {text.intro}
         </p>
         <Section id="lists" title="Which list do you need?">
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {allBestOf().map((b) => (
               <li key={b.slug} className="relative rounded-lg bg-white p-6 shadow-l3">
                 <p className="text-eyebrow uppercase text-shade-60">{getCategory(b.category)!.name}</p>

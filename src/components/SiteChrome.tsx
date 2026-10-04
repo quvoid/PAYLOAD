@@ -262,17 +262,17 @@ function SiteFooter({ track }: { track: Track }) {
                 'Every review, weighed. Numbers are counted by code; every verdict is approved by a named editor.'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <PillLink href={routes.search()} variant={night ? 'outline-night' : 'primary'}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <PillLink href={routes.search()} variant={night ? 'outline-night' : 'primary'} className="whitespace-nowrap">
               <Icon name="search" className="size-4" />
               Find a product
             </PillLink>
-            <PillLink href={routes.methodology()} variant={night ? 'outline-night' : 'outline-light'} arrow>
+            <PillLink href={routes.methodology()} variant={night ? 'outline-night' : 'outline-light'} arrow className="whitespace-nowrap">
               How we score
             </PillLink>
           </div>
         </div>
-        <div className={`grid gap-10 sm:grid-cols-2 ${extraColumns.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+        <div className={`grid grid-cols-2 gap-x-6 gap-y-10 ${extraColumns.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <FooterColumn
             night={night}
             title="Categories"
@@ -299,7 +299,7 @@ function SiteFooter({ track }: { track: Track }) {
           ))}
         </div>
         <div
-          className={`mt-14 flex flex-col gap-2 border-t pt-6 text-micro sm:flex-row sm:justify-between ${night ? 'border-hairline-night text-shade-40' : 'border-hairline text-shade-60'}`}
+          className={`mt-14 flex flex-col gap-2 border-t pt-6 pb-2 text-micro sm:flex-row sm:justify-between ${night ? 'border-hairline-night text-shade-40' : 'border-hairline text-shade-60'}`}
         >
           <p>
             © {new Date().getFullYear()} ReviewLens.{' '}

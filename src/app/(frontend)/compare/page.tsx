@@ -29,7 +29,7 @@ export default async function CompareIndexPage() {
         </p>
 
         <Section id="categories" title="Which category do you want to compare?">
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {categoryComparisons().map((c) => (
               <li key={c.slug}>
                 <CategoryTile
@@ -44,7 +44,7 @@ export default async function CompareIndexPage() {
         </Section>
 
         <Section id="pairs" title="Head-to-heads">
-          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {allComparisons().map((c) => (
               <li key={c.slug}>
                 <Link href={routes.compare(c.slug)} className="block h-full rounded-lg border border-hairline bg-white p-6 transition-colors hover:border-indigo hover:bg-cream">

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { JsonLd } from '@/components/JsonLd'
 import { RelatedLinks } from '@/components/RelatedLinks'
 import { TagList } from '@/components/TagList'
-import { PriceTable, ProsCons, VerdictRationale } from '@/components/product'
+import { MobileBuyBar, PriceTable, ProsCons, VerdictRationale } from '@/components/product'
 import {
   AspectTable,
   Breadcrumbs,
@@ -283,7 +283,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 title="How much are people talking about it?"
                 lead={`Share of voice is this product's share of all ratings and mentions across the ${sov.peers.length} products we track in ${category.name}: each store's own rating count, plus the Reddit and YouTube discussions we collected.`}
               >
-                <div className="grid gap-10 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-10 xl:grid-cols-2">
                   <div>
                     <p className="font-display text-display-md text-pink tabular-nums">{formatPct(sov.share)}</p>
                     <p className="text-caption text-shade-60">
@@ -313,7 +313,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                   title="What else should you consider?"
                   lead={`The closest-scoring alternatives in ${category.name}, measured on exactly the same aspects.`}
                 >
-                  <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {alternatives.map((alt) => (
                       <li key={alt.slug}>
                         <ProductCard product={alt} />
@@ -412,6 +412,9 @@ export default async function ProductPage({ params }: { params: Params }) {
           </footer>
         </article>
       </Container>
+      <MobileBuyBar product={product} />
+      {/* Room for the bar, so it never covers the end of the footer. */}
+      <div aria-hidden className="h-20 lg:hidden" />
       <JsonLd data={graph(productReviewLd(product), breadcrumbLd(crumbs), faqLd(product.faq))} />
     </PageShell>
   )

@@ -677,6 +677,12 @@ a button shape.
 
 **Hero verdict showcase** — the home hero's right column shows one real verdict as a bento of night cards: the product with its verdict chip and `score-ring-on-night`, a positive-share figure with a sentiment bar, the site-wide fake count, and the sources read. All figures are live; the tiles are `{colors.canvas-night-elevated}` with Level 1 only.
 
+**Verdict walkthrough** (`src/components/HowItWorks.tsx`) — the home page's "How does a verdict get made?" band. The step wording comes from Site settings; each step plays a short animation built from the featured product's real reviews: sources pouring into one pile, a pink scan line flagging manipulated reviews, aspect bars counting up, and the score ring drawing before the verdict chip and the editor's approval pop in. Steps advance every six seconds with a `{colors.deep-pink}` progress bar under the active tab. It plays only while on screen, pauses under the pointer or keyboard focus, has a pause button, and never auto-plays under `prefers-reduced-motion` (every keyframe ends on its final state, so the result still shows). Desktop: step tabs on the left, the white stage on the right. Phones: the stage first, then four compact icon tabs and the active step's words below them.
+
+**Motion** — keyframes live in `globals.css` as `--animate-*` tokens (`rise`, `pop`, `grow`, `flow`, `scan`, `flag`, `draw`, `pulse-ring`). Motion explains what the data is doing; it never decorates. Durations stay between 450ms and 1.2s, apart from the looping connector flow.
+
+**Phones** — every responsive grid declares `grid-cols-1` as its base, so a long single-line label can never push a card past the screen edge. The aspect table becomes one labelled card per aspect below 768px; the head-to-head table drops its marks and pills for a compact verdict label so both products fit without sideways scrolling. Product pages pin a `MobileBuyBar` to the bottom (verdict, score, lowest price and a jump to Where to buy), since the price card otherwise sits below every section. The footer's link columns go two-up, and the hero search button becomes an icon.
+
 **Icons** — one inline stroke set (24px grid, 1.75 stroke, round caps) in `src/components/Icon.tsx`. Icons are always `aria-hidden` and always sit beside a text label; they never carry meaning alone.
 
 ## Do's and Don'ts

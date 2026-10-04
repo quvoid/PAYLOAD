@@ -202,12 +202,17 @@ export function SovChart({
   )
 }
 
+/**
+ * Aspect-by-aspect results. A table from the medium breakpoint up; below it each row becomes a
+ * small card with its own labels (taken from data-label), so nothing scrolls sideways on a phone.
+ */
 export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: string }) {
+  const cell = 'md:py-4 md:pr-4 max-md:flex max-md:items-baseline max-md:justify-between max-md:gap-4 max-md:before:text-micro max-md:before:text-shade-60 max-md:before:content-[attr(data-label)]'
   return (
-    <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[560px] border-collapse text-left">
-        <caption className="mb-4 text-left text-caption text-shade-60">{caption}</caption>
-        <thead>
+    <div className="relative">
+      <table className="w-full border-collapse text-left max-md:block">
+        <caption className="mb-4 text-left text-caption text-shade-60 max-md:block">{caption}</caption>
+        <thead className="max-md:sr-only">
           <tr className="border-b border-hairline text-eyebrow uppercase text-shade-60">
             <th scope="col" className="py-3 pr-4 font-normal">Aspect</th>
             <th scope="col" className="py-3 pr-4 font-normal">Mentioned by</th>
@@ -215,10 +220,14 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
             <th scope="col" className="py-3 font-normal">Positive when mentioned</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:grid max-md:gap-3">
           {stats.map((s) => (
-            <tr key={s.aspect.slug} id={`aspect-${s.aspect.slug}`} className="border-b border-hairline">
-              <th scope="row" className="py-4 pr-4 text-left text-body-strong">
+            <tr
+              key={s.aspect.slug}
+              id={`aspect-${s.aspect.slug}`}
+              className="border-b border-hairline max-md:grid max-md:gap-2.5 max-md:rounded-lg max-md:border max-md:bg-white max-md:p-4"
+            >
+              <th scope="row" className="text-left text-body-strong md:py-4 md:pr-4">
                 {s.aspect.topic ? (
                   <Link href={routes.topic(s.aspect.topic)} className="underline decoration-shade-40 underline-offset-4 hover:decoration-pink">
                     {s.aspect.label}
@@ -228,24 +237,29 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
                 )}
                 {s.dealBreaker && <span className="ml-2 align-middle text-micro text-shade-50">deal-breaker</span>}
               </th>
-              <td className="py-4 pr-4 tabular-nums">
-                {formatPct(s.mentionShare)} <span className="text-shade-50">({s.mentions})</span>
+              <td data-label="Mentioned by" className={`tabular-nums ${cell}`}>
+                <span>
+                  {formatPct(s.mentionShare)} <span className="text-shade-50">({s.mentions})</span>
+                </span>
               </td>
-              <td className="py-4 pr-4">
+              <td data-label="Problems reported by" className={`max-md:flex-wrap ${cell}`}>
                 {!s.scored ? (
                   <span className="text-caption text-shade-50">Too few mentions to judge</span>
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 text-body-strong tabular-nums">{formatRate(s.problemRate)}</span>
+                  <div className="flex items-center gap-3 max-md:contents">
+                    <span className="w-12 text-body-strong tabular-nums max-md:w-auto">{formatRate(s.problemRate)}</span>
                     {/* Bar runs 0–40%; notable cons (≥10%) turn pink. */}
                     <Meter
                       value={s.problemRate / 0.4}
                       tone={s.problemRate >= RULES.notableConProblemRate ? 'pink' : 'indigo'}
+                      className="max-md:basis-full"
                     />
                   </div>
                 )}
               </td>
-              <td className="py-4 tabular-nums">{s.mentions ? formatPct(s.positiveShare) : '—'}</td>
+              <td data-label="Positive when mentioned" className={`tabular-nums md:py-4 ${cell.replace('md:pr-4 ', '')}`}>
+                <span>{s.mentions ? formatPct(s.positiveShare) : '—'}</span>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -256,7 +270,7 @@ export function AspectTable({ stats, caption }: { stats: AspectStat[]; caption: 
 
 export function Faq({ items }: { items: FAQ[] }) {
   return (
-    <dl className="grid gap-4 xl:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-4 xl:grid-cols-2">
       {items.map((f) => (
         <div key={f.q} className="rounded-lg border border-hairline bg-white p-6">
           <dt className="flex gap-3 text-heading-sm">
@@ -408,7 +422,7 @@ export function RatingPair({ product }: { product: Product }) {
   const appStores = rated.every((s) => sourceById(s.source).kind === 'app-store')
   const hasBrandStore = product.reviews.some((r) => sourceById(r.source).kind === 'brand-store')
   return (
-    <dl className="grid gap-6 sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
       <div className="rounded-lg border border-hairline bg-white p-6">
         <dt className="text-caption text-shade-60">{appStores ? 'App store average' : 'Marketplace average'}</dt>
         <dd className="mt-2 flex items-baseline gap-3">

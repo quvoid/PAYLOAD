@@ -81,7 +81,7 @@ function PairPage({ pair }: { pair: PairComparison }) {
         </header>
 
         <Section id="pick" title="Which one should you pick?">
-          <ul className="grid gap-6 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {products.map((p) => (
               <li key={p.slug} className="rounded-lg bg-peach p-8">
                 <p className="text-heading-md">{pair.pickIf[p.slug]}</p>
@@ -98,7 +98,7 @@ function PairPage({ pair }: { pair: PairComparison }) {
         </Section>
 
         <Section id="products" title="The two products">
-          <ul className="grid gap-6 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {products.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />

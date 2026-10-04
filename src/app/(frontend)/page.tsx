@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-import { Icon, siloIcon, type IconName } from '@/components/Icon'
+import { HowItWorks, type WalkthroughData } from '@/components/HowItWorks'
+import { Icon, siloIcon } from '@/components/Icon'
 import { JsonLd } from '@/components/JsonLd'
 import { ProductCard, ProductMark, ScoreRing, VerdictBadge } from '@/components/review'
 import { PageShell } from '@/components/SiteChrome'
@@ -11,6 +12,7 @@ import {
   allBestOf,
   allProducts,
   allSources,
+  getAuthor,
   getBrand,
   getCategory,
   isApp,
@@ -20,11 +22,20 @@ import {
   recentlyUpdated,
 } from '@/lib/catalog'
 import { formatCount, formatPct } from '@/lib/format'
-import { compositeScore, countedReviews, productSentiment, sourcesUsed, suspiciousCount } from '@/lib/metrics'
+import {
+  aspectStats,
+  compositeScore,
+  countedReviews,
+  productSentiment,
+  sourceById,
+  sourcesUsed,
+  suspiciousCount,
+} from '@/lib/metrics'
 import { routes } from '@/lib/routes'
 import { fixedPageMetadata, graph, SITE } from '@/lib/seo'
 import { ensureCatalog, settings } from '@/lib/store'
 import type { Product } from '@/lib/types'
+import { verdictLabel } from '@/lib/verdict'
 
 export async function generateMetadata(): Promise<Metadata> {
   await ensureCatalog()
@@ -33,7 +44,42 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Hero copy and the "how it works" steps are edited in the admin: Settings → Site settings.
 
-const stepIcons: IconName[] = ['layers', 'flag', 'list', 'user']
+const clip = (text: string, max = 80) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text)
+
+/** Real reviews and figures for the walkthrough, taken from the featured product. */
+function walkthroughData(product: Product, products: Product[]): WalkthroughData {
+  const counted = countedReviews(product)
+  const keep = new Set(counted)
+  // Flagged reviews, the featured product's first, so the step shows real fakes even when it has few.
+  const fakes = [product, ...products.filter((p) => p !== product)].flatMap((p) => {
+    const c = new Set(countedReviews(p))
+    return p.reviews.filter((r) => !c.has(r) && r.body.length > 10)
+  })
+  const kept = counted.filter((r) => r.rating !== undefined && r.body.length > 20)
+  // Five rows for the screening step: three kept, two flagged, interleaved.
+  const screened = [kept[0], fakes[0], kept[1], fakes[1], kept[2]]
+    .filter((r) => r !== undefined)
+    .map((r) => ({ author: r.author, body: clip(r.body, 70), rating: r.rating, flagged: !keep.has(r) }))
+  return {
+    sources: sourcesUsed(product).map((s) => s.name),
+    incoming: kept.slice(3, 6).map((r) => ({ author: r.author, source: sourceById(r.source).name, body: clip(r.body), rating: r.rating })),
+    screened,
+    counted: counted.length,
+    flagged: suspiciousCount(product),
+    aspects: aspectStats(product)
+      .filter((a) => a.scored)
+      .slice(0, 4)
+      .map((a) => ({ label: a.aspect.label, problem: a.problemRate })),
+    product: {
+      name: product.name,
+      initial: getBrand(product.brand)!.name.charAt(0),
+      score: compositeScore(product),
+      verdict: product.verdict,
+      verdictLabel: verdictLabel(product.verdict, isApp(product)),
+    },
+    editor: getAuthor(product.author)?.name,
+  }
+}
 
 /**
  * The hero's right column: one real verdict broken into tiles, so the first screen shows what a
@@ -168,12 +214,12 @@ export default async function HomePage() {
           title="What are you shopping for?"
           action={{ href: routes.categories(), label: 'All categories' }}
         >
-          <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {listedSilos().map((silo) => {
               const children = listedChildren(silo.slug)
               const count = children.reduce((n, c) => n + productsIn(c.slug).length, 0)
               return (
-                <li key={silo.slug} className="group card-lift relative flex flex-col rounded-lg bg-peach p-7">
+                <li key={silo.slug} className="group card-lift relative flex flex-col rounded-lg bg-peach p-6 sm:p-7">
                   <div className="flex items-start justify-between gap-4">
                     <span className="flex size-12 items-center justify-center rounded-md bg-white text-pink shadow-l3">
                       <Icon name={siloIcon(silo.slug)} className="size-6" />
@@ -183,7 +229,7 @@ export default async function HomePage() {
                       <span className="text-micro text-shade-60">products</span>
                     </span>
                   </div>
-                  <h3 className="mt-8 font-display text-heading-xl">
+                  <h3 className="mt-6 font-display text-heading-xl sm:mt-8">
                     <Link href={routes.category(silo)} className="after:absolute after:inset-0 after:rounded-lg">
                       {silo.name}
                     </Link>
@@ -209,7 +255,7 @@ export default async function HomePage() {
         </Section>
 
         <Section id="latest" title="Latest verdicts" action={{ href: routes.bestIndex(), label: 'See ranked lists' }}>
-          <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {recentlyUpdated(6).map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />
@@ -219,7 +265,7 @@ export default async function HomePage() {
         </Section>
 
         <Section id="lists" title="Ranked lists" action={{ href: routes.bestIndex(), label: 'All lists' }}>
-          <ol className="grid gap-x-10 md:grid-cols-2">
+          <ol className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
             {allBestOf().map((b, i) => (
               <li key={b.slug} className="border-t border-hairline">
                 <Link
@@ -246,28 +292,16 @@ export default async function HomePage() {
         </Section>
       </Container>
 
-      {settings.steps.length > 0 && (
-        <section className="bg-peach">
+      {settings.steps.length > 0 && featured && (
+        <section className="overflow-hidden bg-peach">
           <Container>
-            <Section id="how" title="How does a verdict get made?" action={{ href: routes.methodology(), label: 'Full methodology' }}>
-              <ol className="relative grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                {/* The line joining the steps, drawn behind the number badges on wide screens. */}
-                <span aria-hidden className="absolute top-12 right-[12%] left-[12%] hidden h-px bg-shade-40 xl:block" />
-                {settings.steps.map((s, i) => (
-                  <li key={s.title} className="relative rounded-lg bg-white p-6 shadow-l3">
-                    <div className="flex items-center justify-between">
-                      <span className="flex size-12 items-center justify-center rounded-pill bg-indigo text-white">
-                        <Icon name={stepIcons[i % stepIcons.length]} className="size-5" />
-                      </span>
-                      <span className="font-display text-heading-xl text-pink tabular-nums">
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                    </div>
-                    <h3 className="mt-6 text-heading-md">{s.title}</h3>
-                    <p className="mt-2 text-caption text-shade-60">{s.body}</p>
-                  </li>
-                ))}
-              </ol>
+            <Section
+              id="how"
+              title="How does a verdict get made?"
+              lead="Watch one real product go from thousands of scattered reviews to a signed-off verdict."
+              action={{ href: routes.methodology(), label: 'Full methodology' }}
+            >
+              <HowItWorks steps={settings.steps} data={walkthroughData(featured, products)} />
             </Section>
           </Container>
         </section>

@@ -68,7 +68,7 @@ export default async function BrandPage({ params }: { params: Params }) {
           </dl>
         </header>
         <Section id="products" title={`Which ${brand.name} products are worth buying?`}>
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {products.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />

@@ -164,7 +164,7 @@ function SiloView({ silo }: { silo: Category }) {
         </header>
 
         <Section id="categories" title={`Which kind of ${inSentence(silo.name.split(' & ')[0])} do you need?`}>
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {children.map((c) => (
               <li key={c.slug}>
                 <CategoryTile
@@ -180,7 +180,7 @@ function SiloView({ silo }: { silo: Category }) {
         </Section>
 
         <Section id="top" title={`The best-scoring ${inSentence(silo.name)}`}>
-          <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {top.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} />
@@ -191,7 +191,7 @@ function SiloView({ silo }: { silo: Category }) {
 
         {(lists.length > 0 || pairs.length > 0 || topics.length > 0) && (
           <Section id="guides" title="Lists, comparisons and guides">
-            <div className="grid gap-10 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
               {[
                 { title: 'Ranked lists', links: lists.map((b) => ({ href: routes.best(b.slug), label: b.title })) },
                 {

@@ -52,9 +52,10 @@ export function SearchForm({
       </label>
       <button
         type="submit"
-        className={`shrink-0 rounded-pill px-6 transition-colors ${lg ? 'min-h-14 text-body-strong' : 'min-h-11'} ${button}`}
+        className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-pill transition-colors ${lg ? 'min-h-14 min-w-14 px-4 text-body-strong sm:px-6' : 'min-h-11 px-6'} ${button}`}
       >
-        Search
+        {lg && <Icon name="search" className="size-5 sm:hidden" />}
+        <span className={lg ? 'max-sm:sr-only' : undefined}>Search</span>
       </button>
     </form>
   )
